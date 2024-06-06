@@ -3,6 +3,7 @@ import uuid
 class IdComponentMapper:
     def __init__(self, file_components_map):
         self.id_component_map = {}
+        self.component_id_map = {}
         self.generate_mapping(file_components_map)
 
     def generate_mapping(self, file_components_map):

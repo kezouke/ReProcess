@@ -25,11 +25,7 @@ def extract_components_from_files(file_paths):
     
     for file_path in file_paths:
         components = extract_components(file_path)
-        # Split the path using '/' (or '\\' on Windows) to get the package names
-        packages_with_extension = file_path.split('/')[1:] if '/' in file_path \
-                                    else file_path.rsplit('\\', 1)[1:]
-        packages_with_extension = ".".join(packages_with_extension)
-        packages = packages_with_extension.replace('.py', '')
+        
         modules = [f"{packages}.{component}" for component in components]
 
         file_components_map[file_path] = components
