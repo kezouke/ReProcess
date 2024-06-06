@@ -82,4 +82,22 @@ class CodeComponent:
         code = import_statements_code + "\n" + code
         self.component_code = code
 
+
+    def extract_imports(self):
+        tree = ast.parse(self.component_code)        
+        imports = []
+
+        for node in tree.body:
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    module_name = alias.name
+                    imports.append(module_name)
+            elif isinstance(node, ast.ImportFrom):
+                for alias in node.names:
+                    module_name = node.module
+                    component_name = alias.name
+                    imports.append(f"{module_name}.{component_name}")
+
+        return imports
+
                 

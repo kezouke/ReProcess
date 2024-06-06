@@ -1,7 +1,7 @@
 import ast
 from typing import Dict
 from .mappers.FilePathAstMapper import FilePathAstMapError
-
+from .import_path_extractor import get_import_statement_path
 
 def extract_components(file_path,
                        file_path_ast_map: Dict[str, ast.Module]):
@@ -25,7 +25,7 @@ def extract_components_from_files(file_paths):
     
     for file_path in file_paths:
         components = extract_components(file_path)
-        
+        packages = get_import_statement_path(file_path)
         modules = [f"{packages}.{component}" for component in components]
 
         file_components_map[file_path] = components

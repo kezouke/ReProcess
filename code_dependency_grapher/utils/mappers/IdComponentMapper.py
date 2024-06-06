@@ -1,4 +1,5 @@
 import uuid
+from ..import_path_extractor import get_import_statement_path
 
 class IdComponentMapper:
     def __init__(self, file_components_map):
@@ -9,8 +10,13 @@ class IdComponentMapper:
     def generate_mapping(self, file_components_map):
         for path, components in file_components_map.items():
             for component_name in components:
+                id = str(uuid.uuid4())
                 value = (path, component_name)
-                self.id_component_map[str(uuid.uuid4())] = value
+                self.id_component_map[id] = value
+                
+                packages = get_import_statement_path(path)
+                key = f"{packages}.{component_name}"
+                self.component_id_map[key] = id
 
 
 class IdComponentMapError(Exception):
