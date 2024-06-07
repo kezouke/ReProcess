@@ -15,9 +15,9 @@ class FileAnalyzer:
                  file_id: str, 
                  file_path: str,
                  file_path_ast_map: Optional[Dict[str, ast.Module]] = None,
-                 imports: Optional[List[str]]=None,
-                 called_components: Optional[List[str]]=None,
-                 callable_components: Optional[List[str]]=None):
+                 imports: Optional[List[str]]= None,
+                 called_components: Optional[List[str]] = None,
+                 callable_components: Optional[List[str]] = None):
         self.file_id = file_id
         self.file_path = file_path
         self.file_path_ast_map = file_path_ast_map
@@ -84,4 +84,3 @@ class FileAnalyzer:
     
     def __hash__(self) -> int:
         return hash(self.file_path)
-    

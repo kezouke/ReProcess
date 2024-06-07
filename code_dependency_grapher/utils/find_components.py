@@ -18,13 +18,13 @@ def extract_components(file_path,
     return components
 
 
-def extract_components_from_files(file_paths):
+def extract_components_from_files(file_paths, file_path_ast_map):
     file_components_map = {}
     components_names = []
     package_components_names = []
     
     for file_path in file_paths:
-        components = extract_components(file_path)
+        components = extract_components(file_path, file_path_ast_map)
         packages = get_import_statement_path(file_path)
         modules = [f"{packages}.{component}" for component in components]
 
