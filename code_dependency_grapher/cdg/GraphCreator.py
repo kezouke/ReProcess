@@ -1,8 +1,9 @@
-from .CodeComponent import CodeComponent
-from ..utils.mappers.FilePathAstMapper import FilePathAstMapper
-from ..utils.mappers.IdComponentMapper import IdComponentMapper
-from ..utils.mappers.IdFileAnalyzerMapper import IdFileAnalyzerMapper
-from ..utils.find_components import extract_components_from_files
+from code_dependency_grapher.cdg.CodeComponent import CodeComponent
+from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapper
+from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapper
+from code_dependency_grapher.utils.mappers.IdComponentMapper import IdComponentMapper
+from code_dependency_grapher.utils.mappers.IdFileAnalyzerMapper import IdFileAnalyzerMapper
+from code_dependency_grapher.utils.find_components import extract_components_from_files
 
 class GraphCreator:
     def __init__(self,

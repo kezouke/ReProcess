@@ -2,9 +2,9 @@ import ast
 from typing import List, Optional, Dict, Tuple
 from uuid import UUID
 
-from ..utils.mappers.FilePathAstMapper import FilePathAstMapError
-from ..utils.mappers.IdComponentMapper import IdComponentMapError
-from ..utils.mappers.IdFileAnalyzerMapper import IdFileAnalyzerMapper, IdFileAnalyzeMapError
+from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapError
+from code_dependency_grapher.utils.mappers.IdComponentMapper import IdComponentMapError
+from code_dependency_grapher.utils.mappers.IdFileAnalyzerMapper import IdFileAnalyzerMapper, IdFileAnalyzeMapError
 
 
 class CodeComponent:

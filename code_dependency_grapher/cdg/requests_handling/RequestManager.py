@@ -1,9 +1,12 @@
 import os
 import subprocess
 import logging
-import re
+import uuid
 
 from code_dependency_grapher.utils.find_root_directory import find_project_root
+from code_dependency_grapher.cdg.requests_handling.RequestSession import RequestSession
+from code_dependency_grapher.cdg.requests_handling.RequestEnum import RequestType
+
 
 logging.basicConfig(level=logging.ERROR)
 
@@ -57,13 +60,16 @@ class RequestManager:
             logging.error(f"Failed to get changed files: {e}")
             return []
 
-
     def manage_request(self, repo_url):
         local_repo_path = os.path.join(self.repos_dir, self.get_repo_name(repo_url))
 
         if not self.repo_exists_locally(local_repo_path):
             logging.info(f"Cloning {repo_url}...")
             self.clone_repo(repo_url, local_repo_path)
+            RequestSession(RequestType.FROM_SCRATCH,
+                           self.db_absolute_path,
+                           str(uuid.uuid4()),
+                           self.get_repo_name(repo_url))
         else:
             logging.info("Fetching latest changes...")
             self.fetch_remote_changes(local_repo_path)
