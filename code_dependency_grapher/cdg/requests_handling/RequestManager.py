@@ -1,9 +1,11 @@
 import os
 import subprocess
 import logging
+import re
+
 from code_dependency_grapher.utils.find_root_directory import find_project_root
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.ERROR)
 
 class RequestManager:
     def __init__(self, db_absolute_path):
@@ -38,25 +40,23 @@ class RequestManager:
         except subprocess.CalledProcessError as e:
             logging.error(f"Failed to fetch remote changes: {e}")
 
-    def get_changed_files(self, local_repo_path):
-        # Compares local and remote branches to find changed files
+    def pull_latest_changes(self, local_repo_path):
+        # Pulls the latest changes from the remote repository
         try:
-            result = subprocess.run(['git', '-C', local_repo_path, 'diff', '--name-only', 'HEAD', 'origin/master'],
+            subprocess.run(['git', '-C', local_repo_path, 'pull'], check=True)
+            logging.info(f"Pulled latest changes for {local_repo_path}")
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Failed to pull latest changes: {e}")
+
+    def get_changed_files(self, local_repo_path):
+        try:
+            result = subprocess.run(['git', '-C', local_repo_path, 'diff', '--name-only'],
                                     capture_output=True, text=True, check=True)
             return result.stdout.splitlines()
         except subprocess.CalledProcessError as e:
             logging.error(f"Failed to get changed files: {e}")
             return []
 
-    def get_uncommitted_changes(self, local_repo_path):
-        # Checks for uncommitted changes
-        try:
-            result = subprocess.run(['git', '-C', local_repo_path, 'status', '--porcelain'],
-                                    capture_output=True, text=True, check=True)
-            return result.stdout.splitlines()
-        except subprocess.CalledProcessError as e:
-            logging.error(f"Failed to get uncommitted changes: {e}")
-            return []
 
     def manage_request(self, repo_url):
         local_repo_path = os.path.join(self.repos_dir, self.get_repo_name(repo_url))
@@ -68,20 +68,15 @@ class RequestManager:
             logging.info("Fetching latest changes...")
             self.fetch_remote_changes(local_repo_path)
             changed_files = self.get_changed_files(local_repo_path)
-            uncommitted_changes = self.get_uncommitted_changes(local_repo_path)
-
-            if uncommitted_changes:
-                logging.info("Uncommitted changes detected:")
-                for change in uncommitted_changes:
-                    logging.info(change)
-            elif changed_files:
-                logging.info("Changed files:")
+            if changed_files:
+                logging.info("Changed files detected, pulling latest changes...")
                 for file in changed_files:
                     logging.info(file)
+                self.pull_latest_changes(local_repo_path)
             else:
                 logging.info("No changes detected.")
 
-# Example usage
-repo_url = "https://github.com/triton-lang/triton"
-manager = RequestManager("cdscs")
-manager.manage_request(repo_url)
+# # Example usage
+# repo_url = "https://github.com/triton-lang/triton"
+# manager = RequestManager("cdscs")
+# manager.manage_request(repo_url)
