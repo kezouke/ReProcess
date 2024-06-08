@@ -1,11 +1,10 @@
 import ast
 from typing import List, Optional, Dict, Tuple
-from FileAnalyzer import FileAnalyzer
 from uuid import UUID
 
 from ..utils.mappers.FilePathAstMapper import FilePathAstMapError
 from ..utils.mappers.IdComponentMapper import IdComponentMapError
-from ..utils.mappers.
+from ..utils.mappers.IdFileAnalyzerMapper import IdFileAnalyzerMapper, IdFileAnalyzeMapError
 
 
 class CodeComponent:
