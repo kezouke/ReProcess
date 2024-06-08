@@ -32,3 +32,12 @@ class SystemInitializer:
             
             if self.absolute_path is None:
                 raise ValueError("No path found in the path file.")
+
+
+# # Example usage
+# db_url = "/home/db"
+# si1 = SystemInitializer(db_url)
+# print(si1.absolute_path)
+
+# si2 = SystemInitializer()
+# print(si2.absolute_path)
