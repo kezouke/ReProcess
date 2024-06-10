@@ -1,4 +1,5 @@
 import os
+import subprocess
 from typing import Union
 
 def find_project_root(current_path: str) -> Union[str, None]:
@@ -13,10 +14,30 @@ def find_project_root(current_path: str) -> Union[str, None]:
     Returns:
         Union[str, None]: The path to the project root if found, otherwise `None`.
     """
-    root_marker = ['.git', 'README.md', 'code_dependency_grapher']  # Common markers indicating a project root
-    while current_path!= os.path.dirname(current_path):  # Continue until reaching the root directory
-        # Check if any of the root markers exist in the current directory
-        if any(os.path.exists(os.path.join(current_path, marker)) for marker in root_marker):
-            return current_path  # Return the current path if a marker is found
-        current_path = os.path.dirname(current_path)  # Move up to the next directory level
-    return None  # Return None if no root marker is found after reaching the root directory
+    try:
+        # Change the current working directory to the specified repo_path
+        if os.path.isfile(current_path):
+            current_path = os.path.dirname(current_path)
+       
+        os.chdir(current_path)
+
+        # Run the git command to find the root directory
+        result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True
+        )
+        # The stdout contains the path to the root directory
+        git_root = result.stdout.strip()
+        return git_root
+    except subprocess.CalledProcessError as e:
+        print(f"Error finding Git root: {e.stderr}")
+        return None
+    except FileNotFoundError as e:
+        print(f"Invalid directory: {e}")
+        return None
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return None
