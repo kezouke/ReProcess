@@ -41,7 +41,7 @@ class GraphCreator:
         file_components_map, _, package_components_names = \
             extract_components_from_files(self.python_files, 
                                           ast_manager.file_path_ast_map)
-        
+                
         # Initialize IdComponentMapper to manage component IDs and their mappings
         id_component_manager = IdComponentMapper(file_components_map)
         
@@ -68,6 +68,9 @@ class GraphCreator:
             for l_cmp in linked_components:
                 l_cmp_id = id_component_manager.component_id_map[l_cmp]
                 cmp.linked_component_ids.append(l_cmp_id)
-        
+
+            if linked_components:
+                print(linked_components)
+
         # Return the list of CodeComponent instances and the file-to-analyzer mapping
         return code_components, id_files_manager.id_file_map

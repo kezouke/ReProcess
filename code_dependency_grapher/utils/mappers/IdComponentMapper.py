@@ -29,6 +29,8 @@ class IdComponentMapper:
         Args:
             file_components_map (dict): A dictionary mapping file paths to lists of component names found within those files.
         """
+        base_path = "data/repos/"
+
         for path, components in file_components_map.items():
             for component_name in components:
                 # Generate a unique ID for each component
@@ -38,7 +40,7 @@ class IdComponentMapper:
                 self.id_component_map[id] = (path, component_name)
                 
                 # Determine the package structure of the import statement for the current path
-                packages = get_import_statement_path(path)
+                packages = get_import_statement_path(path.split(base_path)[-1])
                 
                 # Construct the component identifier using the package structure and component name
                 key = f"{packages}.{component_name}"

@@ -29,7 +29,7 @@ class RequestSession:
             python_files = find_python_files(self.repos_dir)
             graph_creator = GraphCreator(python_files)
             graph_builded = graph_creator.create_from_scratch()
-            print(graph_builded)
+            # print(graph_builded)
         elif mode == RequestType.UPDATE_EXISTING:
             # TODO:
             # graph builder to update existing tree
