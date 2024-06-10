@@ -67,7 +67,7 @@ class RequestManager:
             logging.info(f"Cloning {repo_url}...")
             self.clone_repo(repo_url, local_repo_path)
             RequestSession(RequestType.FROM_SCRATCH,
-                           self.db_absolute_path,
+                           self.db_abs_path,
                            str(uuid.uuid4()),
                            self.get_repo_name(repo_url))
         else:

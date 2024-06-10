@@ -8,13 +8,18 @@ from code_dependency_grapher.utils.mappers.IdFileAnalyzerMapper import IdFileAna
 
 
 class CodeComponent:
-
-
-    # def __init__(self, component_id: str):
-    #     self.component_id = component_id
-    #     self.component_path = id_component_map[component_id][0]
-    #     self.file_analyzer = path_file_class_map[self.component_path]
-    #     self.extract_code()
+    """
+    Represents a code component - function or class in the python file.
+    
+    Attributes:
+        component_id (str): Unique identifier for the component.
+        id_files_manager (Optional[IdFileAnalyzerMapper]): Manager for mapping IDs to file analyzers.
+        file_path_ast_map (Optional[Dict[str, ast.Module]]): Mapping of file paths to AST modules.
+        id_component_map (Optional[Dict[UUID, Tuple[str, str]]]): Mapping of component IDs to file paths and names.
+        component_code (Optional[str]): The extracted code of the component.
+        linked_component_ids (Optional[List[str]]): IDs of components that this component is linked to.
+        file_analyzer_id (Optional[str]): ID of the file analyzer associated with this component.
+    """
 
     def __init__(self, 
                  component_id: str,
@@ -25,6 +30,18 @@ class CodeComponent:
                  linked_component_ids: Optional[List[str]] = None,
                  file_analyzer_id: Optional[str] = None
                  ):
+        """
+        Initializes a new instance of the CodeComponent class.
+        
+        Args:
+            component_id (str): Unique identifier for the component.
+            id_files_manager (Optional[IdFileAnalyzerMapper], optional): Manager for mapping IDs to file analyzers. Defaults to None.
+            file_path_ast_map (Optional[Dict[str, ast.Module]], optional): Mapping of file paths to AST modules. Defaults to None.
+            id_component_map (Optional[Dict[UUID, Tuple[str, str]]], optional): Mapping of component IDs to file paths and names. Defaults to None.
+            component_code (Optional[str], optional): The extracted code of the component. Defaults to None.
+            linked_component_ids (Optional[List[str]], optional): IDs of components that this component is linked to. Defaults to None.
+            file_analyzer_id (Optional[str], optional): ID of the file analyzer associated with this component. Defaults to None.
+        """
         self.component_id = component_id
         self.id_files_manager = id_files_manager
         self.file_path_ast_map = file_path_ast_map
@@ -36,15 +53,21 @@ class CodeComponent:
         if self.file_analyzer_id is None:
             self._get_file_analyzer()        
 
-        # Call extract_code() if file_analyzer is provided and component_code is not set
+        # Extract code if file_analyzer is available and component_code is not set
         if self.component_code is None:
             self.extract_code()
 
         if self.linked_component_ids is None:
             self.linked_component_ids = []
 
-
     def _get_file_analyzer(self):
+        """
+        Retrieves the file analyzer based on the component's ID and updates the file_analyzer_id attribute.
+        
+        Raises:
+            IdComponentMapError: If id_component_map is None.
+            IdFileAnalyzeMapError: If id_files_manager is None.
+        """
         if self.id_component_map is None:
             raise IdComponentMapError("id_component_map is None")
         
@@ -54,8 +77,17 @@ class CodeComponent:
         path = self.id_component_map[self.component_id][0]
         self.file_analyzer_id = self.id_files_manager.path_id_map[path]
 
-
     def extract_code(self):
+        """
+        Extracts the code of the component and updates the component_code attribute.
+        
+        This method also extracts and prepends import statements used by the component.
+        
+        Raises:
+            FilePathAstMapError: If file_path_ast_map is None.
+            IdComponentMapError: If id_component_map is None.
+            IdFileAnalyzeMapError: If id_files_manager is None.
+        """
         if self.file_path_ast_map is None:
             raise FilePathAstMapError("file_path_ast_map is None")
         
@@ -85,7 +117,6 @@ class CodeComponent:
                 if node.id in file_imports:
                     used_imports.add(node.id)
 
-
         import_statements_code = ""
         
         for node in tree.body:
@@ -99,14 +130,21 @@ class CodeComponent:
                 imports_to_add = [alias for alias in node.names if alias.name in used_imports 
                                   or (alias.asname is not None and alias.asname in used_imports)]
                 if imports_to_add:
-                    code_line = ast.unparse(ast.ImportFrom(module=node.module, names=imports_to_add))
+                    code_line = ast.unparse(ast.ImportFrom(module=node.module,
+                                                           names=imports_to_add,
+                                                           level=node.level))
                     import_statements_code = code_line + "\n" + import_statements_code
             
         code = import_statements_code + "\n" + code
         self.component_code = code
 
-
     def extract_imports(self):
+        """
+        Extracts and returns a list of import statements used by the component.
+        
+        Returns:
+            List[str]: A list of import statements.
+        """
         tree = ast.parse(self.component_code)        
         imports = []
 
@@ -122,4 +160,3 @@ class CodeComponent:
                     imports.append(f"{module_name}.{component_name}")
 
         return imports
-                
