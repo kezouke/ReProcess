@@ -28,7 +28,8 @@ class FilePathAstMapper:
                     tree = ast.parse(file.read())
                     
                     # Store the AST in the file_path_ast_map dictionary, keyed by the file path
-                    self.file_path_ast_map[file_path] = tree
+                    relative_repo_path = "/".join(file_path.split("/data/repos/")[1].split("/")[1:])
+                    self.file_path_ast_map[relative_repo_path] = tree
             except Exception as e:
                 print(f"Failed to parse {file_path}: {e}")
                 continue

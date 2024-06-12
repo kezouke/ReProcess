@@ -61,7 +61,8 @@ class CodeComponent:
             self._get_file_analyzer()        
             if self.component_name is None:
                 file_path, cmp_name = self.id_component_map[self.component_id]
-                self.component_name = get_import_statement_path(file_path) + f".{cmp_name}"
+                relative_repo_path = "/".join(file_path.split("/data/repos/")[1].split("/"))
+                self.component_name = get_import_statement_path(relative_repo_path) + f".{cmp_name}"
 
         # Extract code if file_analyzer is available and component_code is not set
         if self.component_code is None:

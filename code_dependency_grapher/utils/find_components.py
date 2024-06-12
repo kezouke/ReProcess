@@ -21,7 +21,8 @@ def extract_components(file_path: str,
     if file_path_ast_map is None:
         raise FilePathAstMapError("file_path_ast_map is None")
     
-    tree = file_path_ast_map[file_path]
+    relative_repo_path = "/".join(file_path.split("/data/repos/")[1].split("/")[1:])
+    tree = file_path_ast_map[relative_repo_path]
     components = []
     for node in tree.body:
         if isinstance(node, ast.ClassDef) or isinstance(node, ast.FunctionDef):

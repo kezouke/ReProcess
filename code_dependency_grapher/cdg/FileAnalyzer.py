@@ -36,7 +36,7 @@ class FileAnalyzer:
             callable_components (Optional[List[str]], optional): List of components that can be called, including functions and classes. Defaults to None.
         """
         self.file_id = file_id
-        self.file_path = file_path
+        self.file_path = "/".join(file_path.split("/data/repos/")[1].split("/")[1:])
         self.file_path_ast_map = file_path_ast_map
         self.package_components_names = package_components_names
         self.imports = imports or self.extract_imports()
