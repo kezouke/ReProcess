@@ -53,7 +53,7 @@ class RequestManager:
 
     def get_changed_files(self, local_repo_path):
         try:
-            result = subprocess.run(['git', '-C', local_repo_path, 'diff', '--name-only'],
+            result = subprocess.run(['git', '-C', local_repo_path, 'diff', '--name-status'],
                                     capture_output=True, text=True, check=True)
             return result.stdout.splitlines()
         except subprocess.CalledProcessError as e:
@@ -74,6 +74,13 @@ class RequestManager:
             logging.info("Fetching latest changes...")
             self.fetch_remote_changes(local_repo_path)
             changed_files = self.get_changed_files(local_repo_path)
+            status_file_name = [line.split('\t') for line in changed_files]
+
+            removed_files = [line[1] for line in status_file_name if line[0] == 'D']
+            updated_files = [line[1] for line in status_file_name if line[0] != 'D']
+
+            print(removed_files)
+            print(updated_files)
             if changed_files:
                 logging.info("Changed files detected, pulling latest changes...")
                 for file in changed_files:
@@ -81,6 +88,13 @@ class RequestManager:
                 self.pull_latest_changes(local_repo_path)
             else:
                 logging.info("No changes detected.")
+
+            RequestSession(RequestType.FROM_SCRATCH,
+                           self.db_abs_path,
+                           str(uuid.uuid4()),
+                           self.get_repo_name(repo_url),
+                           updated_files,
+                           removed_files)
 
 # # Example usage
 # repo_url = "https://github.com/triton-lang/triton"

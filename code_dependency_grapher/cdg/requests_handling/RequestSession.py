@@ -10,7 +10,9 @@ class RequestSession:
                  mode,
                  abs_db_path, 
                  request_id, 
-                 repo_name) -> None:
+                 repo_name,
+                 updated_files=None,
+                 removed_files=None) -> None:
         self.mode = mode
         self.abs_db_path = abs_db_path
         self.request_id = request_id
@@ -31,6 +33,11 @@ class RequestSession:
             graph_builded = graph_creator.create_from_scratch()
             # print(graph_builded)
         elif mode == RequestType.UPDATE_EXISTING:
-            # TODO:
-            # graph builder to update existing tree
-            pass 
+            assert updated_files is not None
+            assert removed_files is not None 
+            
+            # TODO: change in future
+            python_files = find_python_files(self.repos_dir)
+            graph_creator = GraphCreator(python_files)
+            graph_builded = graph_creator.create_from_scratch()
+            
