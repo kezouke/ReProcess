@@ -15,7 +15,7 @@ class Engine:
     such as requesting data from repositories.
     """
     
-    def __init__(self, absolute_path: Optional[str] = None):
+    def __init__(self, absolute_path: Optional[str] = None, repos_dir: Optional[str] = None):
         """
         Initializes a new instance of the Engine class.
         
@@ -39,7 +39,7 @@ class Engine:
             self.load_path()  # Load the path from the file if none was provided
         
         # Initialize the request manager with the loaded or provided absolute path
-        self.request_manager = RequestManager(self.absolute_path)
+        self.request_manager = RequestManager(self.absolute_path,repos_dir)
 
     def save_path(self):
         """
@@ -86,8 +86,9 @@ class Engine:
 
 # Example usage
 db_url = "/home/db"
-engine = Engine(db_url)
-engine.request("https://github.com/vllm-project/SQLite_PyQt")
-# engine.request("https://github.com/vllm-project/vllm")
+repos_dir = "/home/repos/"
+engine = Engine(db_url,repos_dir)
+# engine.request("https://github.com/vllm-project/SQLite_PyQt")
+engine.request("https://github.com/vllm-project/vllm")
 # engine.request("https://github.com/IU-Capstone-Project-2024/SayNoMore")
 
