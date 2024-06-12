@@ -112,7 +112,7 @@ class CodeComponent:
         used_imports = self._collect_used_imports(component_tree, file_analyzer.imports)
 
         import_statements_code = self._generate_import_statements(tree, used_imports)
-        
+
         self.component_code = import_statements_code + "\n" + code
 
     def _validate_attributes(self):
@@ -175,7 +175,7 @@ class CodeComponent:
         if node.level > 0:
             current_package = self.component_name
             splitted_package = current_package.split(".")
-            del splitted_package[-node.level:]
+            del splitted_package[-node.level-1:]      
             splitted_package.append(node.module)
             return '.'.join(splitted_package)
         return node.module
@@ -210,5 +210,5 @@ class CodeComponent:
                     module_name = node.module
                     component_name = alias.name
                     imports.append(f"{module_name}.{component_name}")
-
+        
         return imports

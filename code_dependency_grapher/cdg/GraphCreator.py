@@ -65,15 +65,20 @@ class GraphCreator:
             all_components = set(package_components_names)
             cmp_imports = set(cmp.extract_imports())
             linked_components = all_components.intersection(cmp_imports)
-            additional_components = all_components.difference(cmp_imports)
-
+            print(linked_components)
+            additional_components = cmp_imports.difference(linked_components)
+            print(additional_components)
+            print("\n\n")
+            #modules.tests.tests_add_from.foo
             for l_cmp in linked_components:
                 l_cmp_id = id_component_manager.component_id_map[l_cmp]
                 cmp.linked_component_ids.append(l_cmp_id)  
             
-            for a_cmp in additional_components:
-                a_cmp_id = id_component_manager.component_id_map[a_cmp]
-                cmp.additional_component_ids.append(a_cmp_id)
+            # for a_cmp in additional_components:
+            #     print(a_cmp)
+            #     # a_cmp_id = id_component_manager.component_id_map[a_cmp]
+            #     # cmp.additional_component_ids.append(a_cmp_id)
+            
             # print(cmp.component_name)
             # if linked_components:
             #     print(linked_components)
