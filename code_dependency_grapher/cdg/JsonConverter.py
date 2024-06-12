@@ -13,7 +13,8 @@ class JsonConverter:
                 "component_name": component.component_name,
                 "component_code": component.component_code,
                 "linked_component_ids": component.linked_component_ids,
-                "file_analyzer_id": component.file_analyzer_id
+                "file_analyzer_id": component.file_analyzer_id,
+                "additional_component_ids": component.additional_component_ids
             }
             component_data.append(component_dict)
         files_data = []
