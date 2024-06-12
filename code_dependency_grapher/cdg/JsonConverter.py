@@ -1,9 +1,11 @@
 import json
 from code_dependency_grapher.cdg.CodeComponent import CodeComponent
 from code_dependency_grapher.cdg.FileAnalyzer import FileAnalyzer
+import os
+
 class JsonConverter:
-    def convert(db_path,componets, files):
-        
+
+    def convert(db_path, componets, files):
         component_data = []
         for component in componets:
             component_dict = {
@@ -30,6 +32,12 @@ class JsonConverter:
             "files" : files_data,
             "components": component_data
         }
+
+        directory = os.path.dirname(db_path)
+
+        # Create the directory if it doesn't exist
+        if not os.path.exists(directory):
+            os.makedirs(directory)
 
         with open(db_path, "w") as file:
             file.write(json.dumps(result_json,indent=4))
