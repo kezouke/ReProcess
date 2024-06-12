@@ -30,7 +30,7 @@ class JsonConverter:
             "components": component_data
         }
 
-        with open(db_path,"w") as file:
+        with open(db_path, "w") as file:
             file.write(json.dumps(result_json,indent=4))
         
 
