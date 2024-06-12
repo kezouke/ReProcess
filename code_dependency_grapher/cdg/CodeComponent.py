@@ -2,6 +2,7 @@ import ast
 from typing import List, Optional, Dict, Tuple
 from uuid import UUID
 
+from code_dependency_grapher.utils.import_path_extractor import get_import_statement_path
 from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapError
 from code_dependency_grapher.utils.mappers.IdComponentMapper import IdComponentMapError
 from code_dependency_grapher.utils.mappers.IdFileAnalyzerMapper import IdFileAnalyzerMapper, IdFileAnalyzeMapError
@@ -130,9 +131,17 @@ class CodeComponent:
                 imports_to_add = [alias for alias in node.names if alias.name in used_imports 
                                   or (alias.asname is not None and alias.asname in used_imports)]
                 if imports_to_add:
-                    code_line = ast.unparse(ast.ImportFrom(module=node.module,
-                                                           names=imports_to_add,
-                                                           level=node.level))
+                    if node.level > 0:
+                        current_package = get_import_statement_path(file_analyzer.file_path)
+                        splitted_package = current_package.split(".")
+                        del splitted_package[-(node.level):]
+                        splitted_package.append(node.module)
+                        resulting_package = '.'.join(splitted_package)
+                        module = resulting_package
+                    else:
+                        module = node.module
+                    code_line = ast.unparse(ast.ImportFrom(module=module, names=imports_to_add))
+     
                     import_statements_code = code_line + "\n" + import_statements_code
             
         code = import_statements_code + "\n" + code

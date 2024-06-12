@@ -67,10 +67,12 @@ class GraphCreator:
 
             for l_cmp in linked_components:
                 l_cmp_id = id_component_manager.component_id_map[l_cmp]
-                cmp.linked_component_ids.append(l_cmp_id)
+                cmp.linked_component_ids.append(l_cmp_id)  
 
+            print(id_component_manager.id_component_map[cmp.component_id])
             if linked_components:
                 print(linked_components)
+            print()
 
         # Return the list of CodeComponent instances and the file-to-analyzer mapping
         return code_components, id_files_manager.id_file_map
