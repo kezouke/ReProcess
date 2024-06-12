@@ -11,13 +11,15 @@ from code_dependency_grapher.cdg.requests_handling.RequestEnum import RequestTyp
 logging.basicConfig(level=logging.ERROR)
 
 class RequestManager:
-    def __init__(self, db_absolute_path):
+    def __init__(self, db_absolute_path,repos_dir):
         self.db_abs_path = db_absolute_path
         self.project_root = find_project_root(os.path.abspath(__file__))
         if self.project_root is None:
             raise RuntimeError("Could not find project root")
-        
-        self.repos_dir = os.path.join(self.project_root, 'code_dependency_grapher', 'data', 'repos')
+        if repos_dir:
+            self.repos_dir = os.path.join(self.project_root,repos_dir)
+        else:
+            self.repos_dir = os.path.join(self.project_root, 'code_dependency_grapher', 'data', 'repos')
 
     def get_repo_name(self, repo_url):
         # Extracts the repository name from the URL
