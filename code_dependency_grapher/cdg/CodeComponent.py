@@ -21,6 +21,7 @@ class CodeComponent:
         component_code (Optional[str]): The extracted code of the component.
         linked_component_ids (Optional[List[str]]): IDs of components that this component is linked to.
         file_analyzer_id (Optional[str]): ID of the file analyzer associated with this component.
+        additional_component_ids (Optional[List[str]]): IDs of external components
     """
 
     def __init__(self, 
@@ -32,7 +33,8 @@ class CodeComponent:
                  component_name: Optional[str] = None,
                  component_code: Optional[str] = None,
                  linked_component_ids: Optional[List[str]] = None,
-                 file_analyzer_id: Optional[str] = None
+                 file_analyzer_id: Optional[str] = None,
+                 additional_component_ids: Optional[List[str]] = None,
                  ):
         """
         Initializes a new instance of the CodeComponent class.
@@ -56,7 +58,7 @@ class CodeComponent:
         self.component_code = component_code
         self.linked_component_ids = linked_component_ids
         self.file_analyzer_id = file_analyzer_id
-
+        self.additional_component_ids = additional_component_ids
         if self.file_analyzer_id is None:
             self._get_file_analyzer()        
             if self.component_name is None:
@@ -70,7 +72,8 @@ class CodeComponent:
 
         if self.linked_component_ids is None:
             self.linked_component_ids = []
-
+        if self.additional_component_ids is None:
+            self.additional_component_ids = []
     def _get_file_analyzer(self):
         """
         Retrieves the file analyzer based on the component's ID and updates the file_analyzer_id attribute.
