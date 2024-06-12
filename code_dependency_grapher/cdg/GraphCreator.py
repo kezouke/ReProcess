@@ -46,7 +46,7 @@ class GraphCreator:
         id_component_manager = IdComponentMapper(file_components_map)
         
         # Initialize IdFileAnalyzerMapper to manage file analyzers and their mappings
-        id_files_manager = IdFileAnalyzerMapper(self.python_files, ast_manager)
+        id_files_manager = IdFileAnalyzerMapper(self.python_files, ast_manager, package_components_names)
         
         # Initialize a list to hold CodeComponent instances
         code_components = []
@@ -57,6 +57,7 @@ class GraphCreator:
                                                  id_files_manager,
                                                  ast_manager.file_path_ast_map, 
                                                  id_component_manager.id_component_map,
+                                                 package_components_names
                                                  ))
         
         # Link components based on their imports and dependencies

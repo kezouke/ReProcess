@@ -1,6 +1,7 @@
 import ast
 from typing import List, Optional, Dict
 from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapError
+from code_dependency_grapher.utils.import_path_extractor import get_import_statement_path
 
 class FileAnalyzer:
     """
@@ -19,9 +20,10 @@ class FileAnalyzer:
                  file_id: str, 
                  file_path: str,
                  file_path_ast_map: Optional[Dict[str, ast.Module]] = None,
-                 imports: Optional[List[str]]= None,
-                 called_components: Optional[List[str]] = None,
-                 callable_components: Optional[List[str]] = None):
+                 package_components_names: Optional[List[str]] = None,
+                 imports: Optional[List[str]]=None,
+                 called_components: Optional[List[str]]=None,
+                 callable_components: Optional[List[str]]=None):
         """
         Initializes a new instance of the FileAnalyzer class.
         
@@ -36,6 +38,7 @@ class FileAnalyzer:
         self.file_id = file_id
         self.file_path = file_path
         self.file_path_ast_map = file_path_ast_map
+        self.package_components_names = package_components_names
         self.imports = imports or self.extract_imports()
         self.called_components = called_components or self.extract_called_components()
         self.callable_components = callable_components or self.extract_callable_components()
@@ -51,18 +54,38 @@ class FileAnalyzer:
             List[str]: List of imported modules or names.
         """
         self._validate_ast_map()
-
+        
         tree = self.file_path_ast_map[self.file_path]
-
         imports = []
 
+        def handle_import_from(node):
+            if node.names[0].name == '*':
+                module = get_wildcard_module(node)
+                for cmp in self.package_components_names:
+                    if cmp.startswith(module):
+                        imports.append(cmp.split(".")[-1])
+            else:
+                append_aliases(node)
+        
+        def get_wildcard_module(node):
+            if node.level > 0:
+                current_package = get_import_statement_path(self.file_path)
+                splitted_package = current_package.split(".")
+                del splitted_package[-node.level:]
+                splitted_package.append(node.module)
+                return '.'.join(splitted_package)
+            return node.module
+
+        def append_aliases(node):
+            for alias in node.names:
+                imports.append(alias.asname if alias.asname else alias.name)
+
         for node in tree.body:
-            if isinstance(node, ast.Import) or isinstance(node, ast.ImportFrom):
-                for alias in node.names:
-                    if alias.asname is not None:
-                        imports.append(alias.asname)
-                    else:
-                        imports.append(alias.name)
+            if isinstance(node, ast.Import):
+                append_aliases(node)
+            elif isinstance(node, ast.ImportFrom):
+                handle_import_from(node)
+        
         return imports
 
     def extract_called_components(self):

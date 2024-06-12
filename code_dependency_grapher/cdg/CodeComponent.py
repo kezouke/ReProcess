@@ -17,6 +17,7 @@ class CodeComponent:
         id_files_manager (Optional[IdFileAnalyzerMapper]): Manager for mapping IDs to file analyzers.
         file_path_ast_map (Optional[Dict[str, ast.Module]]): Mapping of file paths to AST modules.
         id_component_map (Optional[Dict[UUID, Tuple[str, str]]]): Mapping of component IDs to file paths and names.
+        package_components_names: Optional[List[str]]: List of all component names with its full package path
         component_code (Optional[str]): The extracted code of the component.
         linked_component_ids (Optional[List[str]]): IDs of components that this component is linked to.
         file_analyzer_id (Optional[str]): ID of the file analyzer associated with this component.
@@ -27,6 +28,7 @@ class CodeComponent:
                  id_files_manager: Optional[IdFileAnalyzerMapper] = None,
                  file_path_ast_map: Optional[Dict[str, ast.Module]] = None,
                  id_component_map: Optional[Dict[UUID, Tuple[str, str]]] = None,
+                 package_components_names: Optional[List[str]] = None,
                  component_name: Optional[str] = None,
                  component_code: Optional[str] = None,
                  linked_component_ids: Optional[List[str]] = None,
@@ -40,6 +42,7 @@ class CodeComponent:
             id_files_manager (Optional[IdFileAnalyzerMapper], optional): Manager for mapping IDs to file analyzers. Defaults to None.
             file_path_ast_map (Optional[Dict[str, ast.Module]], optional): Mapping of file paths to AST modules. Defaults to None.
             id_component_map (Optional[Dict[UUID, Tuple[str, str]]], optional): Mapping of component IDs to file paths and names. Defaults to None.
+            package_components_names: Optional[List[str]]: List of all component names with its full package path
             component_code (Optional[str], optional): The extracted code of the component. Defaults to None.
             linked_component_ids (Optional[List[str]], optional): IDs of components that this component is linked to. Defaults to None.
             file_analyzer_id (Optional[str], optional): ID of the file analyzer associated with this component. Defaults to None.
@@ -48,6 +51,7 @@ class CodeComponent:
         self.id_files_manager = id_files_manager
         self.file_path_ast_map = file_path_ast_map
         self.id_component_map = id_component_map
+        self.package_components_names = package_components_names
         self.component_name = component_name
         self.component_code = component_code
         self.linked_component_ids = linked_component_ids
@@ -56,10 +60,8 @@ class CodeComponent:
         if self.file_analyzer_id is None:
             self._get_file_analyzer()        
             if self.component_name is None:
-                self.component_name =  get_import_statement_path(self
-                                                                 .id_files_manager
-                                                                 .id_file_map[self.file_analyzer_id]
-                                                                 .file_path)
+                file_path, cmp_name = self.id_component_map[self.component_id]
+                self.component_name = get_import_statement_path(file_path) + f".{cmp_name}"
 
         # Extract code if file_analyzer is available and component_code is not set
         if self.component_code is None:
@@ -96,63 +98,92 @@ class CodeComponent:
             IdComponentMapError: If id_component_map is None.
             IdFileAnalyzeMapError: If id_files_manager is None.
         """
+        self._validate_attributes()
+
+        file_analyzer = self.id_files_manager.id_file_map[self.file_analyzer_id]
+        tree = self.file_path_ast_map[file_analyzer.file_path]
+        
+        component_tree, code = self._extract_component_code(tree)
+        used_imports = self._collect_used_imports(component_tree, file_analyzer.imports)
+
+        import_statements_code = self._generate_import_statements(tree, used_imports)
+        
+        self.component_code = import_statements_code + "\n" + code
+
+    def _validate_attributes(self):
         if self.file_path_ast_map is None:
             raise FilePathAstMapError("file_path_ast_map is None")
-        
         if self.id_component_map is None:
             raise IdComponentMapError("id_component_map is None")
-        
         if self.id_files_manager is None:
             raise IdFileAnalyzeMapError("id_files_manager is None")
-        
-        file_analyzer = self.id_files_manager.id_file_map[self.file_analyzer_id]
 
-        tree = self.file_path_ast_map[file_analyzer.file_path]
-        code = ""
-        component_tree = None
+    def _extract_component_code(self, tree):
         for node in tree.body:
-            if (isinstance(node, ast.ClassDef) or 
-                isinstance(node, ast.FunctionDef)) and (node.name == self.id_component_map[self.component_id][1]):
-                code = ast.unparse(node)
-                component_tree = node
-                break
-        
-        file_imports = file_analyzer.imports
+            if (isinstance(node, (ast.ClassDef, ast.FunctionDef)) and 
+                    node.name == self.id_component_map[self.component_id][1]):
+                return node, ast.unparse(node)
+        return None, ""
+
+    def _collect_used_imports(self, component_tree, file_imports):
         used_imports = set()
-
         for node in ast.walk(component_tree):
-            if isinstance(node, ast.Name):
-                if node.id in file_imports:
-                    used_imports.add(node.id)
+            if isinstance(node, ast.Name) and node.id in file_imports:
+                used_imports.add(node.id)
+        return used_imports
 
+    def _generate_import_statements(self, tree, used_imports):
         import_statements_code = ""
-        
         for node in tree.body:
             if isinstance(node, ast.Import):
-                imports_to_add = [alias for alias in node.names if alias.name in used_imports 
-                                  or (alias.asname is not None and alias.asname in used_imports)]
-                if imports_to_add:
-                    code_line = ast.unparse(ast.Import(names=imports_to_add))
-                    import_statements_code = code_line + "\n" + import_statements_code
+                import_statements_code = self._handle_import_node(node, used_imports, import_statements_code)
             elif isinstance(node, ast.ImportFrom):
-                imports_to_add = [alias for alias in node.names if alias.name in used_imports 
-                                  or (alias.asname is not None and alias.asname in used_imports)]
-                if imports_to_add:
-                    if node.level > 0:
-                        current_package = self.component_name
-                        splitted_package = current_package.split(".")
-                        del splitted_package[-(node.level):]
-                        splitted_package.append(node.module)
-                        resulting_package = '.'.join(splitted_package)
-                        module = resulting_package
-                    else:
-                        module = node.module
-                    code_line = ast.unparse(ast.ImportFrom(module=module, names=imports_to_add))
-     
-                    import_statements_code = code_line + "\n" + import_statements_code
-            
-        code = import_statements_code + "\n" + code
-        self.component_code = code
+                import_statements_code = self._handle_import_from_node(node, used_imports, import_statements_code)
+        return import_statements_code
+
+    def _handle_import_node(self, node, used_imports, import_statements_code):
+        imports_to_add = [
+            alias for alias in node.names 
+            if alias.name in used_imports or (alias.asname is not None and alias.asname in used_imports)
+        ]
+        if imports_to_add:
+            code_line = ast.unparse(ast.Import(names=imports_to_add))
+            return code_line + "\n" + import_statements_code
+        return import_statements_code
+
+    def _handle_import_from_node(self, node, used_imports, import_statements_code):
+        imports_to_add = [
+            alias for alias in node.names 
+            if alias.name in used_imports or (alias.asname is not None and alias.asname in used_imports) or alias.name == "*"
+        ]
+        if imports_to_add:
+            module = self._resolve_module(node)
+            if imports_to_add[0].name == "*":
+                imports_to_add = self._expand_wildcard_imports(module, used_imports)
+
+            if imports_to_add:       
+                code_line = ast.unparse(ast.ImportFrom(module=module, names=imports_to_add))
+                return code_line + "\n" + import_statements_code
+        return import_statements_code
+
+    def _resolve_module(self, node):
+        if node.level > 0:
+            current_package = self.component_name
+            splitted_package = current_package.split(".")
+            del splitted_package[-node.level:]
+            splitted_package.append(node.module)
+            return '.'.join(splitted_package)
+        return node.module
+
+    def _expand_wildcard_imports(self, module, used_imports):
+        new_imports = []
+        for cmp in self.package_components_names:
+            if cmp.startswith(module):
+                cmp_name = cmp.split(".")[-1]
+                if cmp_name in used_imports:
+                    new_imports.append(ast.alias(name=cmp_name))
+        return new_imports
+
 
     def extract_imports(self):
         """
