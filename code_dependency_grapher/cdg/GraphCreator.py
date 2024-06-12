@@ -69,7 +69,7 @@ class GraphCreator:
                 l_cmp_id = id_component_manager.component_id_map[l_cmp]
                 cmp.linked_component_ids.append(l_cmp_id)  
 
-            print(id_component_manager.id_component_map[cmp.component_id])
+            print(cmp.component_name)
             if linked_components:
                 print(linked_components)
             print()

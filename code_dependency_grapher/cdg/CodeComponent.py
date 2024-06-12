@@ -27,6 +27,7 @@ class CodeComponent:
                  id_files_manager: Optional[IdFileAnalyzerMapper] = None,
                  file_path_ast_map: Optional[Dict[str, ast.Module]] = None,
                  id_component_map: Optional[Dict[UUID, Tuple[str, str]]] = None,
+                 component_name: Optional[str] = None,
                  component_code: Optional[str] = None,
                  linked_component_ids: Optional[List[str]] = None,
                  file_analyzer_id: Optional[str] = None
@@ -47,12 +48,18 @@ class CodeComponent:
         self.id_files_manager = id_files_manager
         self.file_path_ast_map = file_path_ast_map
         self.id_component_map = id_component_map
+        self.component_name = component_name
         self.component_code = component_code
         self.linked_component_ids = linked_component_ids
         self.file_analyzer_id = file_analyzer_id
 
         if self.file_analyzer_id is None:
             self._get_file_analyzer()        
+            if self.component_name is None:
+                self.component_name =  get_import_statement_path(self
+                                                                 .id_files_manager
+                                                                 .id_file_map[self.file_analyzer_id]
+                                                                 .file_path)
 
         # Extract code if file_analyzer is available and component_code is not set
         if self.component_code is None:
@@ -132,7 +139,7 @@ class CodeComponent:
                                   or (alias.asname is not None and alias.asname in used_imports)]
                 if imports_to_add:
                     if node.level > 0:
-                        current_package = get_import_statement_path(file_analyzer.file_path)
+                        current_package = self.component_name
                         splitted_package = current_package.split(".")
                         del splitted_package[-(node.level):]
                         splitted_package.append(node.module)
