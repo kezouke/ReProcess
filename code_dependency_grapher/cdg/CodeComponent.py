@@ -18,6 +18,7 @@ class CodeComponent:
         file_path_ast_map (Optional[Dict[str, ast.Module]]): Mapping of file paths to AST modules.
         id_component_map (Optional[Dict[UUID, Tuple[str, str]]]): Mapping of component IDs to file paths and names.
         package_components_names: Optional[List[str]]: List of all component names with its full package path
+        component_name (Optional[str]): The name of the component with its relative path in the repo
         component_code (Optional[str]): The extracted code of the component.
         linked_component_ids (Optional[List[str]]): IDs of components that this component is linked to.
         file_analyzer_id (Optional[str]): ID of the file analyzer associated with this component.
