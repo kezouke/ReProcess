@@ -60,9 +60,9 @@ class GraphCreator:
         code_components = []
 
         # Populate the list of CodeComponent instances using the IdComponentMapper
-        for id in id_component_manager.id_component_map:
+        for idx in id_component_manager.id_component_map:
             code_components.append(
-                CodeComponent(id, self.repos_dir, id_files_manager,
+                CodeComponent(idx, self.repos_dir, id_files_manager,
                               ast_manager.file_path_ast_map,
                               id_component_manager.id_component_map,
                               package_components_names))
@@ -87,11 +87,11 @@ class GraphCreator:
                 cmp.linked_component_ids.append(l_cmp_id)
 
             for a_cmp in external_components:
-                id = external_components_dict.get(a_cmp, None)
-                if id is None:
-                    id = str(uuid.uuid4())
-                    external_components_dict[a_cmp] = id
-                cmp.external_component_ids.append(id)
+                idx = external_components_dict.get(a_cmp, None)
+                if idx is None:
+                    idx = str(uuid.uuid4())
+                    external_components_dict[a_cmp] = idx
+                cmp.external_component_ids.append(idx)
 
         # Return the list of CodeComponent instances and the file-to-analyzer mapping
         return code_components, id_files_manager.id_file_map, external_components_dict
