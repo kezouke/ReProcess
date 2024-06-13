@@ -22,11 +22,11 @@ class RequestManager:
 
         if repos_dir:
             self.repos_dir = repos_dir
-            print(self.repos_dir)
         else:
             self.repos_dir = os.path.join(self.project_root,
                                           'code_dependency_grapher', 'data',
                                           'repos')
+        print("Your folder is stored at:", self.repos_dir)
 
     def manage_request(self, git_url):
         repo_manager = RepositoryManager(self.repos_dir, git_url)
