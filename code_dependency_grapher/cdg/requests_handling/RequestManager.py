@@ -8,36 +8,34 @@ from code_dependency_grapher.cdg.requests_handling.RequestSession import Request
 from code_dependency_grapher.cdg.requests_handling.RequestEnum import RequestType
 from code_dependency_grapher.cdg.requests_handling.RepositoryManager import RepositoryManager
 
-
 logging.basicConfig(level=logging.ERROR)
 
+
 class RequestManager:
+
     def __init__(self, db_absolute_path, repos_dir):
         self.db_abs_path = db_absolute_path
         self.project_root = find_project_root(os.path.abspath(__file__))
 
         if self.project_root is None:
             raise RuntimeError("Could not find project root")
-        
+
         if repos_dir:
             self.repos_dir = repos_dir
             print(self.repos_dir)
         else:
             self.repos_dir = os.path.join(self.project_root,
-                                          'code_dependency_grapher', 
-                                          'data',
+                                          'code_dependency_grapher', 'data',
                                           'repos')
 
     def manage_request(self, git_url):
         repo_manager = RepositoryManager(self.repos_dir, git_url)
-        
-        RequestSession(repo_manager.request_type,
-                        self.db_abs_path,
-                        str(uuid.uuid4()),
-                        repo_manager.repo_name,
-                        self.repos_dir,
-                        repo_manager.updated_files,
-                        repo_manager.removed_files)
+
+        RequestSession(repo_manager.request_type, self.db_abs_path,
+                       str(uuid.uuid4()), repo_manager.repo_name,
+                       self.repos_dir, repo_manager.updated_files,
+                       repo_manager.removed_files)
+
 
 # # Example usage
 # repo_url = "https://github.com/triton-lang/triton"

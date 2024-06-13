@@ -31,7 +31,8 @@ class RepositoryManager:
                               since the last operation.
     """
 
-    def __init__(self, repository_directory: str, git_hub_url: Optional[str]) -> None:
+    def __init__(self, repository_directory: str,
+                 git_hub_url: Optional[str]) -> None:
         """
         Initializes the RepositoryManager instance.
         
@@ -50,7 +51,8 @@ class RepositoryManager:
         else:
             self.repo_name = self.repo_directory.split('/')[-1].split('.')[0]
 
-        self.request_type, self.updated_files, self.removed_files = self._preprocess_repo()
+        self.request_type, self.updated_files, self.removed_files = self._preprocess_repo(
+        )
 
     def _is_repo_exists_locally(self, local_repo_path: str) -> bool:
         """
@@ -73,8 +75,10 @@ class RepositoryManager:
             local_repo_path (str): Local path where the repository should be cloned.
         """
         try:
-            subprocess.run(['git', 'clone', repo_url, local_repo_path], check=True)
-            logging.info(f"Successfully cloned {repo_url} into {local_repo_path}")
+            subprocess.run(['git', 'clone', repo_url, local_repo_path],
+                           check=True)
+            logging.info(
+                f"Successfully cloned {repo_url} into {local_repo_path}")
         except subprocess.CalledProcessError as e:
             logging.error(f"Failed to clone repository: {e}")
 
@@ -115,8 +119,11 @@ class RepositoryManager:
             list: A list of changed file paths.
         """
         try:
-            result = subprocess.run(['git', '-C', local_repo_path, 'diff', '--name-status'],
-                                    capture_output=True, text=True, check=True)
+            result = subprocess.run(
+                ['git', '-C', local_repo_path, 'diff', '--name-status'],
+                capture_output=True,
+                text=True,
+                check=True)
             return result.stdout.splitlines()
         except subprocess.CalledProcessError as e:
             logging.error(f"Failed to get changed files: {e}")
@@ -137,11 +144,16 @@ class RepositoryManager:
             changed_files = self.get_changed_files(local_repo_path)
             status_file_name = [line.split('\t') for line in changed_files]
 
-            removed_files = [line[1] for line in status_file_name if line[0] == 'D']
-            updated_files = [line[1] for line in status_file_name if line[0]!= 'D']
+            removed_files = [
+                line[1] for line in status_file_name if line[0] == 'D'
+            ]
+            updated_files = [
+                line[1] for line in status_file_name if line[0] != 'D'
+            ]
 
             if changed_files:
-                logging.info("Changed files detected, pulling latest changes...")
+                logging.info(
+                    "Changed files detected, pulling latest changes...")
                 for file in changed_files:
                     logging.info(file)
                 self.pull_latest_changes(local_repo_path)

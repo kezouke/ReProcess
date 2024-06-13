@@ -5,6 +5,7 @@ from typing import Optional
 from code_dependency_grapher.cdg.requests_handling.RequestManager import RequestManager
 from code_dependency_grapher.utils.process_db_abs_path import process_abs_db_path
 
+
 class Engine:
     """
     Manages the core functionality of the dependency graph engine, including loading/saving paths,
@@ -14,10 +15,10 @@ class Engine:
     interactions with external resources, providing a streamlined interface for performing actions
     such as requesting data from repositories.
     """
-    
-    def __init__(self, 
-                db_abs_path: Optional[str] = None,
-                path_where_to_store_repos: Optional[str] = None):
+
+    def __init__(self,
+                 db_abs_path: Optional[str] = None,
+                 path_where_to_store_repos: Optional[str] = None):
         """
         Initializes a new instance of the Engine class.
         
@@ -32,7 +33,8 @@ class Engine:
         # Process the absolute database path, either loading it from a file or using the provided value
         self.absolute_path = process_abs_db_path(db_abs_path)
         # Initialize the request manager with the determined absolute path and the path for storing repositories
-        self.request_manager = RequestManager(self.absolute_path, path_where_to_store_repos)
+        self.request_manager = RequestManager(self.absolute_path,
+                                              path_where_to_store_repos)
 
     def request(self, repo_url: str) -> None:
         """
@@ -45,4 +47,3 @@ class Engine:
             repo_url (str): The URL of the repository from which data is requested.
         """
         self.request_manager.manage_request(repo_url)
-    
