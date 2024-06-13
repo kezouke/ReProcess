@@ -45,12 +45,4 @@ class Engine:
             repo_url (str): The URL of the repository from which data is requested.
         """
         self.request_manager.manage_request(repo_url)
-
-# Example usage
-db_abs_path = "/home/db"
-path_where_to_store_repos = "/home/repos/"
-engine = Engine(db_abs_path)
-engine.request("https://github.com/showpiecep/SQLite_PyQt")
-# Additional example requests commented out for brevity
-# engine.request("https://github.com/vllm-project/vllm")
-# engine.request("https://github.com/IU-Capstone-Project-2024/SayNoMore")
+    
