@@ -54,9 +54,12 @@ def extract_components_from_files(file_paths: List[str],
     base_path = repos_dir
 
     for file_path in file_paths:
-        components = extract_components(file_path,repos_dir, file_path_ast_map)
+        components = extract_components(file_path, 
+                                        repos_dir, 
+                                        file_path_ast_map)
         cutted_path = file_path.split(base_path)[-1]
         packages = get_import_statement_path(cutted_path)
+        
         modules = [f"{packages}.{component}".replace("-", "_") for component in components]
 
         file_components_map[file_path] = components

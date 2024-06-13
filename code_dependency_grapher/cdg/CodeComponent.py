@@ -14,6 +14,7 @@ class CodeComponent:
     
     Attributes:
         component_id (str): Unique identifier for the component.
+        repos_dir (str): String path to the repository.
         id_files_manager (Optional[IdFileAnalyzerMapper]): Manager for mapping IDs to file analyzers.
         file_path_ast_map (Optional[Dict[str, ast.Module]]): Mapping of file paths to AST modules.
         id_component_map (Optional[Dict[UUID, Tuple[str, str]]]): Mapping of component IDs to file paths and names.
@@ -43,13 +44,16 @@ class CodeComponent:
         
         Args:
             component_id (str): Unique identifier for the component.
-            id_files_manager (Optional[IdFileAnalyzerMapper], optional): Manager for mapping IDs to file analyzers. Defaults to None.
-            file_path_ast_map (Optional[Dict[str, ast.Module]], optional): Mapping of file paths to AST modules. Defaults to None.
-            id_component_map (Optional[Dict[UUID, Tuple[str, str]]], optional): Mapping of component IDs to file paths and names. Defaults to None.
+            repos_dir (str): String path to the repository.
+            id_files_manager (Optional[IdFileAnalyzerMapper]): Manager for mapping IDs to file analyzers.
+            file_path_ast_map (Optional[Dict[str, ast.Module]]): Mapping of file paths to AST modules.
+            id_component_map (Optional[Dict[UUID, Tuple[str, str]]]): Mapping of component IDs to file paths and names.
             package_components_names: Optional[List[str]]: List of all component names with its full package path
-            component_code (Optional[str], optional): The extracted code of the component. Defaults to None.
-            linked_component_ids (Optional[List[str]], optional): IDs of components that this component is linked to. Defaults to None.
-            file_analyzer_id (Optional[str], optional): ID of the file analyzer associated with this component. Defaults to None.
+            component_name (Optional[str]): The name of the component with its relative path in the repo
+            component_code (Optional[str]): The extracted code of the component.
+            linked_component_ids (Optional[List[str]]): IDs of components that this component is linked to.
+            file_analyzer_id (Optional[str]): ID of the file analyzer associated with this component.
+            additional_component_ids (Optional[List[str]]): IDs of external components
         """
         self.component_id = component_id
         self.repos_dir = repos_dir
@@ -112,9 +116,11 @@ class CodeComponent:
         tree = self.file_path_ast_map[file_analyzer.file_path]
         
         component_tree, code = self._extract_component_code(tree)
-        used_imports = self._collect_used_imports(component_tree, file_analyzer.imports)
+        used_imports = self._collect_used_imports(component_tree, 
+                                                  file_analyzer.imports)
 
-        import_statements_code = self._generate_import_statements(tree, used_imports)
+        import_statements_code = self._generate_import_statements(tree,
+                                                                  used_imports)
 
         self.component_code = import_statements_code + "\n" + code
 
@@ -144,9 +150,13 @@ class CodeComponent:
         import_statements_code = ""
         for node in tree.body:
             if isinstance(node, ast.Import):
-                import_statements_code = self._handle_import_node(node, used_imports, import_statements_code)
+                import_statements_code = self._handle_import_node(node,
+                                                                  used_imports,
+                                                                  import_statements_code)
             elif isinstance(node, ast.ImportFrom):
-                import_statements_code = self._handle_import_from_node(node, used_imports, import_statements_code)
+                import_statements_code = self._handle_import_from_node(node,
+                                                                       used_imports,
+                                                                       import_statements_code)
         return import_statements_code
 
     def _handle_import_node(self, node, used_imports, import_statements_code):

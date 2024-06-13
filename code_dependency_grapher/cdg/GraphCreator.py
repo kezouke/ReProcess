@@ -38,18 +38,24 @@ class GraphCreator:
                                instances representing the edges between nodes.
         """
         # Create an instance of FilePathAstMapper to parse the Python files into ASTs
-        ast_manager = FilePathAstMapper(self.repos_dir, self.python_files)
+        ast_manager = FilePathAstMapper(self.repos_dir, 
+                                        self.python_files)
         
         # Extract components from the files using the ASTs
         file_components_map, _, package_components_names = \
-            extract_components_from_files(self.python_files, self.repos_dir, 
+            extract_components_from_files(self.python_files, 
+                                          self.repos_dir, 
                                           ast_manager.file_path_ast_map)
                 
         # Initialize IdComponentMapper to manage component IDs and their mappings
-        id_component_manager = IdComponentMapper(self.repos_dir, file_components_map)
+        id_component_manager = IdComponentMapper(self.repos_dir, 
+                                                 file_components_map)
         
         # Initialize IdFileAnalyzerMapper to manage file analyzers and their mappings
-        id_files_manager = IdFileAnalyzerMapper(self.python_files, ast_manager, package_components_names, self.repos_dir)
+        id_files_manager = IdFileAnalyzerMapper(self.python_files, 
+                                                ast_manager, 
+                                                package_components_names, 
+                                                self.repos_dir)
         
         # Initialize a list to hold CodeComponent instances
         code_components = []
@@ -72,6 +78,7 @@ class GraphCreator:
             all_internal_components = set(package_components_names)
             cmp_imports = set(cmp.extract_imports())
             linked_components = all_internal_components.intersection(cmp_imports)
+
             external_components = cmp_imports.difference(linked_components)
             for l_cmp in linked_components:
                 l_cmp_id = id_component_manager.component_id_map[l_cmp]

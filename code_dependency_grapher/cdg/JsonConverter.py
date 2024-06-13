@@ -41,6 +41,6 @@ class JsonConverter:
             os.makedirs(directory)
 
         with open(db_path, "w") as file:
-            file.write(json.dumps(result_json,indent=4))
+            file.write(json.dumps(result_json, indent=4))
         
 

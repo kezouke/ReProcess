@@ -4,24 +4,25 @@ from typing import Union
 
 def find_project_root(current_path: str) -> Union[str, None]:
     """
-    Attempts to find the root directory of a project by looking for common markers like `.git`, `README.md`, or a specific directory name (`code_dependency_grapher`). 
+    Finds the root directory of a project using the `git rev-parse --show-toplevel` command.
     
-    This function walks up from the given `current_path` towards the root directory, checking each parent directory for the presence of one of these markers. Once a match is found, it assumes this location is the project root and returns the path. If no matching marker is found after reaching the root directory, it returns `None`.
-    
+    This function changes the current working directory to the specified `current_path`. It then attempts to execute the git command to determine the root directory of the project. If successful, it returns the path to the project root. If the command fails due to the absence of a.git directory or other errors, it handles exceptions accordingly and returns `None`.
+
     Args:
-        current_path (str): The starting path from which to begin the search upwards towards the root directory.
-    
+        current_path (str): The initial path from where the search for the project root begins.
+
     Returns:
-        Union[str, None]: The path to the project root if found, otherwise `None`.
+        Union[str, None]: The absolute path to the project root if found, otherwise `None`.
     """
     try:
-        # Change the current working directory to the specified repo_path
+        # Adjust the current_path if it points to a file within the project
         if os.path.isfile(current_path):
             current_path = os.path.dirname(current_path)
-       
+        
+        # Switch to the target directory
         os.chdir(current_path)
 
-        # Run the git command to find the root directory
+        # Execute the git command to locate the project root
         result = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"],
             stdout=subprocess.PIPE,
@@ -29,7 +30,7 @@ def find_project_root(current_path: str) -> Union[str, None]:
             text=True,
             check=True
         )
-        # The stdout contains the path to the root directory
+        # Extract and return the project root path from the command output
         git_root = result.stdout.strip()
         return git_root
     except subprocess.CalledProcessError as e:
