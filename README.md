@@ -75,6 +75,7 @@ Each dictionary in the `components` list contains:
 
 This structure helps in understanding the relationships and dependencies among various files and components in the project.
 
+### Real Example of the json:
 ```json
 {
     "files": [
@@ -302,7 +303,7 @@ This structure helps in understanding the relationships and dependencies among v
             "linked_component_ids": [
                 "8564c378-b9d7-422c-b982-267a68d3db8d"
             ],
-            "file_analyzer_id": "741f8448-61ac-4e51-91ee-ec269aa7790d",
+            "file_id": "741f8448-61ac-4e51-91ee-ec269aa7790d",
             "external_component_ids": [
                 "de5df083-3308-41d9-87f4-6ffcfe745d8e",
                 "a615fc16-f499-4170-8779-2a0cd35f5d79",
@@ -318,7 +319,7 @@ This structure helps in understanding the relationships and dependencies among v
                 "9a24def5-ed4b-4042-90f2-1e7f3118d514",
                 "bb090e76-980d-45de-bc4e-d9526015f867"
             ],
-            "file_analyzer_id": "78989791-10b5-440b-97af-fbbaa2449065",
+            "file_id": "78989791-10b5-440b-97af-fbbaa2449065",
             "external_component_ids": [
                 "abfecef1-40af-4a92-a162-27e3d02addf8",
                 "62ad851c-e96a-46d8-a2c1-8f5768db724f",
@@ -338,7 +339,7 @@ This structure helps in understanding the relationships and dependencies among v
                 "c57b9bc1-7419-48e8-98ac-a1fe44d8957a",
                 "8564c378-b9d7-422c-b982-267a68d3db8d"
             ],
-            "file_analyzer_id": "29396126-729e-44f8-9265-090ea7fded8e",
+            "file_id": "29396126-729e-44f8-9265-090ea7fded8e",
             "external_component_ids": [
                 "abfecef1-40af-4a92-a162-27e3d02addf8",
                 "1b180018-2544-485e-a6eb-8c7497db4497",
@@ -353,7 +354,7 @@ This structure helps in understanding the relationships and dependencies among v
             "component_name": "modules.help.Get_info_byID",
             "component_code": "from sqLite import models\n\ndef Get_info_byID(idx: int):\n    req = []\n    with models.db:\n        (cost, amount, name_prod) = Set_total_forCheck(idx)\n        quary = models.Check.select().where(models.Check.id == idx)\n        for res in quary:\n            req.append(str(res.date))\n            req.append(res.total)\n            req.append(res.shop_name)\n            req.append(res.seller_name)\n        return (req, cost, amount, name_prod)",
             "linked_component_ids": [],
-            "file_analyzer_id": "de787a2d-e36c-4c19-8000-9b0a3bb3dd76",
+            "file_id": "de787a2d-e36c-4c19-8000-9b0a3bb3dd76",
             "external_component_ids": [
                 "62ad851c-e96a-46d8-a2c1-8f5768db724f"
             ]
@@ -363,7 +364,7 @@ This structure helps in understanding the relationships and dependencies among v
             "component_name": "modules.help.Set_total_forCheck",
             "component_code": "from sqLite import models\n\ndef Set_total_forCheck(idx: int):\n    cost = []\n    amount = []\n    name_prod = []\n    with models.db:\n        quary = models.Purchases.select().join(models.PurchasesCheck).where(models.PurchasesCheck.id_check == idx)\n        for res in quary:\n            cost.append(res.cost)\n            name_prod.append(res.purchases_name)\n        quary = models.PurchasesCheck.select().where(models.PurchasesCheck.id_check == idx)\n        for res in quary:\n            amount.append(res.amount)\n        res = sum([cost[i] * amount[i] for i in range(len(cost))])\n        update = models.Check.update(total=res).where(models.Check.id == idx)\n        update.execute()\n        return (cost, amount, name_prod)",
             "linked_component_ids": [],
-            "file_analyzer_id": "de787a2d-e36c-4c19-8000-9b0a3bb3dd76",
+            "file_id": "de787a2d-e36c-4c19-8000-9b0a3bb3dd76",
             "external_component_ids": [
                 "62ad851c-e96a-46d8-a2c1-8f5768db724f"
             ]
@@ -373,7 +374,7 @@ This structure helps in understanding the relationships and dependencies among v
             "component_name": "modules.help.CreateCheck",
             "component_code": "from sqLite import models\nimport datetime\n\ndef CreateCheck(seller_name: str, shop_name: str, id_amount: dict):\n    with models.db:\n        tmp = models.Check(date=datetime.date.today(), total=0, shop_name=shop_name, seller_name=seller_name)\n        tmp.save()\n        idx = tmp.id\n        for i in id_amount:\n            models.PurchasesCheck.create(id_purchases=models.Purchases[i], id_check=models.Check[idx], amount=id_amount[i])\n        Set_total_forCheck(idx)",
             "linked_component_ids": [],
-            "file_analyzer_id": "de787a2d-e36c-4c19-8000-9b0a3bb3dd76",
+            "file_id": "de787a2d-e36c-4c19-8000-9b0a3bb3dd76",
             "external_component_ids": [
                 "62ad851c-e96a-46d8-a2c1-8f5768db724f",
                 "a77f26ab-f03a-4325-9b64-96e640594a13"
@@ -384,7 +385,7 @@ This structure helps in understanding the relationships and dependencies among v
             "component_name": "modules.help.GetLastIdCheck",
             "component_code": "from sqLite import models\n\ndef GetLastIdCheck():\n    last = -1\n    with models.db:\n        queru = models.Check.select()\n        for res in queru:\n            last = res.id\n    return last",
             "linked_component_ids": [],
-            "file_analyzer_id": "de787a2d-e36c-4c19-8000-9b0a3bb3dd76",
+            "file_id": "de787a2d-e36c-4c19-8000-9b0a3bb3dd76",
             "external_component_ids": [
                 "62ad851c-e96a-46d8-a2c1-8f5768db724f"
             ]
@@ -394,7 +395,7 @@ This structure helps in understanding the relationships and dependencies among v
             "component_name": "modules.help.UpdateIdCheck",
             "component_code": "from sqLite import models\n\ndef UpdateIdCheck(old: int, new: int):\n    with models.db:\n        query = models.Check.update(id=new).where(models.Check.id == old)\n        query.execute()",
             "linked_component_ids": [],
-            "file_analyzer_id": "de787a2d-e36c-4c19-8000-9b0a3bb3dd76",
+            "file_id": "de787a2d-e36c-4c19-8000-9b0a3bb3dd76",
             "external_component_ids": [
                 "62ad851c-e96a-46d8-a2c1-8f5768db724f"
             ]
@@ -404,7 +405,7 @@ This structure helps in understanding the relationships and dependencies among v
             "component_name": "modules.help.UpdateIdCheckInRelation",
             "component_code": "from sqLite import models\n\ndef UpdateIdCheckInRelation(old: int, new: int):\n    with models.db:\n        query = models.PurchasesCheck.update(id_check=new).where(models.PurchasesCheck.id_check == old)\n        query.execute()",
             "linked_component_ids": [],
-            "file_analyzer_id": "de787a2d-e36c-4c19-8000-9b0a3bb3dd76",
+            "file_id": "de787a2d-e36c-4c19-8000-9b0a3bb3dd76",
             "external_component_ids": [
                 "62ad851c-e96a-46d8-a2c1-8f5768db724f"
             ]
@@ -414,7 +415,7 @@ This structure helps in understanding the relationships and dependencies among v
             "component_name": "modules.help.DelCheck",
             "component_code": "from sqLite import models\n\ndef DelCheck(idx: int):\n    last = GetLastIdCheck()\n    with models.db:\n        q1 = models.PurchasesCheck.delete().where(models.PurchasesCheck.id_check == idx)\n        q2 = models.Check.delete().where(models.Check.id == idx)\n        q1.execute()\n        q2.execute()\n        UpdateIdCheck(last, idx)\n        UpdateIdCheckInRelation(last, idx)",
             "linked_component_ids": [],
-            "file_analyzer_id": "de787a2d-e36c-4c19-8000-9b0a3bb3dd76",
+            "file_id": "de787a2d-e36c-4c19-8000-9b0a3bb3dd76",
             "external_component_ids": [
                 "62ad851c-e96a-46d8-a2c1-8f5768db724f"
             ]
@@ -424,7 +425,7 @@ This structure helps in understanding the relationships and dependencies among v
             "component_name": "modules.help.CreateFile",
             "component_code": "from sqLite import models\n\ndef CreateFile():\n    with models.db:\n        query = models.Check.select()\n        q1 = models.Purchases.select()\n        q2 = models.PurchasesCheck.select()\n        s1 = {}\n        s2 = {}\n        s3 = {}\n        for (idx, res) in enumerate(query):\n            s1[idx] = [res.id, str(res.date), res.total]\n        for (idx, res) in enumerate(q1):\n            s2[idx] = [res.id, res.purchases_name, res.cost]\n        for (idx, res) in enumerate(q2):\n            s3[idx] = [str(res.id_check), str(res.id_purchases)]\n        print(s1, s2, s3, sep='\\n')\n        open('sqLite/foo.txt', 'w').close()\n        with open('sqLite/foo.txt', 'a') as fp:\n            for i in s1:\n                fp.write(str(i) + ' ' + str(s1[i]) + '\\n')\n            for i in s2:\n                fp.write('\\n')\n                fp.write(str(i) + ' ' + str(s2[i]) + '\\n')\n            for i in s3:\n                fp.write('\\n')\n                fp.write(str(i) + ' ' + str(s3[i]) + '\\n')",
             "linked_component_ids": [],
-            "file_analyzer_id": "de787a2d-e36c-4c19-8000-9b0a3bb3dd76",
+            "file_id": "de787a2d-e36c-4c19-8000-9b0a3bb3dd76",
             "external_component_ids": [
                 "62ad851c-e96a-46d8-a2c1-8f5768db724f"
             ]
@@ -432,9 +433,9 @@ This structure helps in understanding the relationships and dependencies among v
         {
             "component_id": "bb090e76-980d-45de-bc4e-d9526015f867",
             "component_name": "modules.tests.tests_add_from.foo",
-            "component_code": "\ndef foo():\n    print('Alhamdulilla')",
+            "component_code": "\ndef foo():\n    print('foooo')",
             "linked_component_ids": [],
-            "file_analyzer_id": "664ea422-c875-4d60-a6b2-168b17fe99cd",
+            "file_id": "664ea422-c875-4d60-a6b2-168b17fe99cd",
             "external_component_ids": []
         }
     ],
