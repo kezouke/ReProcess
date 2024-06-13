@@ -17,7 +17,8 @@ class RequestManager:
         if self.project_root is None:
             raise RuntimeError("Could not find project root")
         if repos_dir:
-            self.repos_dir = os.path.join(self.project_root,repos_dir)
+            self.repos_dir = repos_dir
+            print(self.repos_dir)
         else:
             self.repos_dir = os.path.join(self.project_root, 'code_dependency_grapher', 'data', 'repos')
 
@@ -71,7 +72,8 @@ class RequestManager:
             RequestSession(RequestType.FROM_SCRATCH,
                            self.db_abs_path,
                            str(uuid.uuid4()),
-                           self.get_repo_name(repo_url))
+                           self.get_repo_name(repo_url),
+                           self.repos_dir)
         else:
             logging.info("Fetching latest changes...")
             self.fetch_remote_changes(local_repo_path)
@@ -95,6 +97,7 @@ class RequestManager:
                            self.db_abs_path,
                            str(uuid.uuid4()),
                            self.get_repo_name(repo_url),
+                           self.repos_dir,
                            updated_files,
                            removed_files)
 

@@ -1,4 +1,5 @@
 import uuid
+import hashlib
 from code_dependency_grapher.utils.import_path_extractor import get_import_statement_path
 
 class IdComponentMapper:
@@ -9,7 +10,7 @@ class IdComponentMapper:
     allowing for easy referencing and tracking of these components across different parts of a system.
     """
     
-    def __init__(self, file_components_map):
+    def __init__(self, repos_dir, file_components_map):
         """
         Initializes a new instance of the IdComponentMapper class.
         
@@ -18,6 +19,7 @@ class IdComponentMapper:
         """
         self.id_component_map = {}  # Stores mappings of unique IDs to tuples of (path, component_name)
         self.component_id_map = {}  # Stores mappings of component identifiers to unique IDs
+        self.repos_dir = repos_dir
         
         # Generate initial mappings using the provided file components map
         self.generate_mapping(file_components_map)
@@ -29,7 +31,7 @@ class IdComponentMapper:
         Args:
             file_components_map (dict): A dictionary mapping file paths to lists of component names found within those files.
         """
-        base_path = "data/repos/"
+        base_path = self.repos_dir
 
         for path, components in file_components_map.items():
             for component_name in components:
@@ -43,7 +45,7 @@ class IdComponentMapper:
                 packages = get_import_statement_path(path.split(base_path)[-1])
                 
                 # Construct the component identifier using the package structure and component name
-                key = f"{packages}.{component_name}"
+                key = f"{packages}.{component_name}".replace("-", "_")
                 
                 # Store the reverse mapping of the constructed component identifier to the unique ID
                 self.component_id_map[key] = id

@@ -88,7 +88,7 @@ class Engine:
 db_url = "/home/db"
 repos_dir = "/home/repos/"
 engine = Engine(db_url,repos_dir)
-# engine.request("https://github.com/vllm-project/SQLite_PyQt")
-engine.request("https://github.com/vllm-project/vllm")
+engine.request("https://github.com/showpiecep/SQLite_PyQt")
+# engine.request("https://github.com/vllm-project/vllm")
 # engine.request("https://github.com/IU-Capstone-Project-2024/SayNoMore")
 

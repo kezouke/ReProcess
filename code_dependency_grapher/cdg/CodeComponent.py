@@ -27,6 +27,7 @@ class CodeComponent:
 
     def __init__(self, 
                  component_id: str,
+                 repos_dir: str,
                  id_files_manager: Optional[IdFileAnalyzerMapper] = None,
                  file_path_ast_map: Optional[Dict[str, ast.Module]] = None,
                  id_component_map: Optional[Dict[UUID, Tuple[str, str]]] = None,
@@ -51,6 +52,7 @@ class CodeComponent:
             file_analyzer_id (Optional[str], optional): ID of the file analyzer associated with this component. Defaults to None.
         """
         self.component_id = component_id
+        self.repos_dir = repos_dir
         self.id_files_manager = id_files_manager
         self.file_path_ast_map = file_path_ast_map
         self.id_component_map = id_component_map
@@ -64,9 +66,10 @@ class CodeComponent:
             self._get_file_analyzer()        
             if self.component_name is None:
                 file_path, cmp_name = self.id_component_map[self.component_id]
-                relative_repo_path = "/".join(file_path.split("/data/repos/")[1].split("/"))
+                relative_repo_path = "/".join(file_path.split(f'{self.repos_dir}')[1].split("/"))
                 self.component_name = get_import_statement_path(relative_repo_path) + f".{cmp_name}"
 
+        self.component_name = self.component_name.replace("-", "_")
         # Extract code if file_analyzer is available and component_code is not set
         if self.component_code is None:
             self.extract_code()
@@ -176,7 +179,8 @@ class CodeComponent:
             current_package = self.component_name
             splitted_package = current_package.split(".")
             del splitted_package[-node.level-1:]      
-            splitted_package.append(node.module)
+            if node.module:
+                splitted_package.append(node.module)
             return '.'.join(splitted_package)
         return node.module
 
