@@ -1,5 +1,5 @@
 import uuid
-
+import hashlib
 from code_dependency_grapher.cdg.CodeComponent import CodeComponent
 from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapper
 from code_dependency_grapher.utils.mappers.IdComponentMapper import IdComponentMapper
@@ -73,14 +73,17 @@ class GraphCreator:
         # Link components based on their imports and dependencies
         print(set(package_components_names))
         external_components_dict = {}
-
+        sha256 = hashlib.sha256()
         for cmp in code_components:
             all_internal_components = set(package_components_names)
             cmp_imports = set(cmp.extract_imports())
             linked_components = all_internal_components.intersection(cmp_imports)
-
             external_components = cmp_imports.difference(linked_components)
+            sha256.update(cmp.getComponentCode().encode('utf-8'))
+            cmp.setId(sha256.hexdigest())
             for l_cmp in linked_components:
+                # l_cmp_hash = sha256.update(cmp.getComponentCode().encode('utf-8')).hexdigest()
+                # print(l_cmp_hash)
                 l_cmp_id = id_component_manager.component_id_map[l_cmp]
                 cmp.linked_component_ids.append(l_cmp_id)  
             
