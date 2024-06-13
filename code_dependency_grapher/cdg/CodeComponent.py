@@ -211,22 +211,11 @@ class CodeComponent:
                     new_imports.append(ast.alias(name=cmp_name))
         return new_imports
     
-    def getComponentCode(self):
-        if self.component_code:
-            return self.component_code
-        return None
+    def getComponentAttribute(self, attribute_name):
+        return getattr(self, attribute_name, None)
     
-    def getComponentId(self):
-        if self.component_id:
-            return self.component_id
-        return None
-    
-    def getComponentName(self):
-        if self.component_name:
-            return self.component_name
-        return None
-    def setComponentId(self, newId : str):
-        self.component_id = newId
+    def setComponentAttribute(self, attribute_name, value):
+        setattr(self, attribute_name, value)
 
     def extract_imports(self):
         """

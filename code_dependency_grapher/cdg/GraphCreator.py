@@ -71,9 +71,9 @@ class GraphCreator:
         external_components_dict = {}
 
         for cmpToHash in code_components:
-            hashId = hashlib.sha256(cmpToHash.getComponentCode().encode('utf-8')).hexdigest()
-            id_component_manager.component_id_map[cmpToHash.getComponentName()] = hashId 
-            cmpToHash.setComponentId(hashId)
+            hashId = hashlib.sha256(cmpToHash.getComponentAttribute('component_code').encode('utf-8')).hexdigest()
+            id_component_manager.component_id_map[cmpToHash.getComponentAttribute('component_name')] = hashId 
+            cmpToHash.setComponentAttribute('component_id', hashId)
 
         for cmp in code_components:
             all_internal_components = set(package_components_names)
