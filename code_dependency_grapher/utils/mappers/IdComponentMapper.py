@@ -1,5 +1,4 @@
 import uuid
-import hashlib
 from code_dependency_grapher.utils.import_path_extractor import get_import_statement_path
 
 

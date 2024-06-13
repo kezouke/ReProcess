@@ -69,11 +69,9 @@ class GraphCreator:
 
         # Link components based on their imports and dependencies
         external_components_dict = {}
-        sha256 = hashlib.sha256()
 
         for cmpToHash in code_components:
-            sha256.update(cmpToHash.getComponentCode().encode('utf-8'))
-            hashId = sha256.hexdigest()
+            hashId = hashlib.sha256(cmpToHash.getComponentCode().encode('utf-8')).hexdigest()
             id_component_manager.component_id_map[cmpToHash.getComponentName()] = hashId 
             cmpToHash.setComponentId(hashId)
 
