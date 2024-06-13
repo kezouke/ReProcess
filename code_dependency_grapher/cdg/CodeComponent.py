@@ -208,8 +208,19 @@ class CodeComponent:
         if self.component_code:
             return self.component_code
         return None
-    def setId(self, newId : str):
+    
+    def getComponentId(self):
+        if self.component_id:
+            return self.component_id
+        return None
+    
+    def getComponentName(self):
+        if self.component_name:
+            return self.component_name
+        return None
+    def setComponentId(self, newId : str):
         self.component_id = newId
+
     def extract_imports(self):
         """
         Extracts and returns a list of import statements used by the component.

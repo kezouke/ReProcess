@@ -74,16 +74,19 @@ class GraphCreator:
         print(set(package_components_names))
         external_components_dict = {}
         sha256 = hashlib.sha256()
+
+        for cmpToHash in code_components:
+            sha256.update(cmpToHash.getComponentCode().encode('utf-8'))
+            hashId = sha256.hexdigest()
+            id_component_manager.component_id_map[cmpToHash.getComponentName()] = hashId 
+            cmpToHash.setComponentId(hashId)
+
         for cmp in code_components:
             all_internal_components = set(package_components_names)
             cmp_imports = set(cmp.extract_imports())
             linked_components = all_internal_components.intersection(cmp_imports)
             external_components = cmp_imports.difference(linked_components)
-            sha256.update(cmp.getComponentCode().encode('utf-8'))
-            cmp.setId(sha256.hexdigest())
             for l_cmp in linked_components:
-                # l_cmp_hash = sha256.update(cmp.getComponentCode().encode('utf-8')).hexdigest()
-                # print(l_cmp_hash)
                 l_cmp_id = id_component_manager.component_id_map[l_cmp]
                 cmp.linked_component_ids.append(l_cmp_id)  
             
