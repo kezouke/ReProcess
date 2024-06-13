@@ -19,32 +19,31 @@ The Code Dependency Grapher is a tool designed to manage dependencies within cod
 ## Usage
 
 ### Running the Engine
-To run the Code Dependency Grapher, you will need to execute the `Engine.py` script. Below is an example script illustrating how to use the Engine.
+To run the Code Dependency Grapher, you will need to execute the `build_dependency_graph.py` script by using command: ``python -m code_dependency_grapher.usage_examples.building_dependency_graph``.
+
+Below is an example script illustrating how to use the script.
 
 ### Example Usage
 ```python
-import os
-from code_dependency_grapher.Engine import Engine
+from code_dependency_grapher.cdg.Engine import Engine
 
-# Define the paths
-db_dir = "/home/db"  # Directory where JSON graphs will be saved
-repos_dir = "/home/repos/"  # Directory where repositories will be cloned/stored
+# Example usage
+db_abs_path = "/home/db"
+path_where_to_store_repos = "/home/repos/"
+engine = Engine(db_abs_path,
+                path_where_to_store_repos)
 
-# Initialize the Engine
-engine = Engine(db_dir, repos_dir)
+engine.request("https://github.com/arXiv/arxiv-feed")
 
-# Make a request to fetch data from a repository
-repo_url = "https://github.com/showpiecep/SQLite_PyQt"
-engine.request(repo_url)
-
-# Additional requests can be made as needed
+# Additional example requests commented out for brevity
 # engine.request("https://github.com/vllm-project/vllm")
+# engine.request("https://github.com/showpiecep/SQLite_PyQt")
 # engine.request("https://github.com/IU-Capstone-Project-2024/SayNoMore")
 ```
 
 ### Parameters
-- **db_url**: This is the directory where the JSON graphs will be saved.
-- **repos_dir**: This is the directory where the repositories will be cloned and stored.
+- **db_abs_path**: This is the directory where the JSON graphs will be saved.
+- **path_where_to_store_repos**: This is the directory where the repositories will be cloned and stored.
 - **repo_url**: The URL of the repository from which you want to fetch data.
 
 ### JSON Tree Structure Description
