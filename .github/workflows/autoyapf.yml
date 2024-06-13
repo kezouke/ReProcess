@@ -10,7 +10,7 @@ jobs:
       - name: YAPF Formatter
         uses: diegovalenzuelaiturra/yapf-action@v0.0.5
         with:
-          args: --verbose --parallel --recursive --in-place
+          args: --verbose --parallel --recursive --diff
         
       - name: Ruff Check
         uses: jpetrucciani/ruff-check@0.1.0
