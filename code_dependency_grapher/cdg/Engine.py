@@ -15,13 +15,19 @@ class Engine:
     such as requesting data from repositories.
     """
     
-    def __init__(self, db_abs_path: Optional[str] = None, path_where_to_store_repos: Optional[str] = None):
+    def __init__(self, 
+                db_abs_path: Optional[str] = None,
+                path_where_to_store_repos: Optional[str] = None):
         """
         Initializes a new instance of the Engine class.
         
         Args:
-            db_abs_path (Optional[str]): Absolute path to the folder where resulting JSON graphs will be stored.
-            path_where_to_store_repos (Optional[str]): Absolute path where all needed repositories are stored or will be git-cloned.
+            db_abs_path (Optional[str]): Absolute path to the folder where resulting 
+                JSON graphs will be stored. Can be None. In this case db path will be extracted
+                from /data/path.json
+            path_where_to_store_repos (Optional[str]): Absolute path where all needed repositories
+                are stored or will be git-cloned. Can be None. In this case, repos are 
+                clonned into /data/repos/
         """
         # Process the absolute database path, either loading it from a file or using the provided value
         self.absolute_path = process_abs_db_path(db_abs_path)
@@ -43,7 +49,7 @@ class Engine:
 # Example usage
 db_abs_path = "/home/db"
 path_where_to_store_repos = "/home/repos/"
-engine = Engine(db_abs_path, path_where_to_store_repos)
+engine = Engine(db_abs_path)
 engine.request("https://github.com/showpiecep/SQLite_PyQt")
 # Additional example requests commented out for brevity
 # engine.request("https://github.com/vllm-project/vllm")
