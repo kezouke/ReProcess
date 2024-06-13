@@ -7,10 +7,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       
-      - name: YAPF Python Code Formatting Check
+      - name: YAPF Formatter
         # You may pin to the exact commit or the version.
-        # uses: AlexanderMelde/yapf-action@a2053dba9adceb173b38e58acaad7436a1934bdd
-        uses: AlexanderMelde/yapf-action@v1.0
+        # uses: diegovalenzuelaiturra/yapf-action@aee5e2e322764a5a733e293fdcdb129c173e5df4u
+        uses: diegovalenzuelaiturra/yapf-action@v0.0.5
+        with:
+          # yapf args
+          args: --verbose --parallel --recursive --in-place
+                
         
       - name: Ruff Check
         # You may pin to the exact commit or the version.
