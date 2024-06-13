@@ -1,11 +1,9 @@
 import os
-import subprocess
 import logging
 import uuid
 
 from code_dependency_grapher.utils.find_root_directory import find_project_root
 from code_dependency_grapher.cdg.requests_handling.RequestSession import RequestSession
-from code_dependency_grapher.cdg.requests_handling.RequestEnum import RequestType
 from code_dependency_grapher.cdg.requests_handling.RepositoryManager import RepositoryManager
 
 logging.basicConfig(level=logging.ERROR)
