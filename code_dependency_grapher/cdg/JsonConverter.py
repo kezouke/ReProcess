@@ -13,7 +13,7 @@ class JsonConverter:
                 "component_name": component.component_name,
                 "component_code": component.component_code,
                 "linked_component_ids": component.linked_component_ids,
-                "file_analyzer_id": component.file_analyzer_id,
+                "file_id": component.file_analyzer_id,
                 "external_component_ids": component.external_component_ids
             }
             component_data.append(component_dict)
@@ -28,6 +28,7 @@ class JsonConverter:
                 "callable_components": file_analyzer.callable_components
             }
             files_data.append(files_dict)
+            
         result_json = {
             "files" : files_data,
             "components": component_data,
@@ -42,5 +43,7 @@ class JsonConverter:
 
         with open(db_path, "w") as file:
             file.write(json.dumps(result_json, indent=4))
+            print(f"The graph was successfully built and saved to {db_path}.")
+
         
 

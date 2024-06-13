@@ -71,7 +71,6 @@ class GraphCreator:
                                                  ))
         
         # Link components based on their imports and dependencies
-        print(set(package_components_names))
         external_components_dict = {}
 
         for cmp in code_components:

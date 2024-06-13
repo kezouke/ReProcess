@@ -82,9 +82,7 @@ class RequestManager:
 
             removed_files = [line[1] for line in status_file_name if line[0] == 'D']
             updated_files = [line[1] for line in status_file_name if line[0] != 'D']
-
-            print(removed_files)
-            print(updated_files)
+            
             if changed_files:
                 logging.info("Changed files detected, pulling latest changes...")
                 for file in changed_files:
