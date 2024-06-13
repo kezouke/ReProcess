@@ -70,10 +70,10 @@ class GraphCreator:
         # Link components based on their imports and dependencies
         external_components_dict = {}
 
-        for cmpToHash in code_components:
-            hashId = hashlib.sha256(cmpToHash.getComponentAttribute('component_code').encode('utf-8')).hexdigest()
-            id_component_manager.component_id_map[cmpToHash.getComponentAttribute('component_name')] = hashId 
-            cmpToHash.setComponentAttribute('component_id', hashId)
+        for cmp_to_hash in code_components:
+            hashId = hashlib.sha256(cmp_to_hash.getComponentAttribute('component_code').encode('utf-8')).hexdigest()
+            id_component_manager.component_id_map[cmp_to_hash.getComponentAttribute('component_name')] = hashId 
+            cmp_to_hash.setComponentAttribute('component_id', hashId)
 
         for cmp in code_components:
             all_internal_components = set(package_components_names)
