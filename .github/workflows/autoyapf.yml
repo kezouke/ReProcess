@@ -1,0 +1,18 @@
+name: CodeGena Workflow
+on: [push, pull_request]
+
+jobs:
+  format-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: YAPF Python Code Formatting Check
+        uses: AlexanderMelde/yapf-action@v1.0
+        
+      - name: Ruff Check
+        uses: jpetrucciani/ruff-check@0.1.0
+        with:
+          path: '.'
+          flags: ''
+          format: 'github'
