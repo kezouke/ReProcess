@@ -8,22 +8,13 @@ jobs:
       - uses: actions/checkout@v2
       
       - name: YAPF Formatter
-        # You may pin to the exact commit or the version.
-        # uses: diegovalenzuelaiturra/yapf-action@aee5e2e322764a5a733e293fdcdb129c173e5df4u
         uses: diegovalenzuelaiturra/yapf-action@v0.0.5
         with:
-          # yapf args
           args: --verbose --parallel --recursive --in-place
-                
         
       - name: Ruff Check
-        # You may pin to the exact commit or the version.
-        # uses: jpetrucciani/ruff-check@95ff5ea372c5099efb7a38151f8aef8fee435c47
         uses: jpetrucciani/ruff-check@0.1.0
         with:
-          # File or directory to run ruff on
-          path: '.' # optional, default is.
-          # Optional ruff flags (refer to `ruff --help`)
-          flags: '' # optional, default is empty string
-          # Format to output ruff messages in
-          format: 'github' # optional, default is github
+          path: '.'
+          flags: ''
+          format: 'github'
