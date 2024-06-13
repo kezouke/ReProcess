@@ -18,9 +18,9 @@ class RequestManager:
             raise RuntimeError("Could not find project root")
         if repos_dir:
             self.repos_dir = repos_dir
-            print(self.repos_dir)
         else:
-            self.repos_dir = os.path.join(self.project_root, 'code_dependency_grapher', 'data', 'repos')
+            self.repos_dir = os.path.join(self.project_root, 'code_dependency_grapher', 'data', 'downloads')
+        print("Your folder is stored at:", self.repos_dir)
 
     def get_repo_name(self, repo_url):
         # Extracts the repository name from the URL
