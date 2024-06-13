@@ -33,10 +33,9 @@ class JsonConverter:
         result_json = {
             "files": files_data,
             "components": component_data,
-            "external_components": [{
-                v: k
-                for k, v in external_components.items()
-            }]
+            "external_components":
+            [{v: k
+              for k, v in external_components.items()}]
         }
 
         directory = os.path.dirname(db_path)
