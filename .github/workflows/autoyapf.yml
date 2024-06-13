@@ -14,3 +14,4 @@
     flags: # optional, default is 
     # Format to output ruff messages in
     format: # optional, default is github
+          
