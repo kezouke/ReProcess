@@ -7,10 +7,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       
-      - name: YAPF Formatter
-        uses: diegovalenzuelaiturra/yapf-action@v0.0.5
-        with:
-          args: --verbose --parallel --recursive --diff
+      - name: YAPF Python Code Formatting Check
+        uses: AlexanderMelde/yapf-action@v1.0
         
       - name: Ruff Check
         uses: jpetrucciani/ruff-check@0.1.0
