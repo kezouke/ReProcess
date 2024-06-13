@@ -38,15 +38,19 @@ def process_abs_db_path(abs_db_path: Optional[str]):
         with open(file_with_abs_db_path, 'w') as f:
             json.dump({"path": abs_db_path}, f)
 
+        return abs_db_path
+
     def load_path(file_with_abs_db_path: str) -> str:
         """
         Loads the absolute path of the project from a JSON file.
         
-        Attempts to retrieve the previously saved path, failing gracefully if the file does not exist
-        or if no path is found within the file.
+        Attempts to retrieve the previously saved path, failing 
+        gracefully if the file does not exist or if no path is 
+        found within the file.
         
         Args:
-            file_with_abs_db_path (str): File path including filename from which the absolute path will be read.
+            file_with_abs_db_path (str): File path including filename 
+                        from which the absolute path will be read.
             
         Returns:
             str: The loaded absolute path.
@@ -73,13 +77,18 @@ def process_abs_db_path(abs_db_path: Optional[str]):
     # Find the root folder of the Code Dependency Grapher project
     cdg_root_folder = find_project_root(os.path.abspath(__file__))
     # Define the directory where the path file will be stored
-    data_dir = os.path.join(cdg_root_folder, 'code_dependency_grapher', 'data')
+    data_dir = os.path.join(cdg_root_folder, 
+                            'code_dependency_grapher', 
+                            'data')
     # Define the full path to the path file
-    file_with_abs_db_path = os.path.join(data_dir, 'path.json')
+    file_with_abs_db_path = os.path.join(data_dir, 
+                                         'path.json')
         
-    # Determine whether to save or load the path based on the presence of the abs_db_path argument
+    # Determine whether to save or load the path based 
+    # on the presence of the abs_db_path argument
     if abs_db_path is None:
         return load_path(file_with_abs_db_path)
     else:
-        save_path(abs_db_path, data_dir, file_with_abs_db_path)
-        return None
+        return save_path(abs_db_path, 
+                         data_dir, 
+                         file_with_abs_db_path)
