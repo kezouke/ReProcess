@@ -1,3 +1,5 @@
+import uuid
+
 from code_dependency_grapher.cdg.CodeComponent import CodeComponent
 from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapper
 from code_dependency_grapher.utils.mappers.IdComponentMapper import IdComponentMapper
@@ -64,29 +66,24 @@ class GraphCreator:
         
         # Link components based on their imports and dependencies
         print(set(package_components_names))
+        external_components_dict = {}
 
         for cmp in code_components:
-            all_components = set(package_components_names)
+            all_internal_components = set(package_components_names)
             cmp_imports = set(cmp.extract_imports())
-            linked_components = all_components.intersection(cmp_imports)
-            # print(linked_components)
-            additional_components = cmp_imports.difference(linked_components)
-            # print(additional_components)
-            # print("\n\n")
-            #modules.tests.tests_add_from.foo
+            linked_components = all_internal_components.intersection(cmp_imports)
+            external_components = cmp_imports.difference(linked_components)
             for l_cmp in linked_components:
                 l_cmp_id = id_component_manager.component_id_map[l_cmp]
                 cmp.linked_component_ids.append(l_cmp_id)  
             
-            # for a_cmp in additional_components:
-            #     print(a_cmp)
-            #     # a_cmp_id = id_component_manager.component_id_map[a_cmp]
-            #     # cmp.additional_component_ids.append(a_cmp_id)
-            
-            # print(cmp.component_name)
-            if linked_components:
-                print(linked_components)
-            # print()
+            for a_cmp in external_components:
+                id = external_components_dict.get(a_cmp, None)
+                if id is None:
+                    id = str(uuid.uuid4())
+                    external_components_dict[a_cmp] = id
+                cmp.external_component_ids.append(id)
+        
 
         # Return the list of CodeComponent instances and the file-to-analyzer mapping
-        return code_components, id_files_manager.id_file_map
+        return code_components, id_files_manager.id_file_map, external_components_dict
