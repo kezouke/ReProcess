@@ -5,7 +5,7 @@ import os
 
 class JsonConverter:
 
-    def convert(db_path, componets, files):
+    def convert(db_path, componets, files, external_components):
         component_data = []
         for component in componets:
             component_dict = {
@@ -14,7 +14,7 @@ class JsonConverter:
                 "component_code": component.component_code,
                 "linked_component_ids": component.linked_component_ids,
                 "file_analyzer_id": component.file_analyzer_id,
-                "additional_component_ids": component.additional_component_ids
+                "external_component_ids": component.external_component_ids
             }
             component_data.append(component_dict)
         files_data = []
@@ -30,7 +30,8 @@ class JsonConverter:
             files_data.append(files_dict)
         result_json = {
             "files" : files_data,
-            "components": component_data
+            "components": component_data,
+            "external_components": [{v: k for k, v in external_components.items()}]
         }
 
         directory = os.path.dirname(db_path)
