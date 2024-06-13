@@ -71,8 +71,11 @@ class GraphCreator:
         external_components_dict = {}
 
         for cmp_to_hash in code_components:
-            hashId = hashlib.sha256(cmp_to_hash.getComponentAttribute('component_code').encode('utf-8')).hexdigest()
-            id_component_manager.component_id_map[cmp_to_hash.getComponentAttribute('component_name')] = hashId 
+            hashId = hashlib.sha256(
+                cmp_to_hash.getComponentAttribute('component_code').encode(
+                    'utf-8')).hexdigest()
+            id_component_manager.component_id_map[
+                cmp_to_hash.getComponentAttribute('component_name')] = hashId 
             cmp_to_hash.setComponentAttribute('component_id', hashId)
 
         for cmp in code_components:

@@ -210,10 +210,10 @@ class CodeComponent:
                 if cmp_name in used_imports:
                     new_imports.append(ast.alias(name=cmp_name))
         return new_imports
-    
+
     def getComponentAttribute(self, attribute_name):
         return getattr(self, attribute_name, None)
-    
+
     def setComponentAttribute(self, attribute_name, value):
         setattr(self, attribute_name, value)
 
