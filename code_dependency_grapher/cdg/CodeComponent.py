@@ -203,8 +203,13 @@ class CodeComponent:
                 if cmp_name in used_imports:
                     new_imports.append(ast.alias(name=cmp_name))
         return new_imports
-
-
+    
+    def getComponentCode(self):
+        if self.component_code:
+            return self.component_code
+        return None
+    def setId(self, newId : str):
+        self.component_id = newId
     def extract_imports(self):
         """
         Extracts and returns a list of import statements used by the component.
