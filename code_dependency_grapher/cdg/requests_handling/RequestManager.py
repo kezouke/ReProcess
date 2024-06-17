@@ -27,18 +27,17 @@ class RequestManager:
         print("Your folder is stored at:", self.repos_dir)
 
     def manage_request(self, git_url):
-        repo_manager = RepositoryManager(self.repos_dir,
-                                          git_url, True)
+        repo_manager = RepositoryManager(self.repos_dir, git_url, True)
         RequestSession(repo_manager.request_type, self.db_abs_path,
                        str(uuid.uuid4()), repo_manager.repo_name,
                        self.repos_dir, repo_manager.updated_files,
                        repo_manager.removed_files)
-        
+
     def clone_repo(self, git_url):
-        repo_manager = RepositoryManager(self.repos_dir,
-                                         git_url, False)
-        repo_manager.clone_repo(git_url,
-                                 self.repos_dir)
+        repo_manager = RepositoryManager(self.repos_dir, git_url, False)
+        repo_manager.clone_repo(git_url, self.repos_dir)
+
+
 # # Example usage
 # repo_url = "https://github.com/triton-lang/triton"
 # manager = RequestManager("cdscs")

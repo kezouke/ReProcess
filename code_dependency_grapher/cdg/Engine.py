@@ -45,5 +45,6 @@ class Engine:
             repo_url (str): The URL of the repository from which data is requested.
         """
         self.request_manager.manage_request(repo_url)
+
     def clone(self, repo_url: str) -> None:
         self.request_manager.clone_repo(repo_url)

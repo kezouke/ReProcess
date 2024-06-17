@@ -31,8 +31,7 @@ class RepositoryManager:
                               since the last operation.
     """
 
-    def __init__(self, repository_directory: str,
-                 git_hub_url: Optional[str],
+    def __init__(self, repository_directory: str, git_hub_url: Optional[str],
                  preprocess: Optional[bool]) -> None:
         """
         Initializes the RepositoryManager instance.
