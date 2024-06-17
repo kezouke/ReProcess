@@ -43,6 +43,7 @@ class RepositoryManager:
             git_hub_url (Optional[str]): URL of the Git repository. 
                                If None, assumes the repository is 
                                managed locally.
+            preprocess (Optional[str]): Flag for the initial preprocessing of the repo
         """
         self.repo_directory = repository_directory
         self.git_url = git_hub_url
