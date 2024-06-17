@@ -31,8 +31,7 @@ class RepositoryManager:
                               since the last operation.
     """
 
-    def __init__(self, repository_directory: str,
-                 git_hub_url: Optional[str],
+    def __init__(self, repository_directory: str, git_hub_url: Optional[str],
                  preprocess: Optional[bool]) -> None:
         """
         Initializes the RepositoryManager instance.
@@ -138,11 +137,13 @@ class RepositoryManager:
 
     def get_hash_and_author(self, local_repo_path) -> list:
         try:
-            result = subprocess.run(
-                            ['git', '-C', local_repo_path, 'log', '-1', '--pretty=format:%H%n%ae'],
-                            capture_output=True,
-                            text=True,
-                            check=True)
+            result = subprocess.run([
+                'git', '-C', local_repo_path, 'log', '-1',
+                '--pretty=format:%H%n%ae'
+            ],
+                                    capture_output=True,
+                                    text=True,
+                                    check=True)
             return result.stdout.split('\n')
         except subprocess.CalledProcessError as e:
             logging.error(f"Failed to get commit hash and author: {e}")

@@ -29,8 +29,9 @@ class RequestSession:
             graph_creator = GraphCreator(python_files, self.repos_dir)
             graph_built = graph_creator.create_from_scratch()
             JsonConverter.convert(
-                os.path.join(self.abs_db_path, self.repo_name, "data.json"),
-                graph_built[0], graph_built[1], graph_built[2], self.repo_hash, self.repo_author)
+                os.path.join(self.abs_db_path, self.repo_name,
+                             "data.json"), graph_built[0], graph_built[1],
+                graph_built[2], self.repo_hash, self.repo_author)
 
             # print(graph_builded)
         elif mode == RequestType.UPDATE_EXISTING:
@@ -42,5 +43,6 @@ class RequestSession:
             graph_creator = GraphCreator(python_files, self.repos_dir)
             graph_built = graph_creator.create_from_scratch()
             JsonConverter.convert(
-                os.path.join(self.abs_db_path, self.repo_name, "data.json"),
-                graph_built[0], graph_built[1], graph_built[2], self.repo_hash, self.repo_author)
+                os.path.join(self.abs_db_path, self.repo_name,
+                             "data.json"), graph_built[0], graph_built[1],
+                graph_built[2], self.repo_hash, self.repo_author)

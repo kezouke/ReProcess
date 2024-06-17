@@ -4,7 +4,8 @@ import os
 
 class JsonConverter:
 
-    def convert(db_path, componets, files, external_components,repo_hash, repo_author):
+    def convert(db_path, componets, files, external_components, repo_hash,
+                repo_author):
         component_data = []
         for component in componets:
             component_dict = {
