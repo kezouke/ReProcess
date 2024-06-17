@@ -52,8 +52,7 @@ class RepositoryManager:
         else:
             self.repo_name = self.repo_directory.split('/')[-1].split('.')[0]
         if preprocess:
-            self.request_type, self.updated_files, self.removed_files, self.repo_info = self._preprocess_repo(
-            )
+            self.request_type, self.updated_files, self.removed_files, self.repo_info = self._preprocess_repo()
 
     def _is_repo_exists_locally(self, local_repo_path: str) -> bool:
         """
