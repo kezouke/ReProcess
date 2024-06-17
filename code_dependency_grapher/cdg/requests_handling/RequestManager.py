@@ -37,10 +37,6 @@ class RequestManager:
         repo_manager = RepositoryManager(self.repos_dir, git_url, False)
         repo_manager.clone_repo(git_url, self.repos_dir)
 
-    def clone_repo(self, git_url):
-        repo_manager = RepositoryManager(self.repos_dir, git_url, False)
-        repo_manager.clone_repo(git_url, self.repos_dir)
-
 
 # # Example usage
 # repo_url = "https://github.com/triton-lang/triton"
