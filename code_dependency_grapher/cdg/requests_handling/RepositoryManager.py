@@ -182,4 +182,5 @@ class RepositoryManager:
 
         logging.info(f"Cloning {self.git_url}...")
         self.clone_repo(self.git_url, local_repo_path)
-        return RequestType.FROM_SCRATCH, [], [], self.get_hash_and_author(local_repo_path)
+        return RequestType.FROM_SCRATCH, [], [], self.get_hash_and_author(
+            local_repo_path)
