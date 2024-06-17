@@ -13,6 +13,7 @@ class RequestSession:
                  request_id,
                  repo_name,
                  repos_dir,
+                 repo_info,
                  updated_files=None,
                  removed_files=None) -> None:
         self.mode = mode
@@ -20,7 +21,8 @@ class RequestSession:
         self.request_id = request_id
         self.repo_name = repo_name
         self.repos_dir = os.path.join(repos_dir, self.repo_name)
-
+        self.repo_hash = repo_info[0]
+        self.repo_author = repo_info[1]
         if mode == RequestType.FROM_SCRATCH:
             # graph builder from scratch
             python_files = find_python_files(self.repos_dir)
@@ -28,7 +30,7 @@ class RequestSession:
             graph_built = graph_creator.create_from_scratch()
             JsonConverter.convert(
                 os.path.join(self.abs_db_path, self.repo_name, "data.json"),
-                graph_built[0], graph_built[1], graph_built[2])
+                graph_built[0], graph_built[1], graph_built[2], self.repo_hash, self.repo_author)
 
             # print(graph_builded)
         elif mode == RequestType.UPDATE_EXISTING:
@@ -41,4 +43,4 @@ class RequestSession:
             graph_built = graph_creator.create_from_scratch()
             JsonConverter.convert(
                 os.path.join(self.abs_db_path, self.repo_name, "data.json"),
-                graph_built[0], graph_built[1], graph_built[2])
+                graph_built[0], graph_built[1], graph_built[2], self.repo_hash, self.repo_author)
