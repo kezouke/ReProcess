@@ -27,8 +27,7 @@ class regExpFinder:
             return None
 
         except FileNotFoundError:
-            print(f"File not found: {path_to_repo}")
-            return None
+            raise FileNotFoundError(f"File not found: {path_to_repo}")
 
         except json.JSONDecodeError as e:
             print(f"Error decoding JSON: {e}")
