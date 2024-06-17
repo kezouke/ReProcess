@@ -35,7 +35,9 @@ class Engine:
         self.request_manager = RequestManager(self.absolute_path,
                                               path_where_to_store_repos)
 
-    def request(self, repo_url: str) -> None:
+    def request(self,
+                repo_url: Optional[str] = None,
+                repo_folder_name: Optional[str] = None) -> None:
         """
         Initiates a request to fetch data from the specified repository URL.
         
@@ -45,7 +47,12 @@ class Engine:
         Args:
             repo_url (str): The URL of the repository from which data is requested.
         """
-        self.request_manager.manage_request(repo_url)
+        if repo_url:
+            self.request_manager.manage_request(repo_url)
+        elif repo_folder_name:
+            self.request_manager.manage_request_from_folder(repo_folder_name)
+        else:
+            raise Exception("Please, pass either repo_url or repo_folder_name")
 
     def componentSearch(self, repo_name, regExpStr) -> CodeComponent:
         found_component = regExpFinder.search(self.absolute_path, repo_name,
