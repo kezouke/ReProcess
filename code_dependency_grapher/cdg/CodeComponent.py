@@ -211,6 +211,12 @@ class CodeComponent:
                     new_imports.append(ast.alias(name=cmp_name))
         return new_imports
 
+    def getComponentAttribute(self, attribute_name):
+        return getattr(self, attribute_name, None)
+
+    def setComponentAttribute(self, attribute_name, value):
+        setattr(self, attribute_name, value)
+
     def extract_imports(self):
         """
         Extracts and returns a list of import statements used by the component.

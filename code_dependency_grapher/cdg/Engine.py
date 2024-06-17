@@ -1,5 +1,3 @@
-import os
-import json
 from typing import Optional
 
 from code_dependency_grapher.cdg.requests_handling.RequestManager import RequestManager

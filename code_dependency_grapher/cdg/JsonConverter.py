@@ -1,6 +1,4 @@
 import json
-from code_dependency_grapher.cdg.CodeComponent import CodeComponent
-from code_dependency_grapher.cdg.FileAnalyzer import FileAnalyzer
 import os
 
 

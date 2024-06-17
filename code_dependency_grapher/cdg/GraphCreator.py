@@ -1,5 +1,5 @@
 import uuid
-
+import hashlib
 from code_dependency_grapher.cdg.CodeComponent import CodeComponent
 from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapper
 from code_dependency_grapher.utils.mappers.IdComponentMapper import IdComponentMapper
@@ -60,15 +60,23 @@ class GraphCreator:
         code_components = []
 
         # Populate the list of CodeComponent instances using the IdComponentMapper
-        for id in id_component_manager.id_component_map:
+        for idx in id_component_manager.id_component_map:
             code_components.append(
-                CodeComponent(id, self.repos_dir, id_files_manager,
+                CodeComponent(idx, self.repos_dir, id_files_manager,
                               ast_manager.file_path_ast_map,
                               id_component_manager.id_component_map,
                               package_components_names))
 
         # Link components based on their imports and dependencies
         external_components_dict = {}
+
+        for cmp_to_hash in code_components:
+            hashId = hashlib.sha256(
+                cmp_to_hash.getComponentAttribute('component_code').encode(
+                    'utf-8')).hexdigest()
+            id_component_manager.component_id_map[
+                cmp_to_hash.getComponentAttribute('component_name')] = hashId
+            cmp_to_hash.setComponentAttribute('component_id', hashId)
 
         for cmp in code_components:
             all_internal_components = set(package_components_names)
@@ -82,11 +90,11 @@ class GraphCreator:
                 cmp.linked_component_ids.append(l_cmp_id)
 
             for a_cmp in external_components:
-                id = external_components_dict.get(a_cmp, None)
-                if id is None:
-                    id = str(uuid.uuid4())
-                    external_components_dict[a_cmp] = id
-                cmp.external_component_ids.append(id)
+                idx = external_components_dict.get(a_cmp, None)
+                if idx is None:
+                    idx = str(uuid.uuid4())
+                    external_components_dict[a_cmp] = idx
+                cmp.external_component_ids.append(idx)
 
         # Return the list of CodeComponent instances and the file-to-analyzer mapping
         return code_components, id_files_manager.id_file_map, external_components_dict
