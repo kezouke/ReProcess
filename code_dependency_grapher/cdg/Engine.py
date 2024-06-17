@@ -1,8 +1,7 @@
 from typing import Optional
-
 from code_dependency_grapher.cdg.requests_handling.RequestManager import RequestManager
 from code_dependency_grapher.utils.process_db_abs_path import process_abs_db_path
-
+from code_dependency_grapher.utils.regExp_finder import regExpFinder
 
 class Engine:
     """
@@ -45,3 +44,7 @@ class Engine:
             repo_url (str): The URL of the repository from which data is requested.
         """
         self.request_manager.manage_request(repo_url)
+    
+    def componentSearch(self, repo_name, regExpStr):
+        found_component = regExpFinder.search(self.absolute_path, repo_name, regExpStr)
+        print(found_component)
