@@ -1,5 +1,4 @@
 from code_dependency_grapher.cdg.Engine import Engine
-from code_dependency_grapher.cdg.CodeComponent import CodeComponent
 
 # Example usage
 db_abs_path = "/home/db"
