@@ -2,6 +2,7 @@ from typing import Optional
 from code_dependency_grapher.cdg.requests_handling.RequestManager import RequestManager
 from code_dependency_grapher.utils.process_db_abs_path import process_abs_db_path
 from code_dependency_grapher.utils.regExp_finder import regExpFinder
+from code_dependency_grapher.cdg.CodeComponent import CodeComponent
 
 
 class Engine:
@@ -46,10 +47,18 @@ class Engine:
         """
         self.request_manager.manage_request(repo_url)
 
-    def componentSearch(self, repo_name, regExpStr):
-        found_component = regExpFinder.search(self.absolute_path, repo_name,
-                                              regExpStr)
-        print(found_component)
+    def componentSearch(self, repo_name, regExpStr) -> CodeComponent:
+        found_component = regExpFinder.search(self.absolute_path, 
+                                              repo_name,
+                                              regExpStr) 
+        
+        return CodeComponent(component_id=found_component['component_id'],
+                             component_name=found_component['component_name'],
+                             component_code=found_component['component_code'],
+                             linked_component_ids=found_component['linked_component_ids'],
+                             file_analyzer_id=found_component["file_id"],
+                             external_component_ids=found_component["external_component_ids"]
+                             )
 
     def clone(self, repo_url: str) -> None:
         self.request_manager.clone_repo(repo_url)
