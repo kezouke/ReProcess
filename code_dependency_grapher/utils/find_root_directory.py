@@ -2,6 +2,7 @@ import os
 import subprocess
 from typing import Union
 
+
 def find_project_root(current_path: str) -> Union[str, None]:
     """
     Finds the root directory of a project using the `git rev-parse --show-toplevel` command.
@@ -18,18 +19,16 @@ def find_project_root(current_path: str) -> Union[str, None]:
         # Adjust the current_path if it points to a file within the project
         if os.path.isfile(current_path):
             current_path = os.path.dirname(current_path)
-        
+
         # Switch to the target directory
         os.chdir(current_path)
 
         # Execute the git command to locate the project root
-        result = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            check=True
-        )
+        result = subprocess.run(["git", "rev-parse", "--show-toplevel"],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                text=True,
+                                check=True)
         # Extract and return the project root path from the command output
         git_root = result.stdout.strip()
         return git_root

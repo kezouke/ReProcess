@@ -1,6 +1,7 @@
 import os
 from typing import List
 
+
 def find_python_files(directory: str) -> List[str]:
     """
     Finds and returns a list of all Python (.py) files within a given directory and its subdirectories.

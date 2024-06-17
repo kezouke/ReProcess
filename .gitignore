@@ -1,3 +1,5 @@
 code_dependency_grapher/data/path.json
-code_dependency_grapher/data/repos
+code_dependency_grapher/data/repos/*
 cdg_env
+__pycache__/*
+__pycache__/
