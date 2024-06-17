@@ -6,7 +6,7 @@ path_where_to_store_repos = "/home/repos/"
 engine = Engine(db_abs_path, path_where_to_store_repos)
 
 engine.request("https://github.com/arXiv/arxiv-feed")
-
+engine.componentSearch("arxiv-feed", r'\bfeed\.routes\.status\b')
 # Additional example requests commented out for brevity
 # engine.request("https://github.com/vllm-project/vllm")
 # engine.request("https://github.com/showpiecep/SQLite_PyQt")
