@@ -46,7 +46,12 @@ class Engine:
         """
         self.request_manager.manage_request(repo_url)
 
+
     def componentSearch(self, repo_name, regExpStr):
         found_component = regExpFinder.search(self.absolute_path, repo_name,
                                               regExpStr)
         print(found_component)
+
+        
+    def clone(self, repo_url: str) -> None:
+        self.request_manager.clone_repo(repo_url)

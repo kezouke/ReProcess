@@ -31,8 +31,8 @@ class RepositoryManager:
                               since the last operation.
     """
 
-    def __init__(self, repository_directory: str,
-                 git_hub_url: Optional[str]) -> None:
+    def __init__(self, repository_directory: str, git_hub_url: Optional[str],
+                 preprocess: Optional[bool]) -> None:
         """
         Initializes the RepositoryManager instance.
         
@@ -42,17 +42,18 @@ class RepositoryManager:
             git_hub_url (Optional[str]): URL of the Git repository. 
                                If None, assumes the repository is 
                                managed locally.
+            preprocess (Optional[str]): Flag for the initial preprocessing of the repo
         """
         self.repo_directory = repository_directory
         self.git_url = git_hub_url
-
+        self.preprocess = preprocess
         if self.git_url:
             self.repo_name = self.git_url.split('/')[-1].split('.')[0]
         else:
             self.repo_name = self.repo_directory.split('/')[-1].split('.')[0]
-
-        self.request_type, self.updated_files, self.removed_files = self._preprocess_repo(
-        )
+        if preprocess:
+            self.request_type, self.updated_files, self.removed_files, self.repo_info = self._preprocess_repo(
+            )
 
     def _is_repo_exists_locally(self, local_repo_path: str) -> bool:
         """
@@ -74,6 +75,11 @@ class RepositoryManager:
             repo_url (str): URL of the Git repository to clone.
             local_repo_path (str): Local path where the repository should be cloned.
         """
+        if not self.preprocess:
+            local_repo_path = os.path.join(self.repo_directory, self.repo_name)
+            if self._is_repo_exists_locally(local_repo_path):
+                print("Repo is already cloned.")
+                return
         try:
             subprocess.run(['git', 'clone', repo_url, local_repo_path],
                            check=True)
@@ -129,6 +135,19 @@ class RepositoryManager:
             logging.error(f"Failed to get changed files: {e}")
             return []
 
+    def get_hash_and_author(self, local_repo_path) -> list:
+        try:
+            result = subprocess.run([
+                'git', '-C', local_repo_path, 'log', '-1',
+                '--pretty=format:%H%n%ae'
+            ],
+                                    capture_output=True,
+                                    text=True,
+                                    check=True)
+            return result.stdout.split('\n')
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Failed to get commit hash and author: {e}")
+
     def _preprocess_repo(self) -> tuple:
         """
         Preprocesses the repository by checking if it exists locally, fetching changes, and determining the type of request needed.
@@ -143,7 +162,7 @@ class RepositoryManager:
             self.fetch_remote_changes(local_repo_path)
             changed_files = self.get_changed_files(local_repo_path)
             status_file_name = [line.split('\t') for line in changed_files]
-
+            repo_info = self.get_hash_and_author(local_repo_path)
             removed_files = [
                 line[1] for line in status_file_name if line[0] == 'D'
             ]
@@ -159,7 +178,7 @@ class RepositoryManager:
                 self.pull_latest_changes(local_repo_path)
             else:
                 logging.info("No changes detected.")
-            return RequestType.FROM_SCRATCH, updated_files, removed_files
+            return RequestType.FROM_SCRATCH, updated_files, removed_files, repo_info
 
         logging.info(f"Cloning {self.git_url}...")
         self.clone_repo(self.git_url, local_repo_path)
