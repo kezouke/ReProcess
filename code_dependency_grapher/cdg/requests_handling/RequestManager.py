@@ -30,8 +30,8 @@ class RequestManager:
         repo_manager = RepositoryManager(self.repos_dir, git_url, True)
         RequestSession(repo_manager.request_type, self.db_abs_path,
                        str(uuid.uuid4()), repo_manager.repo_name,
-                       self.repos_dir, repo_manager.updated_files,
-                       repo_manager.removed_files)
+                       self.repos_dir, repo_manager.repo_info,
+                       repo_manager.updated_files, repo_manager.removed_files)
 
     def clone_repo(self, git_url):
         repo_manager = RepositoryManager(self.repos_dir, git_url, False)
