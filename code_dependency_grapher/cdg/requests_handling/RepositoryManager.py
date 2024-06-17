@@ -31,8 +31,8 @@ class RepositoryManager:
                               since the last operation.
     """
 
-    def __init__(self, repository_directory: str,
-                 git_hub_url: Optional[str]) -> None:
+    def __init__(self, repository_directory: str, git_hub_url: Optional[str],
+                 preprocess: Optional[bool]) -> None:
         """
         Initializes the RepositoryManager instance.
         
@@ -42,17 +42,18 @@ class RepositoryManager:
             git_hub_url (Optional[str]): URL of the Git repository. 
                                If None, assumes the repository is 
                                managed locally.
+            preprocess (Optional[str]): Flag for the initial preprocessing of the repo
         """
         self.repo_directory = repository_directory
         self.git_url = git_hub_url
-
+        self.preprocess = preprocess
         if self.git_url:
             self.repo_name = self.git_url.split('/')[-1].split('.')[0]
         else:
             self.repo_name = self.repo_directory.split('/')[-1].split('.')[0]
-
-        self.request_type, self.updated_files, self.removed_files = self._preprocess_repo(
-        )
+        if preprocess:
+            self.request_type, self.updated_files, self.removed_files = self._preprocess_repo(
+            )
 
     def _is_repo_exists_locally(self, local_repo_path: str) -> bool:
         """
@@ -74,6 +75,11 @@ class RepositoryManager:
             repo_url (str): URL of the Git repository to clone.
             local_repo_path (str): Local path where the repository should be cloned.
         """
+        if not self.preprocess:
+            local_repo_path = os.path.join(self.repo_directory, self.repo_name)
+            if self._is_repo_exists_locally(local_repo_path):
+                print("Repo is already cloned.")
+                return
         try:
             subprocess.run(['git', 'clone', repo_url, local_repo_path],
                            check=True)
