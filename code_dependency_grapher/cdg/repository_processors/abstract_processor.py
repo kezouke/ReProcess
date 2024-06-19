@@ -1,6 +1,5 @@
-from code_dependency_grapher.cdg.repository_processors.repositoty_container import RepositoryContainer
+from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
 from abc import ABC, abstractmethod
-
 
 class RepositoryProcessor(ABC):
 
