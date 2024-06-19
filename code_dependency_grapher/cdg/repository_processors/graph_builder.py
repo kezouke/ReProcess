@@ -92,3 +92,4 @@ class GraphBuilder(RepositoryProcessor):
         repository_container.files = [
             value for _, value in id_files_manager.id_file_map.items()
         ]
+        repository_container.external_components = external_components_dict
