@@ -17,11 +17,11 @@
 # # engine.request("https://github.com/showpiecep/SQLite_PyQt")
 # engine.request("https://github.com/IU-Capstone-Project-2024/SayNoMore")
 
-
 from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
 from code_dependency_grapher.cdg.repository_processors.graph_updater import GraphUpdater
 
-repo_container = RepositoryContainer("arxiv-feed", "/home/arxiv-feed", "home/db")
+repo_container = RepositoryContainer("arxiv-feed", "/home/arxiv-feed",
+                                     "home/db")
 GraphUpdater().process(repo_container)
 # for cmp in repo_container.code_components:
 #     print(cmp.component_id)
