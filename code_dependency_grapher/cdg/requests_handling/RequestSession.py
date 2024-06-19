@@ -23,6 +23,7 @@ class RequestSession:
         self.repos_dir = os.path.join(repos_dir, self.repo_name)
         self.repo_hash = repo_info[0]
         self.repo_author = repo_info[1]
+
         if mode == RequestType.FROM_SCRATCH:
             # graph builder from scratch
             python_files = find_python_files(self.repos_dir)

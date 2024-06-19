@@ -29,7 +29,7 @@ class CodeComponent:
     def __init__(
         self,
         component_id: str,
-        repos_dir: str,
+        repos_dir: Optional[str] = None,
         id_files_manager: Optional[IdFileAnalyzerMapper] = None,
         file_path_ast_map: Optional[Dict[str, ast.Module]] = None,
         id_component_map: Optional[Dict[UUID, Tuple[str, str]]] = None,

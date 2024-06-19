@@ -2,6 +2,7 @@ from typing import Optional
 from code_dependency_grapher.cdg.requests_handling.RequestManager import RequestManager
 from code_dependency_grapher.utils.process_db_abs_path import process_abs_db_path
 from code_dependency_grapher.utils.regExp_finder import regExpFinder
+from code_dependency_grapher.cdg.CodeComponent import CodeComponent
 
 
 class Engine:
@@ -34,7 +35,9 @@ class Engine:
         self.request_manager = RequestManager(self.absolute_path,
                                               path_where_to_store_repos)
 
-    def request(self, repo_url: str) -> None:
+    def request(self,
+                repo_url: Optional[str] = None,
+                repo_folder_name: Optional[str] = None) -> None:
         """
         Initiates a request to fetch data from the specified repository URL.
         
@@ -44,12 +47,24 @@ class Engine:
         Args:
             repo_url (str): The URL of the repository from which data is requested.
         """
-        self.request_manager.manage_request(repo_url)
+        if repo_url:
+            self.request_manager.manage_request(repo_url)
+        elif repo_folder_name:
+            self.request_manager.manage_request_from_folder(repo_folder_name)
+        else:
+            raise Exception("Please, pass either repo_url or repo_folder_name")
 
-    def componentSearch(self, repo_name, regExpStr):
+    def componentSearch(self, repo_name, regExpStr) -> CodeComponent:
         found_component = regExpFinder.search(self.absolute_path, repo_name,
                                               regExpStr)
-        print(found_component)
+
+        return CodeComponent(
+            component_id=found_component['component_id'],
+            component_name=found_component['component_name'],
+            component_code=found_component['component_code'],
+            linked_component_ids=found_component['linked_component_ids'],
+            file_analyzer_id=found_component["file_id"],
+            external_component_ids=found_component["external_component_ids"])
 
     def clone(self, repo_url: str) -> None:
         self.request_manager.clone_repo(repo_url)

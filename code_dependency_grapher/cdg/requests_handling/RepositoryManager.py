@@ -31,8 +31,10 @@ class RepositoryManager:
                               since the last operation.
     """
 
-    def __init__(self, repository_directory: str, git_hub_url: Optional[str],
-                 preprocess: Optional[bool]) -> None:
+    def __init__(self,
+                 repository_directory: str = None,
+                 git_hub_url: Optional[str] = None,
+                 preprocess: Optional[bool] = True) -> None:
         """
         Initializes the RepositoryManager instance.
         
@@ -47,13 +49,23 @@ class RepositoryManager:
         self.repo_directory = repository_directory
         self.git_url = git_hub_url
         self.preprocess = preprocess
+
         if self.git_url:
             self.repo_name = self.git_url.split('/')[-1].split('.')[0]
         else:
             self.repo_name = self.repo_directory.split('/')[-1].split('.')[0]
+
         if preprocess:
             self.request_type, self.updated_files, self.removed_files, self.repo_info = self._preprocess_repo(
             )
+        else:
+            self.request_type = RequestType.FROM_SCRATCH
+            self.updated_files = []
+            self.removed_files = []
+            self.repo_info = [
+                "Unknown when the user passes the repo folder rather than the git url",
+                "Unknown when the user passes the repo folder rather than the git url"
+            ]
 
     def _is_repo_exists_locally(self, local_repo_path: str) -> bool:
         """
@@ -182,4 +194,5 @@ class RepositoryManager:
 
         logging.info(f"Cloning {self.git_url}...")
         self.clone_repo(self.git_url, local_repo_path)
-        return RequestType.FROM_SCRATCH, [], [], self.get_hash_and_author(local_repo_path)
+        return RequestType.FROM_SCRATCH, [], [], self.get_hash_and_author(
+            local_repo_path)

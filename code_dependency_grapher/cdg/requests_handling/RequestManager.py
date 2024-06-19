@@ -33,6 +33,15 @@ class RequestManager:
                        self.repos_dir, repo_manager.repo_info,
                        repo_manager.updated_files, repo_manager.removed_files)
 
+    def manage_request_from_folder(self, repo_folder_name):
+        repo_manager = RepositoryManager(repository_directory=os.path.join(
+            self.repos_dir, repo_folder_name),
+                                         preprocess=False)
+        RequestSession(repo_manager.request_type, self.db_abs_path,
+                       str(uuid.uuid4()), repo_manager.repo_name,
+                       self.repos_dir, repo_manager.repo_info,
+                       repo_manager.updated_files, repo_manager.removed_files)
+
     def clone_repo(self, git_url):
         repo_manager = RepositoryManager(self.repos_dir, git_url, False)
         repo_manager.clone_repo(git_url, self.repos_dir)
