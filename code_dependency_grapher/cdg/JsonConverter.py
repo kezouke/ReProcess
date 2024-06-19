@@ -51,7 +51,7 @@ class JsonConverter(RepositoryProcessor):
         # Create the directory if it doesn't exist
         if not os.path.exists(directory):
             os.makedirs(directory)
-        
+
         def set_default(obj):
             if isinstance(obj, set):
                 return list(obj)
