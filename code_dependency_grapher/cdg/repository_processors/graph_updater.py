@@ -49,7 +49,7 @@ class GraphUpdater(RepositoryProcessor):
 
         repository_container.files = [
             file for file in repository_container.files
-            if file.file_id not in removed_components_ids
+            if file.file_id not in removed_file_ids
         ]
 
         print()
@@ -68,7 +68,7 @@ class GraphUpdater(RepositoryProcessor):
         repository_container.code_components = [
             code_component
             for code_component in repository_container.code_components
-            if code_components.component_id not in removed_components_ids
+            if code_component.component_id not in removed_components_ids
             or code_component.component_id not in updated_components_ids
         ]
 
