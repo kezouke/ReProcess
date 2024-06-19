@@ -50,7 +50,7 @@ from code_dependency_grapher.cdg.repository_processors.processors_compose import
 
 repo_container = RepositoryContainer("arxiv-feed", "/home/arxiv-feed",
                                      "/home/db")
-Compose(repo_container,[GraphBuilder(), JsonConverter()])
+Compose(repo_container, [GraphBuilder(), JsonConverter()])
 
 # for cmp in repo_container.code_components:
 #     print(cmp.component_id)
