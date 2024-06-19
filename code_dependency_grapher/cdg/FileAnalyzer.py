@@ -25,7 +25,8 @@ class FileAnalyzer:
                  package_components_names: Optional[List[str]] = None,
                  imports: Optional[List[str]] = None,
                  called_components: Optional[List[str]] = None,
-                 callable_components: Optional[List[str]] = None):
+                 callable_components: Optional[List[str]] = None,
+                 deparse: bool = False):
         """
         Initializes a new instance of the FileAnalyzer class.
         
@@ -36,17 +37,22 @@ class FileAnalyzer:
             imports (Optional[List[str]], optional): List of imported modules or names. Defaults to None.
             called_components (Optional[List[str]], optional): List of components that are called within the file. Defaults to None.
             callable_components (Optional[List[str]], optional): List of components that can be called, including functions and classes. Defaults to None.
+            deparse: Optional[bool] = False
         """
         self.file_id = file_id
         self.file_path = "/".join(
             file_path.split(f'{repos_dir}')[1].split("/")[1:])
+        # print(f'original path: {self.file_path}')
         self.file_path_ast_map = file_path_ast_map
         self.package_components_names = package_components_names
-        self.imports = imports or self.extract_imports()
-        self.called_components = called_components or self.extract_called_components(
-        )
-        self.callable_components = callable_components or self.extract_callable_components(
-        )
+        if deparse:
+            self.imports = imports
+            self.called_components = called_components
+            self.callable_components = callable_components
+        else:
+            self.imports = self.extract_imports()
+            self.called_components = self.extract_called_components()
+            self.callable_components = self.extract_callable_components()
 
     def extract_imports(self):
         """
