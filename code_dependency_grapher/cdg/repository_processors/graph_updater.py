@@ -36,7 +36,6 @@ class GraphUpdater(RepositoryProcessor):
         updated_files_relative_paths = [
             line[1] for line in status_file_name if line[0] != 'D'
         ]
-        
 
         print("Removed files")
         print(removed_files)
@@ -55,7 +54,8 @@ class GraphUpdater(RepositoryProcessor):
 
         repository_container.files = [
             file for file in repository_container.files
-            if file.file_id not in removed_file_ids and file.file_id not in updated_files_ids
+            if file.file_id not in removed_file_ids
+            and file.file_id not in updated_files_ids
         ]
 
         print()
@@ -96,9 +96,10 @@ class GraphUpdater(RepositoryProcessor):
         # Map component identifiers to their corresponding components
         id_component_manager = IdComponentMapper(
             repository_container.repo_path, file_components_map)
-        
+
         for code_component in repository_container.code_components:
-            id_component_manager.component_id_map[code_component.component_name] = code_component.component_id
+            id_component_manager.component_id_map[
+                code_component.component_name] = code_component.component_id
 
         # Analyze files to map them to their unique identifiers and other relevant data
         id_files_manager = IdFileAnalyzerMapper(updated_files, ast_manager,

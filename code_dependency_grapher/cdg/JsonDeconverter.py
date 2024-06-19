@@ -19,14 +19,14 @@ class JsonDeconverter:
 
         for file in json_dict["files"]:
             repository_container.files.append(
-                FileAnalyzer(file["file_id"],
-                             f"{repository_container.repo_path}/{file['file_path']}",
-                             repository_container.repo_path,
-                             imports=file["imports"],
-                             called_components=file['called_components'],
-                             callable_components=file['callable_components'],
-                             deparse = True)
-                             )
+                FileAnalyzer(
+                    file["file_id"],
+                    f"{repository_container.repo_path}/{file['file_path']}",
+                    repository_container.repo_path,
+                    imports=file["imports"],
+                    called_components=file['called_components'],
+                    callable_components=file['callable_components'],
+                    deparse=True))
         for component in json_dict["components"]:
             repository_container.code_components.append(
                 CodeComponent(

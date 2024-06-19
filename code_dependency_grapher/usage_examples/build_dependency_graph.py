@@ -21,11 +21,7 @@ from code_dependency_grapher.cdg.repository_processors.repository_container impo
 from code_dependency_grapher.cdg.repository_processors.graph_updater import GraphUpdater
 from code_dependency_grapher.cdg.JsonDeconverter import JsonDeconverter
 
-
-repo_container = RepositoryContainer("arxiv-feed", 
-                                     "/home/arxiv-feed",
-                                     "",
-                                     "",
+repo_container = RepositoryContainer("arxiv-feed", "/home/arxiv-feed", "", "",
                                      "/home/db")
 
 JsonDeconverter().deconvert(repo_container)
