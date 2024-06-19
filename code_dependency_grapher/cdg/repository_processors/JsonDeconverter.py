@@ -39,3 +39,4 @@ class JsonDeconverter(RepositoryProcessor):
                     file_analyzer_id=component["file_id"],
                     external_component_ids=component["external_component_ids"])
             )
+        repository_container.external_components = json_dict["external_components"]
