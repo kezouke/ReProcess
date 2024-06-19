@@ -2,7 +2,7 @@ import os
 from code_dependency_grapher.cdg.requests_handling.RequestEnum import RequestType
 from code_dependency_grapher.cdg.GraphCreator import GraphCreator
 from code_dependency_grapher.utils.find_python_files import find_python_files
-from code_dependency_grapher.cdg.JsonConverter import JsonConverter
+from code_dependency_grapher.cdg.repository_processors.JsonConverter import JsonConverter
 
 
 class RequestSession:
