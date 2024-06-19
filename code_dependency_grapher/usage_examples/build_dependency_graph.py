@@ -47,10 +47,15 @@ from code_dependency_grapher.cdg.repository_processors.repository_container impo
 from code_dependency_grapher.cdg.repository_processors.graph_builder import GraphBuilder
 from code_dependency_grapher.cdg.repository_processors.JsonConverter import JsonConverter
 from code_dependency_grapher.cdg.repository_processors.processors_compose import Compose
+from code_dependency_grapher.cdg.repository_processors.clone_repository import CloneRepository
 
 repo_container = RepositoryContainer("arxiv-feed", "/home/arxiv-feed",
                                      "/home/db")
-Compose(repo_container, [GraphBuilder(), JsonConverter()])
+Compose(repo_container, [
+    CloneRepository("https://github.com/arXiv/arxiv-feed"),
+    GraphBuilder(),
+    JsonConverter()
+])
 
 # for cmp in repo_container.code_components:
 #     print(cmp.component_id)
