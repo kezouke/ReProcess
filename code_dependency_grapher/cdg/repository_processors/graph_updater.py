@@ -6,7 +6,6 @@ from code_dependency_grapher.utils.mappers.IdComponentMapper import IdComponentM
 from code_dependency_grapher.utils.mappers.IdFileAnalyzerMapper import IdFileAnalyzerMapper
 from code_dependency_grapher.utils.find_components import extract_components_from_files
 from code_dependency_grapher.cdg.repository_processors.abstract_processor import RepositoryProcessor
-from code_dependency_grapher.utils.find_python_files import find_python_files
 from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
 
 
@@ -22,15 +21,23 @@ class GraphUpdater(RepositoryProcessor):
             preprocess=False
         ).get_changed_files(repository_container.repo_path)
         status_file_name = [line.split('\t') for line in changed_files]
+
+        print(status_file_name)
         removed_files = [
-            line[1].split(repository_container.repo_name + "/")[1] for line in status_file_name if line[0] == 'D'
+            repository_container.repo_path + "/" + line[1] for line in status_file_name if line[0] == 'D'
         ]
         updated_files = [
-            line for line in status_file_name if line[0] != 'D'
+            repository_container.repo_path + "/" + line[1] for line in status_file_name if line[0] != 'D'
         ]
         updated_files_relative_paths = [
-            line[1].split(repository_container.repo_name + "/")[1] for line in status_file_name if line[0] != 'D'
+            line[1] for line in status_file_name if line[0] != 'D'
         ]
+
+        print("Removed files")
+        print(removed_files)
+        print("\nUpdated files")
+        print(updated_files)
+
         
         removed_file_ids = []
         updated_files_ids = []
@@ -42,6 +49,11 @@ class GraphUpdater(RepositoryProcessor):
         
         repository_container.files = [file for file in repository_container.files
                                       if file.file_id not in removed_components_ids]
+        
+        print()
+        print(removed_file_ids)
+        print()
+        print(updated_files_ids)
         
         removed_components_ids = []
         updated_components_ids = []
@@ -70,7 +82,7 @@ class GraphUpdater(RepositoryProcessor):
         file_components_map, _, package_components_names = extract_components_from_files(
             updated_files, repository_container.repo_path,
             ast_manager.file_path_ast_map)
-
+                
         # Map component identifiers to their corresponding components
         id_component_manager = IdComponentMapper(
             repository_container.repo_path, file_components_map)
