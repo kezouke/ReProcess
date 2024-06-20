@@ -1,15 +1,22 @@
 import json
 import re
 import os
+from code_dependency_grapher.cdg.repository_processors.abstract_processor import RepositoryProcessor
+from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
 
 
-class regExpFinder:
+class RegExpFinder(RepositoryProcessor):
 
-    def search(path_to_repo, repo_name, regExpStr: str):
+    def __init__(self, regExpStr: str):
+        self.regExpStr = regExpStr
+
+    def process(self, repository_container: RepositoryContainer):
 
         try:
-            path_to_repo = os.path.join(path_to_repo, repo_name, "data.json")
-            re.compile(regExpStr)
+            path_to_repo = os.path.join(repository_container.db_path,
+                                        repository_container.repo_name,
+                                        "data.json")
+            re.compile(self.regExpStr)
             with open(path_to_repo, "r") as file:
                 json_data = json.load(file)
 
@@ -17,7 +24,7 @@ class regExpFinder:
 
             for component in components:
                 component_name = component.get("component_name", "")
-                match = re.search(regExpStr, component_name)
+                match = re.search(self.regExpStr, component_name)
                 if match:
                     print(
                         f"Found match '{match.group()}' in component: {component_name}"

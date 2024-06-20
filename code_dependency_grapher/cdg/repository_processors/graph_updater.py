@@ -1,4 +1,5 @@
 import uuid
+import hashlib
 from code_dependency_grapher.cdg.requests_handling.RepositoryManager import RepositoryManager
 from code_dependency_grapher.cdg.CodeComponent import CodeComponent
 from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapper
@@ -16,12 +17,13 @@ class GraphUpdater(RepositoryProcessor):
 
     def process(self, repository_container: RepositoryContainer):
 
+        def is_removed(changed_file_status: str):
+            return changed_file_status[0] == 'D'
+
         changed_files = RepositoryManager(
             repository_directory=repository_container.repo_path,
             preprocess=False).get_changed_files(repository_container.repo_path)
         status_file_name = [line.split('\t') for line in changed_files]
-
-        is_removed = lambda x: x[0] == 'D'
 
         removed_files_relative_paths = [
             line[1] for line in status_file_name if is_removed(line)
@@ -104,7 +106,13 @@ class GraphUpdater(RepositoryProcessor):
                               id_files_manager, ast_manager.file_path_ast_map,
                               id_component_manager.id_component_map,
                               package_components_names))
-
+        for cmp_to_hash in code_components:
+            hashId = hashlib.sha256(
+                cmp_to_hash.getComponentAttribute('component_code').encode(
+                    'utf-8')).hexdigest()
+            id_component_manager.component_id_map[
+                cmp_to_hash.getComponentAttribute('component_name')] = hashId
+            cmp_to_hash.setComponentAttribute('component_id', hashId)
         # Identify external components and link internal components based on imports
         external_components_dict = repository_container.external_components
 
