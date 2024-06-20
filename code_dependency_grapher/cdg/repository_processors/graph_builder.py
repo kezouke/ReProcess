@@ -75,7 +75,7 @@ class GraphBuilder(RepositoryProcessor):
             id_component_manager.component_id_map[
                 cmp_to_hash.getComponentAttribute('component_name')] = hashId
             cmp_to_hash.setComponentAttribute('component_id', hashId)
-            
+
         # Identify external components and link internal components based on imports
         external_components_dict = {}
         all_internal_components = set(package_components_names)
