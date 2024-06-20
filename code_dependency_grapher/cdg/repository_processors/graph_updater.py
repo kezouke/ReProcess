@@ -22,35 +22,25 @@ class GraphUpdater(RepositoryProcessor):
             preprocess=False).get_changed_files(repository_container.repo_path)
         status_file_name = [line.split('\t') for line in changed_files]
 
-        print(status_file_name)
-        removed_files = [
-            repository_container.repo_path + "/" + line[1]
-            for line in status_file_name if line[0] == 'D'
-        ]
+        is_removed = lambda x: x[0] == 'D'
+
         removed_files_relative_paths = [
-            line[1] for line in status_file_name if line[0] == 'D'
+            line[1] for line in status_file_name if is_removed(line)
         ]
         updated_files = [
             repository_container.repo_path + "/" + line[1]
-            for line in status_file_name if line[0] != 'D'
+            for line in status_file_name if not is_removed(line)
         ]
         updated_files_relative_paths = [
-            line[1] for line in status_file_name if line[0] != 'D'
+            line[1] for line in status_file_name if not is_removed(line)
         ]
-
-        print("Removed files")
-        print(removed_files)
-        print(removed_files_relative_paths)
-        print("\nUpdated files")
-        print(updated_files)
-        print(updated_files_relative_paths)
 
         removed_file_ids = []
         updated_files_ids = []
         for file in repository_container.files:
             if file.file_path in removed_files_relative_paths:
                 removed_file_ids.append(file.file_id)
-            if file.file_path in updated_files_relative_paths:
+            elif file.file_path in updated_files_relative_paths:
                 updated_files_ids.append(file.file_id)
 
         repository_container.files = [
@@ -58,18 +48,14 @@ class GraphUpdater(RepositoryProcessor):
             if file.file_id not in removed_file_ids
             and file.file_id not in updated_files_ids
         ]
-
-        print()
-        print(removed_file_ids)
-        print()
-        print(updated_files_ids)
+        # FILTER TODO
 
         removed_components_ids = []
         updated_components_ids = []
         for code_component in repository_container.code_components:
             if code_component.file_analyzer_id in removed_file_ids:
                 removed_components_ids.append(code_component.component_id)
-            if code_component.file_analyzer_id in updated_files_ids:
+            elif code_component.file_analyzer_id in updated_files_ids:
                 updated_components_ids.append(code_component.component_id)
 
         repository_container.code_components = [
@@ -78,6 +64,8 @@ class GraphUpdater(RepositoryProcessor):
             if code_component.component_id not in removed_components_ids
             and code_component.component_id not in updated_components_ids
         ]
+
+        # FILTER TODO
 
         changed_components_ids = set(removed_components_ids +
                                      updated_components_ids)
