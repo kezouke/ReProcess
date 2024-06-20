@@ -1,5 +1,8 @@
 # Code Dependency Grapher README
 
+## Release Verison 
+#`0.1`
+
 ## Introduction
 The Code Dependency Grapher is a tool designed to manage dependencies within code repositories. This document provides instructions on how to set up and use the current version of the Code Dependency Grapher.
 
