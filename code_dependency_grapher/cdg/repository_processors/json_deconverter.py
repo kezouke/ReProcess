@@ -24,7 +24,6 @@ class JsonDeconverter(RepositoryProcessor):
         """
         self.class_map = class_map
 
-        
     def __call__(self, repository_container: RepositoryContainer):
         """
         Processes the given repository container by loading its state from a JSON file and populating the container.
