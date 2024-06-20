@@ -30,7 +30,7 @@ class JsonDeconverter(RepositoryProcessor):
         
         :param repository_container: An instance of RepositoryContainer to be populated with data from the JSON file.
         """
-        
+
         def dict_to_class(d, class_map):
             """
             Recursively converts a dictionary to a class instance using the provided class map.
@@ -46,18 +46,26 @@ class JsonDeconverter(RepositoryProcessor):
                     class_name = d.pop('__class__')
                     if class_name in class_map:
                         cls = class_map[class_name]
-                        instance = cls.__new__(cls)  # Create a new instance without calling __init__
+                        instance = cls.__new__(
+                            cls
+                        )  # Create a new instance without calling __init__
                         for key, value in d.items():
-                            setattr(instance, key, dict_to_class(value, class_map))
+                            setattr(instance, key,
+                                    dict_to_class(value, class_map))
                         return instance
-                return {key: dict_to_class(value, class_map) for key, value in d.items()}
+                return {
+                    key: dict_to_class(value, class_map)
+                    for key, value in d.items()
+                }
             elif isinstance(d, list):
                 return [dict_to_class(element, class_map) for element in d]
             else:
                 return d
-        
+
         # Define the path to the JSON file
-        self.json_path = os.path.join(repository_container.db_path, repository_container.repo_name, 'data.json')
+        self.json_path = os.path.join(repository_container.db_path,
+                                      repository_container.repo_name,
+                                      'data.json')
 
         # Load the JSON data
         with open(self.json_path, 'r') as file:
@@ -89,25 +97,21 @@ class JsonDeconverter(RepositoryProcessor):
                     component_code=component["component_code"],
                     linked_component_ids=component["linked_component_ids"],
                     file_analyzer_id=component["file_id"],
-                    external_component_ids=component["external_component_ids"]))
+                    external_component_ids=component["external_component_ids"])
+            )
 
         # Process external components
         tmp_external_components = json_dict["external_components"][0]
-        repository_container.external_components = {v: k for k, v in tmp_external_components.items()}
+        repository_container.external_components = {
+            v: k
+            for k, v in tmp_external_components.items()
+        }
 
         # Handle predefined attributes
         predefined_attributes = [
-            "external_components",
-            "code_components",
-            "files",
-            "repo_author",
-            "repo_hash",
-            "repo_name",
-            "repo_path",
-            "db_path",
-            "author",
-            "commit_hash",
-            "components"
+            "external_components", "code_components", "files", "repo_author",
+            "repo_hash", "repo_name", "repo_path", "db_path", "author",
+            "commit_hash", "components"
         ]
 
         # Extract and convert external attributes not defined in predefined_attributes
@@ -115,10 +119,11 @@ class JsonDeconverter(RepositoryProcessor):
         for key in json_dict:
             if key not in predefined_attributes:
                 external_attributes[key] = json_dict[key]
-        
+
         # Convert external attributes back to class instances
-        external_attributes = dict_to_class(external_attributes, self.class_map)
-        
+        external_attributes = dict_to_class(external_attributes,
+                                            self.class_map)
+
         # Populate the repository container with converted external attributes
         for key in external_attributes:
             setattr(repository_container, key, external_attributes[key])

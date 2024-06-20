@@ -18,7 +18,7 @@ class JsonConverter(RepositoryProcessor):
         
         :param repository_container: An instance of RepositoryContainer containing the repository's data.
         """
-        
+
         def class_to_dict(obj):
             """
             Recursively converts a class instance to a dictionary.
@@ -29,22 +29,28 @@ class JsonConverter(RepositoryProcessor):
             :return: A dictionary representation of the input object.
             """
             if isinstance(obj, dict):
-                return {key: class_to_dict(value) for key, value in obj.items()}
+                return {
+                    key: class_to_dict(value)
+                    for key, value in obj.items()
+                }
             elif isinstance(obj, list):
                 return [class_to_dict(element) for element in obj]
             elif hasattr(obj, "__dict__"):
-                data = {key: class_to_dict(value) for key, value in obj.__dict__.items()}
+                data = {
+                    key: class_to_dict(value)
+                    for key, value in obj.__dict__.items()
+                }
                 data['__class__'] = obj.__class__.__name__
-                return data 
+                return data
             else:
                 return obj
-            
+
         # Function to handle serialization of sets to lists
         def set_default(obj):
             if isinstance(obj, set):
                 return list(obj)
             raise TypeError(f"{type(obj)}")
-        
+
         # Initialize lists to hold component and file data
         component_data = []
         files_data = []
@@ -74,36 +80,40 @@ class JsonConverter(RepositoryProcessor):
 
         # Construct the main JSON structure
         result_json = {
-            "author": repository_container.repo_author,
-            "commit hash": repository_container.repo_hash,
-            "files": files_data,
-            "components": component_data,
-            "external_components": [{v: k for k, v in repository_container.external_components.items()}]
+            "author":
+            repository_container.repo_author,
+            "commit hash":
+            repository_container.repo_hash,
+            "files":
+            files_data,
+            "components":
+            component_data,
+            "external_components": [{
+                v: k
+                for k, v in repository_container.external_components.items()
+            }]
         }
 
         # Collect additional attributes not explicitly defined in the predefined attributes
         predefined_attributes = [
-            "external_components",
-            "code_components",
-            "files",
-            "repo_author",
-            "repo_hash",
-            "repo_name",
-            "repo_path",
-            "db_path"
+            "external_components", "code_components", "files", "repo_author",
+            "repo_hash", "repo_name", "repo_path", "db_path"
         ]
         external_attributes_of_repository = {}
         for attribute in repository_container.__dict__:
             if attribute not in predefined_attributes:
-                external_attributes_of_repository[attribute] = repository_container.__dict__[attribute]
+                external_attributes_of_repository[
+                    attribute] = repository_container.__dict__[attribute]
 
         # Add these additional attributes to the main JSON structure
-        addition_fields_for_json = class_to_dict(external_attributes_of_repository)
+        addition_fields_for_json = class_to_dict(
+            external_attributes_of_repository)
         for key in addition_fields_for_json:
             result_json[key] = addition_fields_for_json[key]
 
         # Define the path where the JSON will be saved
-        db_path = os.path.join(repository_container.db_path, repository_container.repo_name, "data.json")
+        db_path = os.path.join(repository_container.db_path,
+                               repository_container.repo_name, "data.json")
         directory = os.path.dirname(db_path)
 
         # Ensure the directory exists
