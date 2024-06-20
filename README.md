@@ -6,18 +6,26 @@
 ## Introduction
 The Code Dependency Grapher is a tool designed to manage dependencies within code repositories. This document provides instructions on how to set up and use the current version of the Code Dependency Grapher.
 
-## Installation
-1. **Clone the Repository**: First, clone the Code Dependency Grapher repository to your local machine.
+## Installation Steps
+1. **Clone the Repository**: Begin by cloning the Code Dependency Grapher repository to your local machine.
 
    ```bash
    git clone https://github.com/kezouke/TestGena
    ```
 
-2. **Navigate to the Project Directory**: Change your working directory to the project directory.
+2. **Navigate to the Project Directory**: Change directory to enter the project folder.
 
    ```bash
-   cd code_dependency_grapher
+   cd TestGena
    ```
+
+3. **Install the Library**: Execute the setup.py script to install the `code_dependency_grapher` library.
+
+   ```bash
+   python3 -m pip install -e .
+   ```
+
+These steps will set up the necessary environment for using the library in your local development environment.
 
 ## Usage
 
