@@ -17,12 +17,13 @@ class GraphUpdater(RepositoryProcessor):
 
     def process(self, repository_container: RepositoryContainer):
 
+        def is_removed(changed_file_status: str):
+            return changed_file_status[0] == 'D'
+
         changed_files = RepositoryManager(
             repository_directory=repository_container.repo_path,
             preprocess=False).get_changed_files(repository_container.repo_path)
         status_file_name = [line.split('\t') for line in changed_files]
-
-        is_removed = lambda x: x[0] == 'D'
 
         removed_files_relative_paths = [
             line[1] for line in status_file_name if is_removed(line)
