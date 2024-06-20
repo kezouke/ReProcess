@@ -44,14 +44,16 @@
 # # engine.request("https://github.com/IU-Capstone-Project-2024/SayNoMore")
 
 from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
-from code_dependency_grapher.cdg.repository_processors.graph_updater import GraphUpdater
+from code_dependency_grapher.cdg.repository_processors.graph_builder import GraphBuilder
 from code_dependency_grapher.cdg.repository_processors.JsonConverter import JsonConverter
-from code_dependency_grapher.cdg.repository_processors.JsonDeconverter import JsonDeconverter
-# from code_dependency_grapher.cdg.repository_processors.graph_builder import GraphBuilder
+from code_dependency_grapher.cdg.repository_processors.processors_compose import Compose
+from code_dependency_grapher.cdg.repository_processors.clone_repository import CloneRepository
 
 repo_container = RepositoryContainer("arxiv-feed", "/home/arxiv-feed",
                                      "/home/db")
-JsonDeconverter().process(repo_container)
-GraphUpdater().process(repo_container)
-# GraphBuilder().process(repo_container)
-JsonConverter().process(repo_container)
+Compose(repo_container, [
+    CloneRepository("https://github.com/arXiv/arxiv-feed"),
+    GraphBuilder(),
+    JsonConverter()
+])
+
