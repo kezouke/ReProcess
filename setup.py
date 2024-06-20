@@ -8,7 +8,7 @@ setup(
     author_email='eliwhatthe@gmail.com',
     packages=find_packages(),
     package_data={
-          'data': ['path.json'],
+        'data': ['path.json'],
     },
     url='https://github.com/kezouke/TestGena',
     license='MIT',
@@ -17,7 +17,7 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.9',
-    ]
+    ], 
     description='Tool to manage dependencies within code repositories',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown'
