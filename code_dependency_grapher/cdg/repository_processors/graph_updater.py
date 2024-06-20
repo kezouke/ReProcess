@@ -15,7 +15,7 @@ class GraphUpdater(RepositoryProcessor):
     def __init__(self) -> None:
         super().__init__()
 
-    def process(self, repository_container: RepositoryContainer):
+    def __call__(self, repository_container: RepositoryContainer):
 
         def is_removed(changed_file_status: str):
             return changed_file_status[0] == 'D'

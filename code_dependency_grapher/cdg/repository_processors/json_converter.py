@@ -12,7 +12,7 @@ class JsonConverter(RepositoryProcessor):
     It also handles saving this JSON object to a file within the repository's database path.
     """
 
-    def process(self, repository_container: RepositoryContainer):
+    def __call__(self, repository_container: RepositoryContainer):
         """
         Processes the given repository container and saves its data in JSON format to a file.
         

@@ -9,7 +9,7 @@ class CloneRepository(RepositoryProcessor):
     def __init__(self, git_url: str):
         self.git_url = git_url
 
-    def process(self, repository_container: RepositoryContainer):
+    def __call__(self, repository_container: RepositoryContainer):
         store_repo_path = os.path.dirname(repository_container.repo_path)
         repo_manager = RepositoryManager(store_repo_path, self.git_url, False)
         repo_manager.clone_repo(self.git_url, store_repo_path)

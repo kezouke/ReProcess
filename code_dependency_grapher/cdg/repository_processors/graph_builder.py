@@ -26,7 +26,7 @@ class GraphBuilder(RepositoryProcessor):
     def __init__(self) -> None:
         super().__init__()
 
-    def process(self, repository_container: RepositoryContainer):
+    def __call__(self, repository_container: RepositoryContainer):
         """
         Orchestrates the construction of a dependency graph from a set of Python files contained within a repository.
 
