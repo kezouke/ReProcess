@@ -1,4 +1,5 @@
 import uuid
+import hashlib
 from code_dependency_grapher.cdg.requests_handling.RepositoryManager import RepositoryManager
 from code_dependency_grapher.cdg.CodeComponent import CodeComponent
 from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapper
@@ -116,7 +117,13 @@ class GraphUpdater(RepositoryProcessor):
                               id_files_manager, ast_manager.file_path_ast_map,
                               id_component_manager.id_component_map,
                               package_components_names))
-
+        for cmp_to_hash in code_components:
+            hashId = hashlib.sha256(
+                cmp_to_hash.getComponentAttribute('component_code').encode(
+                    'utf-8')).hexdigest()
+            id_component_manager.component_id_map[
+                cmp_to_hash.getComponentAttribute('component_name')] = hashId
+            cmp_to_hash.setComponentAttribute('component_id', hashId)
         # Identify external components and link internal components based on imports
         external_components_dict = repository_container.external_components
 
