@@ -5,5 +5,5 @@ from abc import ABC, abstractmethod
 class RepositoryProcessor(ABC):
 
     @abstractmethod
-    def process(self, repository_container: RepositoryContainer):
+    def __call__(self, repository_container: RepositoryContainer):
         pass

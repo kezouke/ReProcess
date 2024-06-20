@@ -8,7 +8,7 @@ from code_dependency_grapher.cdg.repository_processors.repository_container impo
 
 class JsonDeconverter(RepositoryProcessor):
 
-    def process(self, repository_container: RepositoryContainer):
+    def __call__(self, repository_container: RepositoryContainer):
         self.json_path = os.path.join(repository_container.db_path,
                                       repository_container.repo_name,
                                       'data.json')

@@ -15,12 +15,12 @@ class Compose:
         self.deep_copied_repository_container = None
         if in_place:
             for processor in composeList:
-                processor.process(repository_container)
+                processor(repository_container)
         else:
             self.deep_copied_repository_container = copy.deepcopy(
                 repository_container)
             for processor in composeList:
-                processor.process(self.deep_copied_repository_container)
+                processor(self.deep_copied_repository_container)
 
     def get_processed_container(self) -> RepositoryContainer:
         if not self.in_place:

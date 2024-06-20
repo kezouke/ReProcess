@@ -6,7 +6,7 @@ from code_dependency_grapher.cdg.repository_processors.repository_container impo
 
 class JsonConverter(RepositoryProcessor):
 
-    def process(self, repository_container: RepositoryContainer):
+    def __call__(self, repository_container: RepositoryContainer):
         component_data = []
         for component in repository_container.code_components:
             component_dict = {
