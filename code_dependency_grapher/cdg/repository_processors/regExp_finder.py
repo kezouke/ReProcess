@@ -5,7 +5,7 @@ from code_dependency_grapher.cdg.repository_processors.abstract_processor import
 from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
 
 
-class RegExpFinder(RepositoryContainer):
+class RegExpFinder(RepositoryProcessor):
 
     def __init__(self, regExpStr: str):
         self.regExpStr = regExpStr

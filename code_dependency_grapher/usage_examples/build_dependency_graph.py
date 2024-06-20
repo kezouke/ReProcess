@@ -48,7 +48,7 @@ from code_dependency_grapher.cdg.repository_processors.graph_builder import Grap
 from code_dependency_grapher.cdg.repository_processors.JsonConverter import JsonConverter
 from code_dependency_grapher.cdg.repository_processors.processors_compose import Compose
 from code_dependency_grapher.cdg.repository_processors.clone_repository import CloneRepository
-from code_dependency_grapher.utils.regExp_finder import RegExpFinder
+from code_dependency_grapher.cdg.repository_processors.regExp_finder import RegExpFinder
 
 repo_container = RepositoryContainer("arxiv-feed", "/home/arxiv-feed",
                                      "/home/db")

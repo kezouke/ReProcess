@@ -1,7 +1,7 @@
 from typing import Optional
 from code_dependency_grapher.cdg.requests_handling.RequestManager import RequestManager
 from code_dependency_grapher.utils.process_db_abs_path import process_abs_db_path
-from code_dependency_grapher.utils.regExp_finder import regExpFinder
+from TestGena.code_dependency_grapher.cdg.repository_processors.regExp_finder import regExpFinder
 from code_dependency_grapher.cdg.CodeComponent import CodeComponent
 
 
