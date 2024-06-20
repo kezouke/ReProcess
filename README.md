@@ -18,7 +18,7 @@ The Code Dependency Grapher is a tool designed to manage dependencies within cod
 
 ## Usage
 
-### Running the Engine
+### Running the Code Dependency Grapher
 To run the Code Dependency Grapher, you need to execute the `build_dependency_graph.py` script by using command: ``python -m code_dependency_grapher.usage_examples.building_dependency_graph``.
 
 Below is an example script illustrating how to use the script.
