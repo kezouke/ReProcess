@@ -18,7 +18,6 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.9',
     ], 
-    description='Tool to manage dependencies within code repositories',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown'
 )
