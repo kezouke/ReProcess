@@ -57,7 +57,3 @@ Compose(repo_container, [
     JsonConverter()
 ])
 
-# for cmp in repo_container.code_components:
-#     print(cmp.component_id)
-#     print(cmp.linked_component_ids)
-#     print(cmp.component_name)

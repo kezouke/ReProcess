@@ -118,7 +118,7 @@ class GraphUpdater(RepositoryProcessor):
                               package_components_names))
 
         # Identify external components and link internal components based on imports
-        external_components_dict = {}
+        external_components_dict = repository_container.external_components
 
         all_packages = [
             cmp.component_name for cmp in repository_container.code_components
@@ -146,3 +146,4 @@ class GraphUpdater(RepositoryProcessor):
         repository_container.files += [
             value for _, value in id_files_manager.id_file_map.items()
         ]
+        repository_container.external_components = external_components_dict

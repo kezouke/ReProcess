@@ -52,6 +52,12 @@ class JsonConverter(RepositoryProcessor):
         if not os.path.exists(directory):
             os.makedirs(directory)
 
+            
+        def set_default(obj):
+            if isinstance(obj, set):
+                return list(obj)
+            raise TypeError
+
         with open(db_path, "w") as file:
-            file.write(json.dumps(result_json, indent=4))
+            file.write(json.dumps(result_json, indent=4, default=set_default))
             print(f"The graph was successfully built and saved to {db_path}.")
