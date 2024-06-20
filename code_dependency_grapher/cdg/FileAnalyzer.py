@@ -3,6 +3,7 @@ from typing import List, Optional, Dict
 from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapError
 from code_dependency_grapher.utils.import_path_extractor import get_import_statement_path
 
+
 class FileAnalyzer:
     """
     Analyzes a Python file to extract various components such as imports, called components, and callable components.
@@ -16,15 +17,16 @@ class FileAnalyzer:
         callable_components (List[str]): List of components that can be called, including functions and classes.
     """
 
-    def __init__(self, 
-                 file_id: str, 
+    def __init__(self,
+                 file_id: str,
                  file_path: str,
                  repos_dir: str,
                  file_path_ast_map: Optional[Dict[str, ast.Module]] = None,
                  package_components_names: Optional[List[str]] = None,
-                 imports: Optional[List[str]]=None,
-                 called_components: Optional[List[str]]=None,
-                 callable_components: Optional[List[str]]=None):
+                 imports: Optional[List[str]] = None,
+                 called_components: Optional[List[str]] = None,
+                 callable_components: Optional[List[str]] = None,
+                 deparse: bool = False):
         """
         Initializes a new instance of the FileAnalyzer class.
         
@@ -35,14 +37,22 @@ class FileAnalyzer:
             imports (Optional[List[str]], optional): List of imported modules or names. Defaults to None.
             called_components (Optional[List[str]], optional): List of components that are called within the file. Defaults to None.
             callable_components (Optional[List[str]], optional): List of components that can be called, including functions and classes. Defaults to None.
+            deparse: Optional[bool] = False
         """
         self.file_id = file_id
-        self.file_path = "/".join(file_path.split(f'{repos_dir}')[1].split("/")[1:])
+        self.file_path = "/".join(
+            file_path.split(f'{repos_dir}')[1].split("/")[1:])
+        # print(f'original path: {self.file_path}')
         self.file_path_ast_map = file_path_ast_map
         self.package_components_names = package_components_names
-        self.imports = imports or self.extract_imports()
-        self.called_components = called_components or self.extract_called_components()
-        self.callable_components = callable_components or self.extract_callable_components()
+        if deparse:
+            self.imports = imports
+            self.called_components = called_components
+            self.callable_components = callable_components
+        else:
+            self.imports = self.extract_imports()
+            self.called_components = self.extract_called_components()
+            self.callable_components = self.extract_callable_components()
 
     def extract_imports(self):
         """
@@ -55,7 +65,7 @@ class FileAnalyzer:
             List[str]: List of imported modules or names.
         """
         self._validate_ast_map()
-        
+
         tree = self.file_path_ast_map[self.file_path]
         imports = []
 
@@ -67,7 +77,7 @@ class FileAnalyzer:
                         imports.append(cmp.split(".")[-1])
             else:
                 append_aliases(node)
-        
+
         def get_wildcard_module(node):
             if node.level > 0:
                 current_package = get_import_statement_path(self.file_path)
@@ -86,7 +96,7 @@ class FileAnalyzer:
                 append_aliases(node)
             elif isinstance(node, ast.ImportFrom):
                 handle_import_from(node)
-        
+
         return imports
 
     def extract_called_components(self):
@@ -100,7 +110,7 @@ class FileAnalyzer:
             List[str]: List of called components.
         """
         self._validate_ast_map()
-        
+
         tree = self.file_path_ast_map[self.file_path]
 
         called_components = set()
@@ -125,7 +135,7 @@ class FileAnalyzer:
             List[str]: List of callable components.
         """
         self._validate_ast_map()
-        
+
         tree = self.file_path_ast_map[self.file_path]
 
         callable_components = set()
@@ -139,7 +149,7 @@ class FileAnalyzer:
                 callable_components.add(node.name)
 
         return list(callable_components)
-    
+
     def _validate_ast_map(self):
         """
         Validates that the file_path_ast_map attribute is not None.
@@ -153,7 +163,7 @@ class FileAnalyzer:
     def __str__(self) -> str:
         """Returns the file path as a string representation of the object."""
         return self.file_path
-    
+
     def __hash__(self) -> int:
         """Returns the hash value of the file path."""
         return hash(self.file_path)

@@ -26,19 +26,20 @@ class CodeComponent:
         external_component_ids (Optional[List[str]]): IDs of external components
     """
 
-    def __init__(self, 
-                 component_id: str,
-                 repos_dir: str,
-                 id_files_manager: Optional[IdFileAnalyzerMapper] = None,
-                 file_path_ast_map: Optional[Dict[str, ast.Module]] = None,
-                 id_component_map: Optional[Dict[UUID, Tuple[str, str]]] = None,
-                 package_components_names: Optional[List[str]] = None,
-                 component_name: Optional[str] = None,
-                 component_code: Optional[str] = None,
-                 linked_component_ids: Optional[List[str]] = None,
-                 file_analyzer_id: Optional[str] = None,
-                 external_component_ids: Optional[List[str]] = None,
-                 ):
+    def __init__(
+        self,
+        component_id: str,
+        repos_dir: Optional[str] = None,
+        id_files_manager: Optional[IdFileAnalyzerMapper] = None,
+        file_path_ast_map: Optional[Dict[str, ast.Module]] = None,
+        id_component_map: Optional[Dict[UUID, Tuple[str, str]]] = None,
+        package_components_names: Optional[List[str]] = None,
+        component_name: Optional[str] = None,
+        component_code: Optional[str] = None,
+        linked_component_ids: Optional[List[str]] = None,
+        file_analyzer_id: Optional[str] = None,
+        external_component_ids: Optional[List[str]] = None,
+    ):
         """
         Initializes a new instance of the CodeComponent class.
         
@@ -67,11 +68,13 @@ class CodeComponent:
         self.file_analyzer_id = file_analyzer_id
         self.external_component_ids = external_component_ids
         if self.file_analyzer_id is None:
-            self._get_file_analyzer()        
+            self._get_file_analyzer()
             if self.component_name is None:
                 file_path, cmp_name = self.id_component_map[self.component_id]
-                relative_repo_path = "/".join(file_path.split(f'{self.repos_dir}')[1].split("/"))
-                self.component_name = get_import_statement_path(relative_repo_path) + f".{cmp_name}"
+                relative_repo_path = "/".join(
+                    file_path.split(f'{self.repos_dir}')[1].split("/"))
+                self.component_name = get_import_statement_path(
+                    relative_repo_path) + f".{cmp_name}"
 
         self.component_name = self.component_name.replace("-", "_")
         # Extract code if file_analyzer is available and component_code is not set
@@ -82,6 +85,7 @@ class CodeComponent:
             self.linked_component_ids = []
         if self.external_component_ids is None:
             self.external_component_ids = []
+
     def _get_file_analyzer(self):
         """
         Retrieves the file analyzer based on the component's ID and updates the file_analyzer_id attribute.
@@ -92,10 +96,10 @@ class CodeComponent:
         """
         if self.id_component_map is None:
             raise IdComponentMapError("id_component_map is None")
-        
+
         if self.id_files_manager is None:
             raise IdFileAnalyzeMapError("id_files_manager is None")
-        
+
         path = self.id_component_map[self.component_id][0]
         self.file_analyzer_id = self.id_files_manager.path_id_map[path]
 
@@ -112,15 +116,16 @@ class CodeComponent:
         """
         self._validate_attributes()
 
-        file_analyzer = self.id_files_manager.id_file_map[self.file_analyzer_id]
+        file_analyzer = self.id_files_manager.id_file_map[
+            self.file_analyzer_id]
         tree = self.file_path_ast_map[file_analyzer.file_path]
-        
+
         component_tree, code = self._extract_component_code(tree)
-        used_imports = self._collect_used_imports(component_tree, 
+        used_imports = self._collect_used_imports(component_tree,
                                                   file_analyzer.imports)
 
-        import_statements_code = self._generate_import_statements(tree,
-                                                                  used_imports)
+        import_statements_code = self._generate_import_statements(
+            tree, used_imports)
 
         self.component_code = import_statements_code + "\n" + code
 
@@ -134,8 +139,8 @@ class CodeComponent:
 
     def _extract_component_code(self, tree):
         for node in tree.body:
-            if (isinstance(node, (ast.ClassDef, ast.FunctionDef)) and 
-                    node.name == self.id_component_map[self.component_id][1]):
+            if (isinstance(node, (ast.ClassDef, ast.FunctionDef)) and node.name
+                    == self.id_component_map[self.component_id][1]):
                 return node, ast.unparse(node)
         return None, ""
 
@@ -150,37 +155,39 @@ class CodeComponent:
         import_statements_code = ""
         for node in tree.body:
             if isinstance(node, ast.Import):
-                import_statements_code = self._handle_import_node(node,
-                                                                  used_imports,
-                                                                  import_statements_code)
+                import_statements_code = self._handle_import_node(
+                    node, used_imports, import_statements_code)
             elif isinstance(node, ast.ImportFrom):
-                import_statements_code = self._handle_import_from_node(node,
-                                                                       used_imports,
-                                                                       import_statements_code)
+                import_statements_code = self._handle_import_from_node(
+                    node, used_imports, import_statements_code)
         return import_statements_code
 
     def _handle_import_node(self, node, used_imports, import_statements_code):
         imports_to_add = [
-            alias for alias in node.names 
-            if alias.name in used_imports or (alias.asname is not None and alias.asname in used_imports)
+            alias for alias in node.names if alias.name in used_imports or (
+                alias.asname is not None and alias.asname in used_imports)
         ]
         if imports_to_add:
             code_line = ast.unparse(ast.Import(names=imports_to_add))
             return code_line + "\n" + import_statements_code
         return import_statements_code
 
-    def _handle_import_from_node(self, node, used_imports, import_statements_code):
+    def _handle_import_from_node(self, node, used_imports,
+                                 import_statements_code):
         imports_to_add = [
-            alias for alias in node.names 
-            if alias.name in used_imports or (alias.asname is not None and alias.asname in used_imports) or alias.name == "*"
+            alias for alias in node.names if alias.name in used_imports or (
+                alias.asname is not None and alias.asname in used_imports)
+            or alias.name == "*"
         ]
         if imports_to_add:
             module = self._resolve_module(node)
             if imports_to_add[0].name == "*":
-                imports_to_add = self._expand_wildcard_imports(module, used_imports)
+                imports_to_add = self._expand_wildcard_imports(
+                    module, used_imports)
 
-            if imports_to_add:       
-                code_line = ast.unparse(ast.ImportFrom(module=module, names=imports_to_add))
+            if imports_to_add:
+                code_line = ast.unparse(
+                    ast.ImportFrom(module=module, names=imports_to_add))
                 return code_line + "\n" + import_statements_code
         return import_statements_code
 
@@ -188,7 +195,7 @@ class CodeComponent:
         if node.level > 0:
             current_package = self.component_name
             splitted_package = current_package.split(".")
-            del splitted_package[-node.level-1:]      
+            del splitted_package[-node.level - 1:]
             if node.module:
                 splitted_package.append(node.module)
 
@@ -204,6 +211,11 @@ class CodeComponent:
                     new_imports.append(ast.alias(name=cmp_name))
         return new_imports
 
+    def getComponentAttribute(self, attribute_name):
+        return getattr(self, attribute_name, None)
+
+    def setComponentAttribute(self, attribute_name, value):
+        setattr(self, attribute_name, value)
 
     def extract_imports(self):
         """
@@ -212,7 +224,7 @@ class CodeComponent:
         Returns:
             List[str]: A list of import statements.
         """
-        tree = ast.parse(self.component_code)        
+        tree = ast.parse(self.component_code)
         imports = []
 
         for node in tree.body:
@@ -225,5 +237,5 @@ class CodeComponent:
                     module_name = node.module
                     component_name = alias.name
                     imports.append(f"{module_name}.{component_name}")
-        
+
         return imports
