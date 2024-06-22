@@ -2,8 +2,10 @@ from code_dependency_grapher.cdg.repository_processors import JsonConverter, Rep
 
 repo_container = RepositoryContainer("arxiv-feed", "/home/arxiv-feed",
                                      "/home/db")
-new_container = Compose(repo_container, [
+composition = Compose([
     CloneRepository("https://github.com/arXiv/arxiv-feed"),
     GraphBuilder(),
     JsonConverter()
 ])
+
+new_container = composition(repo_container)
