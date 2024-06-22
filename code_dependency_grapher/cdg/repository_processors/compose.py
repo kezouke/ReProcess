@@ -13,7 +13,7 @@ class Compose(RepositoryProcessor):
         self.inplace = inplace
 
     def __call__(self, repository_container: RepositoryContainer):
-        active_container = repository_container if self.in_place \
+        active_container = repository_container if self.inplace \
                             else copy.deepcopy(repository_container)
 
         for processor in self.processor_list:
