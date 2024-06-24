@@ -1,7 +1,7 @@
 import os
 import json
-from code_dependency_grapher.cdg.FileAnalyzer import FileAnalyzer
-from code_dependency_grapher.cdg.CodeComponent import CodeComponent
+from code_dependency_grapher.cdg.FileAnalyzer import FileContainer
+from code_dependency_grapher.cdg.CodeComponent import CodeComponentContainer
 from code_dependency_grapher.cdg.repository_processors.abstract_processor import RepositoryProcessor
 from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
 
@@ -23,6 +23,8 @@ class JsonDeconverter(RepositoryProcessor):
         :param class_map: A dictionary mapping class names to their corresponding classes.
         """
         self.class_map = class_map
+        self.class_map["RepositoryContainer"] = RepositoryContainer
+        self.class_map["FileContainer"] = FileContainer
 
     def __call__(self, repository_container: RepositoryContainer):
         """
@@ -71,48 +73,47 @@ class JsonDeconverter(RepositoryProcessor):
         with open(self.json_path, 'r') as file:
             json_dict = json.load(file)
 
-        # Populate the repository container with loaded data
-        repository_container.repo_author = json_dict["author"]
-        repository_container.repo_hash = json_dict["commit hash"]
+        # # Populate the repository container with loaded data
+        # repository_container.repo_author = json_dict["author"]
+        # repository_container.repo_hash = json_dict["commit hash"]
 
-        # Process files
-        for file in json_dict["files"]:
-            repository_container.files.append(
-                FileAnalyzer(
-                    file["file_id"],
-                    f"{repository_container.repo_path}/{file['file_path']}",
-                    repository_container.repo_path,
-                    imports=file["imports"],
-                    called_components=file['called_components'],
-                    callable_components=file['callable_components'],
-                    deparse=True))
+        # # Process files
+        # for file in json_dict["files"]:
+        #     repository_container.files.append(
+        #         FileContainer(
+        #             file["file_id"],
+        #             file['file_path'],
+        #             file["imports"],
+        #             file['called_components'],
+        #             file['callable_components']
+        #             ))
 
-        # Process components
-        for component in json_dict["components"]:
-            repository_container.code_components.append(
-                CodeComponent(
-                    component["component_id"],
-                    repository_container.repo_path,
-                    component_name=component["component_name"],
-                    component_code=component["component_code"],
-                    linked_component_ids=component["linked_component_ids"],
-                    file_analyzer_id=component["file_id"],
-                    external_component_ids=component["external_component_ids"])
-            )
+        # # Process components
+        # for component in json_dict["components"]:
+        #     repository_container.code_components.append(
+        #         CodeComponentContainer(
+        #             component["component_id"],
+        #             component_name=component["component_name"],
+        #             component_code=component["component_code"],
+        #             linked_component_ids=component["linked_component_ids"],
+        #             file_id=component["file_id"],
+        #             external_component_ids=component["external_component_ids"])
+        #     )
 
-        # Process external components
-        tmp_external_components = json_dict["external_components"][0]
-        repository_container.external_components = {
-            v: k
-            for k, v in tmp_external_components.items()
-        }
+        # # Process external components
+        # tmp_external_components = json_dict["external_components"][0]
+        # repository_container.external_components = {
+        #     v: k
+        #     for k, v in tmp_external_components.items()
+        # }
 
-        # Handle predefined attributes
-        predefined_attributes = [
-            "external_components", "code_components", "files", "repo_author",
-            "repo_hash", "repo_name", "repo_path", "db_path", "author",
-            "commit_hash", "components"
-        ]
+        # # Handle predefined attributes
+        # predefined_attributes = [
+        #     "external_components", "code_components", "files", "repo_author",
+        #     "repo_hash", "repo_name", "repo_path", "db_path", "author",
+        #     "commit_hash", "components"
+        # ]
+        predefined_attributes = []
 
         # Extract and convert external attributes not defined in predefined_attributes
         external_attributes = {}

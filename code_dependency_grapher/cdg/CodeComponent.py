@@ -8,7 +8,51 @@ from code_dependency_grapher.utils.mappers.IdComponentMapper import IdComponentM
 from code_dependency_grapher.utils.mappers.IdFileAnalyzerMapper import IdFileAnalyzerMapper, IdFileAnalyzeMapError
 
 
-class CodeComponent:
+class CodeComponentContainer:
+    def __init__(self,
+                 component_id: str,
+                 component_name: str,
+                 component_code: str,
+                 linked_component_ids: List[str],
+                 file_id: str,
+                 external_component_ids: List[str]) -> None:
+        self.component_id = component_id
+        self.component_name = component_name
+        self.component_code = component_code
+        self.linked_component_ids = linked_component_ids
+        self.file_id = file_id
+        self.external_component_ids = external_component_ids
+    
+    def getComponentAttribute(self, attribute_name):
+        return getattr(self, attribute_name, None)
+
+    def setComponentAttribute(self, attribute_name, value):
+        setattr(self, attribute_name, value)
+
+    def extract_imports(self):
+        """
+        Extracts and returns a list of import statements used by the component.
+        
+        Returns:
+            List[str]: A list of import statements.
+        """
+        tree = ast.parse(self.component_code)
+        imports = []
+
+        for node in tree.body:
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    module_name = alias.name
+                    imports.append(module_name)
+            elif isinstance(node, ast.ImportFrom):
+                for alias in node.names:
+                    module_name = node.module
+                    component_name = alias.name
+                    imports.append(f"{module_name}.{component_name}")
+
+        return imports
+
+class CodeComponentFiller:
     """
     Represents a code component - function or class in the python file.
     
@@ -239,3 +283,14 @@ class CodeComponent:
                     imports.append(f"{module_name}.{component_name}")
 
         return imports
+
+
+    def get_code_component_container(self) -> CodeComponentContainer:
+        return CodeComponentContainer(
+            self.component_id,
+            self.component_name,
+            self.component_code,
+            self.linked_component_ids,
+            self.file_analyzer_id,
+            self.external_component_ids
+        )

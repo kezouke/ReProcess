@@ -1,7 +1,7 @@
 import uuid
 import hashlib
 from code_dependency_grapher.cdg.requests_handling.RepositoryManager import RepositoryManager
-from code_dependency_grapher.cdg.CodeComponent import CodeComponent
+from code_dependency_grapher.cdg.CodeComponent import CodeComponentFiller
 from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapper
 from code_dependency_grapher.utils.mappers.IdComponentMapper import IdComponentMapper
 from code_dependency_grapher.utils.mappers.IdFileAnalyzerMapper import IdFileAnalyzerMapper
@@ -125,7 +125,7 @@ class GraphUpdater(RepositoryProcessor):
         # Construct code components based on the identified components and their relationships
         for cmp_id in id_component_manager.id_component_map:
             code_components.append(
-                CodeComponent(cmp_id, repository_container.repo_path,
+                CodeComponentFiller(cmp_id, repository_container.repo_path,
                               id_files_manager, ast_manager.file_path_ast_map,
                               id_component_manager.id_component_map,
                               package_components_names))
@@ -163,8 +163,9 @@ class GraphUpdater(RepositoryProcessor):
                 cmp.external_component_ids.append(e_id)
 
         # Populate the repository container with the constructed code components and files
-        repository_container.code_components += code_components
+        repository_container.code_components += list(map(lambda c: c.get_code_component_container(),
+                                                    code_components))
         repository_container.files += [
-            value for _, value in id_files_manager.id_file_map.items()
+            value.get_file_container() for _, value in id_files_manager.id_file_map.items()
         ]
         repository_container.external_components = external_components_dict

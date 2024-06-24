@@ -3,8 +3,34 @@ from typing import List, Optional, Dict
 from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapError
 from code_dependency_grapher.utils.import_path_extractor import get_import_statement_path
 
+class FileContainer:
+    """
+    {
+            "file_id": "eb432f97-45a5-45b3-8d4f-c7d20ace1456",
+            "file_path": "main.py",
+            "imports": [
+                "create_web_app"
+            ],
+            "called_components": [
+                "run",
+                "create_web_app"
+            ],
+            "callable_components": []
+        },
+    """
+    def __init__(self,
+                 file_id: str,
+                 file_path: str,
+                 imports: List[str],
+                 called_components: List[str],
+                 callable_components: List[str]) -> None:
+        self.file_id = file_id
+        self.file_path = file_path
+        self.imports = imports
+        self.called_components = called_components
+        self.callable_components = callable_components
 
-class FileAnalyzer:
+class FileFiller:
     """
     Analyzes a Python file to extract various components such as imports, called components, and callable components.
     
@@ -167,3 +193,12 @@ class FileAnalyzer:
     def __hash__(self) -> int:
         """Returns the hash value of the file path."""
         return hash(self.file_path)
+    
+    def get_file_container(self) -> FileContainer:
+        return FileContainer(
+            self.file_id,
+            self.file_path,
+            self.imports,
+            self.called_components,
+            self.callable_components
+        )
