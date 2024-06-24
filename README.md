@@ -1,41 +1,107 @@
 # Code Dependency Grapher README
 
+## Release Verison 
+#`0.1`
+
 ## Introduction
 The Code Dependency Grapher is a tool designed to manage dependencies within code repositories. This document provides instructions on how to set up and use the current version of the Code Dependency Grapher.
 
-## Installation
-1. **Clone the Repository**: First, clone the Code Dependency Grapher repository to your local machine.
+## Installation Steps
+1. **Clone the Repository**: Begin by cloning the Code Dependency Grapher repository to your local machine.
 
    ```bash
    git clone https://github.com/kezouke/TestGena
    ```
 
-2. **Navigate to the Project Directory**: Change your working directory to the project directory.
+2. **Navigate to the Project Directory**: Change directory to enter the project folder.
 
    ```bash
-   cd code_dependency_grapher
+   cd TestGena
    ```
+
+3. **Install the Library**: Execute the setup.py script to install the `code_dependency_grapher` library.
+
+   ```bash
+   python3 -m pip install -e .
+   ```
+
+These steps will set up the necessary environment for using the library in your local development environment.
 
 ## Usage
 
-### Running the Code Dependency Grapher
-To run the Code Dependency Grapher, you need to execute the `build_dependency_graph.py` script by using command: ``python -m code_dependency_grapher.usage_examples.building_dependency_graph``.
+### Running the Code Dependency Grapher Example Script
+To execute the usage example script of our library, use the following command:
 
-Below is an example script illustrating how to use the script.
+```bash
+python -m code_dependency_grapher.usage_examples.building_dependency_graph
+```
 
-### Example Usage
+This script demonstrates how to utilize the Code Dependency Grapher library.
+
+### Example Usage Script
 ```python
 from code_dependency_grapher.cdg.repository_processors import GraphBuilder, JsonConverter, RepositoryContainer, Compose, CloneRepository
 
-repo_container = RepositoryContainer("arxiv-feed", "/home/arxiv-feed",
-                                     "/home/db")
+repo_container = RepositoryContainer("arxiv-feed", "/home/arxiv-feed", "/home/db")
 Compose(repo_container, [CloneRepository("https://github.com/arXiv/arxiv-feed"), GraphBuilder(), JsonConverter()])
 ```
 
-### Parameters of the repository container
-- **repo_name**: This is the name of repository
-- **repo_path**: This is the directory where the repository will be cloned.
-- **db_path**: This is the directory where the JSON graphs will be saved.
+### Parameters of the Repository Container
+- **repo_name**: Name of the repository.
+- **repo_path**: Directory where the repository will be cloned.
+- **db_path**: Directory where the JSON graphs will be saved.
+
+### List of Repository Processors:
+- **CloneRepository**: Clones a repository from a given Git URL.
+  **Example**: 
+  ```python
+  Compose(repo_container, [CloneRepository("https://github.com/arXiv/arxiv-feed")])
+  ```
+
+- **GraphBuilder**: Builds a graph of the repository and saves it into the specified `db_path`. It also populates the repository container.
+  **Example**: 
+  ```python
+  Compose(repo_container, [GraphBuilder()])
+  ```
+
+- **GraphUpdater**: Updates the graph of the repository and updates the `json` file accordingly, refining the repository container.
+  **Example**: 
+  ```python
+  Compose(repo_container, [GraphUpdater()])
+  ```
+
+- **JsonConverter**: Converts fields of the repository container into a `json` file, placed according to the specified `db_path`.
+  **Example**: 
+  ```python
+  Compose(repo_container, [JsonConverter()])
+  ```
+
+- **JsonDeconverter**: Converts `json` from the `repository_container.db_path` field and populates all attributes of the repository container.
+  **Example**: 
+  ```python
+  Compose(repo_container, [JsonDeconverter()])
+  ```
+
+- **RegExpFinder**: Searches components by name in the repository container and returns the `CodeComponent` class.
+  **Example**: 
+  ```python
+  Compose(repo_container, [RegExpFinder(r'\bfeed\.routes\.status\b')])
+  ```
+
+- **Compose**: Executes a sequence of other processors on the repository container.
+  - **Input**: `in_place: bool = True`.
+  **Example**: 
+  ```python
+  Compose(repo_container, [Processors_list])
+  ```
+
+  If using `in_place = False`, call the `get_processed_container` function.
+  **Example**: 
+  ```python
+  processed_container = Compose(repo_container, [Processors_list], in_place=False).get_processed_container()
+  ```
+  
+This set of processors allows flexible management and analysis of code dependencies within repositories.
 
 ### List of repository processors:
 - **CloneRepository**: This processor clones repository from given git url.
