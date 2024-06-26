@@ -19,17 +19,26 @@ def extract_components(file_path: str, repos_dir: str,
     Returns:
         List[str]: A list of names of the components found in the file.
     """
+    components = []
+
+    def visit_node(node):
+        if isinstance(node, ast.ClassDef):
+            components.append(node.name)
+            for class_body_node in node.body:
+                if isinstance(class_body_node, ast.FunctionDef):
+                    components.append(f"{node.name}.{class_body_node.name}")
+        elif isinstance(node, ast.FunctionDef):
+            components.append(node.name)
+
     if file_path_ast_map is None:
         raise FilePathAstMapError("file_path_ast_map is None")
 
     relative_repo_path = "/".join(
         file_path.split(f'{repos_dir}')[1].split("/")[1:])
     tree = file_path_ast_map[relative_repo_path]
-    components = []
-    for node in tree.body:
-        if isinstance(node, ast.ClassDef) or isinstance(node, ast.FunctionDef):
-            components.append(node.name)
 
+    for node in tree.body:
+        visit_node(node)
     return components
 
 
@@ -70,5 +79,4 @@ def extract_components_from_files(
         file_components_map[file_path] = components
         components_names.extend(components)
         package_components_names.extend(modules)
-
     return file_components_map, components_names, package_components_names
