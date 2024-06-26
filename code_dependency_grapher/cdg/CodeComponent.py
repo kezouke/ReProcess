@@ -9,24 +9,59 @@ from code_dependency_grapher.utils.mappers.IdFileAnalyzerMapper import IdFileAna
 
 
 class CodeComponentContainer:
-    def __init__(self,
-                 component_id: str,
-                 component_name: str,
-                 component_code: str,
-                 linked_component_ids: List[str],
-                 file_id: str,
-                 external_component_ids: List[str]) -> None:
+    """
+    Represents a container for a single code component (function or class) within a Python file.
+    
+    Attributes:
+        component_id (str): Unique identifier for the component.
+        component_name (str): Name of the component.
+        component_code (str): Source code of the component.
+        linked_component_ids (List[str]): IDs of components this component is linked to.
+        file_id (str): Identifier for the file containing the component.
+        external_component_ids (List[str]): IDs of external components referenced by this component.
+    """
+
+    def __init__(self, component_id: str, component_name: str,
+                 component_code: str, linked_component_ids: List[str],
+                 file_id: str, external_component_ids: List[str]) -> None:
+        """
+        Initializes a new instance of the CodeComponentContainer class.
+        
+        Parameters:
+            component_id (str): Unique identifier for the component.
+            component_name (str): Name of the component.
+            component_code (str): Source code of the component.
+            linked_component_ids (List[str]): IDs of components this component is linked to.
+            file_id (str): Identifier for the file containing the component.
+            external_component_ids (List[str]): IDs of external components referenced by this component.
+        """
         self.component_id = component_id
         self.component_name = component_name
         self.component_code = component_code
         self.linked_component_ids = linked_component_ids
         self.file_id = file_id
         self.external_component_ids = external_component_ids
-    
+
     def getComponentAttribute(self, attribute_name):
+        """
+        Retrieves the value of an attribute from the component container.
+        
+        Parameters:
+            attribute_name (str): Name of the attribute to retrieve.
+            
+        Returns:
+            Any: Value of the requested attribute, or None if the attribute does not exist.
+        """
         return getattr(self, attribute_name, None)
 
     def setComponentAttribute(self, attribute_name, value):
+        """
+        Sets the value of an attribute in the component container.
+        
+        Parameters:
+            attribute_name (str): Name of the attribute to set.
+            value: New value for the attribute.
+        """
         setattr(self, attribute_name, value)
 
     def extract_imports(self):
@@ -51,6 +86,7 @@ class CodeComponentContainer:
                     imports.append(f"{module_name}.{component_name}")
 
         return imports
+
 
 class CodeComponentFiller:
     """
@@ -284,13 +320,9 @@ class CodeComponentFiller:
 
         return imports
 
-
     def get_code_component_container(self) -> CodeComponentContainer:
-        return CodeComponentContainer(
-            self.component_id,
-            self.component_name,
-            self.component_code,
-            self.linked_component_ids,
-            self.file_analyzer_id,
-            self.external_component_ids
-        )
+        return CodeComponentContainer(self.component_id, self.component_name,
+                                      self.component_code,
+                                      self.linked_component_ids,
+                                      self.file_analyzer_id,
+                                      self.external_component_ids)

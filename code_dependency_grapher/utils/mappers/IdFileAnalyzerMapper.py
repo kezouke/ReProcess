@@ -48,10 +48,10 @@ class IdFileAnalyzerMapper:
         for path in python_files:
             id = str(uuid.uuid4()
                      )  # Generate a unique identifier for the current file.
-            file_analyzer = FileFiller(
-                id, path, self.repos_dir, ast_manager.file_path_ast_map,
-                package_components_names
-            )  # Initialize a FileAnalyzer instance.
+            file_analyzer = FileFiller(id, path, self.repos_dir,
+                                       ast_manager.file_path_ast_map,
+                                       package_components_names
+                                       )  # Initialize a FileAnalyzer instance.
             self.id_file_map[
                 id] = file_analyzer  # Map the unique identifier to the FileAnalyzer instance.
             self.path_id_map[

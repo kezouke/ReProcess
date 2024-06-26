@@ -23,7 +23,7 @@ class JsonDeconverter(RepositoryProcessor):
         :param class_map: A dictionary mapping class names to their corresponding classes.
         """
         self.class_map = class_map
-        self.class_map["RepositoryContainer"] = RepositoryContainer
+        self.class_map["CodeComponentContainer"] = CodeComponentContainer
         self.class_map["FileContainer"] = FileContainer
 
     def __call__(self, repository_container: RepositoryContainer):

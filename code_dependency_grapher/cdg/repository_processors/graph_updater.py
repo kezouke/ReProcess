@@ -78,9 +78,9 @@ class GraphUpdater(RepositoryProcessor):
         removed_components_ids = []
         updated_components_ids = []
         for code_component in repository_container.code_components:
-            if code_component.file_analyzer_id in removed_file_ids:
+            if code_component.file_id in removed_file_ids:
                 removed_components_ids.append(code_component.component_id)
-            elif code_component.file_analyzer_id in updated_files_ids:
+            elif code_component.file_id in updated_files_ids:
                 updated_components_ids.append(code_component.component_id)
 
         repository_container.code_components = list(
@@ -126,9 +126,10 @@ class GraphUpdater(RepositoryProcessor):
         for cmp_id in id_component_manager.id_component_map:
             code_components.append(
                 CodeComponentFiller(cmp_id, repository_container.repo_path,
-                              id_files_manager, ast_manager.file_path_ast_map,
-                              id_component_manager.id_component_map,
-                              package_components_names))
+                                    id_files_manager,
+                                    ast_manager.file_path_ast_map,
+                                    id_component_manager.id_component_map,
+                                    package_components_names))
 
         for cmp_to_hash in code_components:
             hashId = hashlib.sha256(
@@ -139,7 +140,10 @@ class GraphUpdater(RepositoryProcessor):
             cmp_to_hash.setComponentAttribute('component_id', hashId)
 
         # Identify external components and link internal components based on imports
-        external_components_dict = repository_container.external_components
+        external_components_dict = {
+            v: k
+            for k, v in repository_container.external_components.items()
+        }
 
         all_packages = [
             cmp.component_name for cmp in repository_container.code_components
@@ -163,9 +167,13 @@ class GraphUpdater(RepositoryProcessor):
                 cmp.external_component_ids.append(e_id)
 
         # Populate the repository container with the constructed code components and files
-        repository_container.code_components += list(map(lambda c: c.get_code_component_container(),
-                                                    code_components))
+        repository_container.code_components += list(
+            map(lambda c: c.get_code_component_container(), code_components))
         repository_container.files += [
-            value.get_file_container() for _, value in id_files_manager.id_file_map.items()
+            value.get_file_container()
+            for _, value in id_files_manager.id_file_map.items()
         ]
-        repository_container.external_components = external_components_dict
+        repository_container.external_components = {
+            v: k
+            for k, v in external_components_dict.items()
+        }
