@@ -29,6 +29,14 @@ class FileContainer:
         self.imports = imports
         self.called_components = called_components
         self.callable_components = callable_components
+    
+    def __str__(self) -> str:
+        """Returns the file path as a string representation of the object."""
+        return self.file_path
+
+    def __hash__(self) -> int:
+        """Returns the hash value of the file path."""
+        return hash(self.file_path)
 
 class FileFiller:
     """
