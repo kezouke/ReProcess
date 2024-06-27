@@ -71,7 +71,7 @@ class GraphBuilder(RepositoryProcessor):
 
         for cmp_to_hash in code_components:
             hashId = hashlib.sha256(
-                cmp_to_hash.getComponentAttribute('component_code').encode(
+                (cmp_to_hash.component_name + cmp_to_hash.getComponentAttribute('component_code')).encode(
                     'utf-8')).hexdigest()
             id_component_manager.component_id_map[
                 cmp_to_hash.getComponentAttribute('component_name')] = hashId
