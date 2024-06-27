@@ -1,9 +1,7 @@
 import os
 import json
-from code_dependency_grapher.cdg.FileAnalyzer import FileContainer
 from code_dependency_grapher.cdg.CodeComponent import CodeComponentContainer
 from code_dependency_grapher.cdg.FileAnalyzer import FileContainer
-from code_dependency_grapher.cdg.CodeComponent import CodeComponentContainer
 from code_dependency_grapher.cdg.repository_processors.abstract_processor import RepositoryProcessor
 from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
 
@@ -25,8 +23,6 @@ class JsonDeconverter(RepositoryProcessor):
         :param class_map: A dictionary mapping class names to their corresponding classes.
         """
         self.class_map = class_map
-        self.class_map["CodeComponentContainer"] = CodeComponentContainer
-        self.class_map["FileContainer"] = FileContainer
         self.class_map["CodeComponentContainer"] = CodeComponentContainer
         self.class_map["FileContainer"] = FileContainer
 
