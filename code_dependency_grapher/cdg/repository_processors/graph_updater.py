@@ -18,7 +18,7 @@ class GraphUpdater(RepositoryProcessor):
     It processes changes in files and components, updates the repository's structure accordingly, and constructs a new dependency graph.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, **kwargs) -> None:
         """
         Initializes the GraphUpdater.
         
@@ -27,14 +27,14 @@ class GraphUpdater(RepositoryProcessor):
         super().__init__()
 
     def is_removed(self, changed_file_status: str):
-            """
+        """
             Checks if a file has been removed based on its status string.
             
             :param changed_file_status: The status string of a file ('A' for added, 'M' for modified, 'D' for deleted).
             :return: True if the file has been removed, False otherwise.
             """
-            return changed_file_status[0] == 'D'
-    
+        return changed_file_status[0] == 'D'
+
     def __call__(self,
                  repository_container: RepositoryContainer,
                  inplace: bool = True):
@@ -43,8 +43,6 @@ class GraphUpdater(RepositoryProcessor):
         
         :param repository_container: The repository container holding the current state of the repository.
         """
-
-        
 
         # Retrieve and process changed files
         changed_files = RepositoryManager(

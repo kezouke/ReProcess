@@ -1,5 +1,6 @@
 actual_al = None
 
+
 def get_attribute_linker():
     global actual_al
     if actual_al:
@@ -7,8 +8,10 @@ def get_attribute_linker():
     else:
         actual_al = AttributeLinker()
         return actual_al
-    
+
+
 class AttributeLinker:
+
     def __init__(self):
         self.cls_to_attrs = dict()
         self.attrs_to_class = dict()
@@ -27,11 +30,11 @@ class AttributeLinker:
             if not attr_name in self.attrs_to_class.keys():
                 self.attrs_to_class[attr_name] = []
             self.attrs_to_class[attr_name].append(cls_name)
-            
-
 
     def get_classes_by_attrs(self, attr_list):
-        assert all([attr_name in self.attrs_to_class.keys() for attr_name in attr_list]), "Attribute is not registered for any RepositoryProcessor"
+        assert all([
+            attr_name in self.attrs_to_class.keys() for attr_name in attr_list
+        ]), "Attribute is not registered for any RepositoryProcessor"
 
         class_dict = dict()
         for attr_name in attr_list:

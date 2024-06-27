@@ -15,9 +15,6 @@ class CloneRepository(RepositoryProcessor):
         repo_manager.clone_repo()
         repo_info = repo_manager.get_hash_and_author(
             repository_container.repo_path)
-        # repository_container.repo_author = repo_info[1]
-        # repository_container.repo_hash = repo_info[0]
-        # repository_container.is_downloaded = True
 
         return {
             "repo_author": repo_info[1],

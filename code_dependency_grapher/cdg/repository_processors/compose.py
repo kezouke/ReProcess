@@ -5,11 +5,8 @@ from typing import List
 
 class Compose(RepositoryProcessor):
 
-    def __init__(self,
-                 processor_list: List[RepositoryProcessor],
-                 inplace: bool = True):
+    def __init__(self, processor_list: List[RepositoryProcessor], **kwargs):
         self.processor_list = processor_list
-        # self.inplace = inplace
 
     def __call__(self, repository_container: RepositoryContainer):
 

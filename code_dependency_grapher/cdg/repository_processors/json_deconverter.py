@@ -14,7 +14,7 @@ class JsonDeconverter(RepositoryProcessor):
     It also handles the reconstruction of complex objects like `FileAnalyzer` and `CodeComponent` instances based on the JSON data.
     """
 
-    def __init__(self, class_map: dict = {}):
+    def __init__(self, class_map: dict = {}, **kwargs):
         """
         Initializes the JsonDeconverter with a mapping of class names to classes.
         
@@ -42,8 +42,7 @@ class JsonDeconverter(RepositoryProcessor):
                 if class_name in class_map:
                     cls = class_map[class_name]
                     instance = cls.__new__(
-                        cls
-                    )  # Create a new instance without calling __init__
+                        cls)  # Create a new instance without calling __init__
                     for key, value in d.items():
                         setattr(instance, key,
                                 self.dict_to_class(value, class_map))
@@ -56,7 +55,7 @@ class JsonDeconverter(RepositoryProcessor):
             return [self.dict_to_class(element, class_map) for element in d]
         else:
             return d
-        
+
     def __call__(self,
                  repository_container: RepositoryContainer,
                  inplace: bool = True):
@@ -65,8 +64,6 @@ class JsonDeconverter(RepositoryProcessor):
         
         :param repository_container: An instance of RepositoryContainer to be populated with data from the JSON file.
         """
-
-        
 
         # Define the path to the JSON file
         self.json_path = os.path.join(repository_container.db_path,
@@ -87,9 +84,7 @@ class JsonDeconverter(RepositoryProcessor):
 
         # Convert external attributes back to class instances
         external_attributes = self.dict_to_class(external_attributes,
-                                            self.class_map)
+                                                 self.class_map)
 
         # Populate the repository container with converted external attributes
         return external_attributes
-        # for key in external_attributes:
-        #     setattr(repository_container, key, external_attributes[key])
