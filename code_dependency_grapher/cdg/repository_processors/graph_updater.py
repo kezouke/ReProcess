@@ -26,7 +26,9 @@ class GraphUpdater(RepositoryProcessor):
         """
         super().__init__()
 
-    def __call__(self, repository_container: RepositoryContainer, inplace: bool =True):
+    def __call__(self,
+                 repository_container: RepositoryContainer,
+                 inplace: bool = True):
         """
         Updates the repository's dependency graph based on changes detected in the repository.
         
@@ -183,9 +185,8 @@ class GraphUpdater(RepositoryProcessor):
         files = repository_container.files + new_files
         code_components = repository_container.code_components + new_code_components
 
-
-        return { "external_components": external_components,
-                "code_components": code_components,
-                "files" : files
+        return {
+            "external_components": external_components,
+            "code_components": code_components,
+            "files": files
         }
-

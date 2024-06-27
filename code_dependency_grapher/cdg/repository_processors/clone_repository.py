@@ -19,8 +19,8 @@ class CloneRepository(RepositoryProcessor):
         # repository_container.repo_hash = repo_info[0]
         # repository_container.is_downloaded = True
 
-        return{
-            "repo_author" : repo_info[1],
-            "repo_hash" : repo_info[0],
-            "is_downloaded" : True
-            }
+        return {
+            "repo_author": repo_info[1],
+            "repo_hash": repo_info[0],
+            "is_downloaded": True
+        }

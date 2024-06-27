@@ -113,4 +113,4 @@ class GraphBuilder(RepositoryProcessor):
             "code_components": code_components,
             "files": files,
             "external_components": external_components
-            }
+        }

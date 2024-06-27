@@ -8,7 +8,7 @@ class Compose(RepositoryProcessor):
 
     def __init__(self,
                  processor_list: List[RepositoryProcessor],
-                 inplace: bool =True):
+                 inplace: bool = True):
         self.processor_list = processor_list
         # self.inplace = inplace
 

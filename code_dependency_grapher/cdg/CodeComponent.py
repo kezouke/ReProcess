@@ -90,7 +90,7 @@ class CodeComponentContainer:
                     imports.append(f"{module_name}.{component_name}")
 
         return imports
-    
+
     def __eq__(self, other) -> bool:
         if isinstance(other, CodeComponentContainer):
             self_attrs = vars(self)
@@ -98,9 +98,10 @@ class CodeComponentContainer:
 
             if self_attrs.keys() != other_attrs.keys():
                 return False
-            
+
             for key in self_attrs.keys():
-                if key not in other_attrs or self_attrs[key]!= other_attrs[key]:
+                if key not in other_attrs or self_attrs[key] != other_attrs[
+                        key]:
                     return False
             return True
         else:
@@ -364,5 +365,3 @@ class CodeComponentFiller:
                                       self.file_analyzer_id,
                                       self.external_component_ids,
                                       self.component_type)
-    
-    

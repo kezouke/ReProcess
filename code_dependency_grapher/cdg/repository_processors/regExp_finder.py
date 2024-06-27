@@ -10,7 +10,9 @@ class RegExpFinder(RepositoryProcessor):
     def __init__(self, regExpStr: str):
         self.regExpStr = regExpStr
 
-    def __call__(self, repository_container: RepositoryContainer, inplace: bool =True):
+    def __call__(self,
+                 repository_container: RepositoryContainer,
+                 inplace: bool = True):
 
         try:
             path_to_repo = os.path.join(repository_container.db_path,
@@ -47,4 +49,3 @@ class RegExpFinder(RepositoryProcessor):
         except re.error:
             print("Given string is not valid regExp")
             return None
-        

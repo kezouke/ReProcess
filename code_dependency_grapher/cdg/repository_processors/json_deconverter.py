@@ -26,7 +26,9 @@ class JsonDeconverter(RepositoryProcessor):
         self.class_map["CodeComponentContainer"] = CodeComponentContainer
         self.class_map["FileContainer"] = FileContainer
 
-    def __call__(self, repository_container: RepositoryContainer, inplace: bool =True):
+    def __call__(self,
+                 repository_container: RepositoryContainer,
+                 inplace: bool = True):
         """
         Processes the given repository container by loading its state from a JSON file and populating the container.
         
