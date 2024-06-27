@@ -24,7 +24,7 @@ class JsonDeconverter(RepositoryProcessor):
         """
         self.class_map = class_map
 
-    def __call__(self, repository_container: RepositoryContainer):
+    def __call__(self, repository_container: RepositoryContainer, inplace: bool =True):
         """
         Processes the given repository container by loading its state from a JSON file and populating the container.
         
@@ -125,5 +125,6 @@ class JsonDeconverter(RepositoryProcessor):
                                             self.class_map)
 
         # Populate the repository container with converted external attributes
-        for key in external_attributes:
-            setattr(repository_container, key, external_attributes[key])
+        return external_attributes
+        # for key in external_attributes:
+        #     setattr(repository_container, key, external_attributes[key])

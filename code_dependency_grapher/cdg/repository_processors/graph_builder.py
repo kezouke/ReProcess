@@ -26,7 +26,7 @@ class GraphBuilder(RepositoryProcessor):
     def __init__(self) -> None:
         super().__init__()
 
-    def __call__(self, repository_container: RepositoryContainer):
+    def __call__(self, repository_container: RepositoryContainer, inplace: bool =True):
         """
         Orchestrates the construction of a dependency graph from a set of Python files contained within a repository.
 
@@ -97,8 +97,12 @@ class GraphBuilder(RepositoryProcessor):
                 cmp.external_component_ids.append(e_id)
 
         # Populate the repository container with the constructed code components and files
-        repository_container.code_components = code_components
-        repository_container.files = [
+        files = [
             value for _, value in id_files_manager.id_file_map.items()
         ]
-        repository_container.external_components = external_components_dict
+
+        return {
+            "code_components": code_components,
+            "files": files,
+            "external_components": external_components_dict
+            }

@@ -8,15 +8,13 @@ class Compose(RepositoryProcessor):
 
     def __init__(self,
                  processor_list: List[RepositoryProcessor],
-                 inplace: bool = False):
+                 inplace: bool =True):
         self.processor_list = processor_list
-        self.inplace = inplace
+        # self.inplace = inplace
 
     def __call__(self, repository_container: RepositoryContainer):
-        active_container = repository_container if self.inplace \
-                            else copy.deepcopy(repository_container)
 
         for processor in self.processor_list:
-            processor(active_container)
+            repository_container = processor(repository_container)
 
-        return active_container
+        return dict()

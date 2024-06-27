@@ -6,7 +6,7 @@ from code_dependency_grapher.cdg.repository_processors.repository_container impo
 
 class CloneRepository(RepositoryProcessor):
 
-    def __init__(self, git_url: str):
+    def __init__(self, git_url: str, **kwargs):
         self.git_url = git_url
 
     def __call__(self, repository_container: RepositoryContainer):
@@ -15,5 +15,12 @@ class CloneRepository(RepositoryProcessor):
         repo_manager.clone_repo(self.git_url, store_repo_path)
         repo_info = repo_manager.get_hash_and_author(
             repository_container.repo_path)
-        repository_container.repo_author = repo_info[1]
-        repository_container.repo_hash = repo_info[0]
+        # repository_container.repo_author = repo_info[1]
+        # repository_container.repo_hash = repo_info[0]
+        # repository_container.is_downloaded = True
+
+        return{
+            "repo_author" : repo_info[1],
+            "repo_hash" : repo_info[0],
+            "is_downloaded" : True
+            }
