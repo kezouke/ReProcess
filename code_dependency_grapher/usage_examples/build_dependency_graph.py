@@ -9,3 +9,5 @@ composition = Compose([
 ])
 
 new_container = composition(repo_container)
+print(f'New:{new_container.code_components[0]}')
+print(f'Old:{repo_container.code_components[0]}')

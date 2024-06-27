@@ -26,7 +26,7 @@ class GraphUpdater(RepositoryProcessor):
         """
         super().__init__()
 
-    def __call__(self, repository_container: RepositoryContainer):
+    def __call__(self, repository_container: RepositoryContainer, inplace: bool =True):
         """
         Updates the repository's dependency graph based on changes detected in the repository.
         
@@ -167,13 +167,24 @@ class GraphUpdater(RepositoryProcessor):
                 cmp.external_component_ids.append(e_id)
 
         # Populate the repository container with the constructed code components and files
-        repository_container.code_components += list(
+        code_components = list(
             map(lambda c: c.get_code_component_container(), code_components))
-        repository_container.files += [
+        new_files = [
             value.get_file_container()
             for _, value in id_files_manager.id_file_map.items()
         ]
-        repository_container.external_components = {
+        external_components = {
             v: k
             for k, v in external_components_dict.items()
         }
+
+        external_components.update(repository_container.external_components)
+        files = repository_container.files + new_files
+        code_components = repository_container.code_components + new_code_components
+
+
+        return { "external_components": external_components,
+                "code_components": code_components,
+                "files" : files
+        }
+

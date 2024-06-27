@@ -12,7 +12,7 @@ class JsonConverter(RepositoryProcessor):
     It also handles saving this JSON object to a file within the repository's database path.
     """
 
-    def __call__(self, repository_container: RepositoryContainer):
+    def __call__(self, repository_container: RepositoryContainer, inplace: bool =True):
         """
         Processes the given repository container and saves its data in JSON format to a file.
         
@@ -126,3 +126,7 @@ class JsonConverter(RepositoryProcessor):
         with open(db_path, "w") as file:
             file.write(json.dumps(result_json, indent=4, default=set_default))
             print(f"The graph was successfully built and saved to {db_path}.")
+
+        return {
+            "is_converted" : True
+        }

@@ -98,13 +98,18 @@ class GraphBuilder(RepositoryProcessor):
                 cmp.external_component_ids.append(e_id)
 
         # Populate the repository container with the constructed code components and files
-        repository_container.code_components = list(
+        code_components = list(
             map(lambda c: c.get_code_component_container(), code_components))
-        repository_container.files = [
+        files = [
             value.get_file_container()
             for _, value in id_files_manager.id_file_map.items()
         ]
-        repository_container.external_components = {
+        external_components = {
             v: k
             for k, v in external_components_dict.items()
         }
+        return {
+            "code_components": code_components,
+            "files": files,
+            "external_components": external_components
+            }
