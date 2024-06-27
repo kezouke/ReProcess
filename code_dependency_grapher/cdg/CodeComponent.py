@@ -23,7 +23,8 @@ class CodeComponentContainer:
 
     def __init__(self, component_id: str, component_name: str,
                  component_code: str, linked_component_ids: List[str],
-                 file_id: str, external_component_ids: List[str]) -> None:
+                 file_id: str, external_component_ids: List[str],
+                 component_type: str) -> None:
         """
         Initializes a new instance of the CodeComponentContainer class.
         
@@ -34,6 +35,8 @@ class CodeComponentContainer:
             linked_component_ids (List[str]): IDs of components this component is linked to.
             file_id (str): Identifier for the file containing the component.
             external_component_ids (List[str]): IDs of external components referenced by this component.
+            component_type (str): Whether component is class, method or function
+
         """
         self.component_id = component_id
         self.component_name = component_name
@@ -41,6 +44,7 @@ class CodeComponentContainer:
         self.linked_component_ids = linked_component_ids
         self.file_id = file_id
         self.external_component_ids = external_component_ids
+        self.component_type = component_type
 
     def getComponentAttribute(self, attribute_name):
         """
@@ -147,6 +151,7 @@ class CodeComponentFiller:
         self.linked_component_ids = linked_component_ids
         self.file_analyzer_id = file_analyzer_id
         self.external_component_ids = external_component_ids
+        self.component_type = ""
         if self.file_analyzer_id is None:
             self._get_file_analyzer()
             if self.component_name is None:
@@ -218,10 +223,27 @@ class CodeComponentFiller:
             raise IdFileAnalyzeMapError("id_files_manager is None")
 
     def _extract_component_code(self, tree):
+        component_name = self.id_component_map[self.component_id][1].split(".")
+
         for node in tree.body:
-            if (isinstance(node, (ast.ClassDef, ast.FunctionDef)) and node.name
-                    == self.id_component_map[self.component_id][1]):
+            if isinstance(node,
+                          ast.FunctionDef) and node.name == component_name[0]:
+                self.component_type = "function"
                 return node, ast.unparse(node)
+            elif isinstance(node,
+                            ast.ClassDef) and node.name == component_name[0]:
+                if len(component_name) == 1:
+                    self.component_type = "class"
+                    return node, ast.unparse(node)
+                else:
+                    # If it's a method within a class
+                    for class_node in node.body:
+                        if isinstance(
+                                class_node, ast.FunctionDef
+                        ) and class_node.name == component_name[1]:
+                            self.component_type = "method"
+                            return class_node, ast.unparse(class_node)
+
         return None, ""
 
     def _collect_used_imports(self, component_tree, file_imports):
@@ -325,4 +347,5 @@ class CodeComponentFiller:
                                       self.component_code,
                                       self.linked_component_ids,
                                       self.file_analyzer_id,
-                                      self.external_component_ids)
+                                      self.external_component_ids,
+                                      self.component_type)

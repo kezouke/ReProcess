@@ -145,6 +145,48 @@ If you're using ``in_place = False``, you need to call function ``get_processed_
 ```python 
 processed_container = Compose(repository_container, [Processors_list], in_place=False).get_processed_container()
 ```
+### List of repository processors:
+- **CloneRepository**: This processor clones repository from given git url.
+**Example**: 
+```python 
+Compose(repository_container, [CloneRepository("https://github.com/arXiv/arxiv-feed")])
+```
+
+- **GraphBuilder**: This processor builds graph of the given repository and saves it into the defined ``db_path``, also GraphBuilder fills given repository container.
+**Example**: 
+```python 
+Compose(repository_container, [GraphBuilder()])
+```
+- **GraphUpdater**: This processor updates graph of the given repository and changes the ``json`` file according to updates, also refine given repository container.
+**Example**: 
+```python 
+Compose(repository_container, [GraphUpdater()])
+```
+- **JsonConverter**: This processor convertes fields of the given ``repository container`` into the ``json`` file, placed according to given ``db_path``.
+**Example**: 
+```python 
+Compose(repository_container, [JsonConverter()])
+```
+- **JsonDeconverter**: This processor deconvertes ``json`` from ``repository_container.db_path`` field and fills in all attributes of ``repository_container``.
+**Example**: 
+```python 
+Compose(repository_container, [JsonDeconverter()])
+```
+- **RegExpFinder**: This processor searches components by name in given ``repository container``, returns ``CodeComponent`` class.
+**Example**: 
+```python 
+Compose(repository_container, [RegExpFinder(r'\bfeed\.routes\.status\b')])
+```
+- **Compose**: This is processor to execute sequence of the other processors on the given ``repository_container``, has input value: ``in_place: bool = True``.
+**Example**: 
+```python 
+Compose(repository_container, [Processors_list])
+```
+If you're using ``in_place = False``, you need to call function ``get_processed_container``
+**Example**: 
+```python 
+processed_container = Compose(repository_container, [Processors_list], in_place=False).get_processed_container()
+```
 ### JSON Tree Structure Description
 
 After running the analysis, the JSON structure stored at `db_url` will have the following format:
@@ -219,35 +261,36 @@ This structure helps in understanding the relationships and dependencies among v
                 "c1327f0a-b679-4c91-aa98-e4ccd2ed4b73",
                 "782625df-3b8b-4cee-b489-ac154218837d"
             ],
+            "component_type": "function",
             "__class__": "CodeComponentContainer"
         }
     ],
     "files": [
         {
-            "file_id": "bb2bd632-a392-429d-9b04-fc6e70fd5875",
-            "file_path": "feed/routes.py",
+            "file_id": "03ea4512-375c-457e-b8c9-a53f70c0c1c5",
+            "file_path": "feed/serializers/extensions.py",
             "imports": [
-                "Union",
-                "timedelta",
-                "Response",
-                "request",
-                "Blueprint",
-                "make_response",
-                "redirect",
-                "url_for",
-                "current_app",
-                "ARCHIVES_ACTIVE",
-                "add_surrogate_key",
-                "controller",
-                "FeedVersion",
-                "serialize",
-                "FeedError",
-                "FeedVersionError",
-                "get_arxiv_midnight",
-                "utc_now",
-                "check_service"
+                "Dict",
+                "List",
+                "Optional",
+                "etree",
+                "Element",
+                "BaseEntryExtension",
+                "BaseExtension",
+                "Author"
             ],
-        }
+            "called_components": [
+                "SubElement",
+                "__add_authors",
+                "join"
+            ],
+            "callable_components": [
+                "ArxivAtomExtension",
+                "ArxivExtension",
+                "ArxivEntryExtension"
+            ],
+            "__class__": "FileContainer"
+        },
     ],
     "repo_author": "78058179+kyokukou@users.noreply.github.com",
     "repo_hash": "3720f2018d8e59b6c760de53f515e7eda0ed16c7",
