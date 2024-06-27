@@ -79,7 +79,7 @@ class RepositoryManager:
         """
         return os.path.exists(local_repo_path)
 
-    def clone_repo(self, repo_url: str, local_repo_path: str) -> None:
+    def clone_repo(self) -> None:
         """
         Clones the repository from the given URL to the specified local path if it does not already exist.
         
@@ -88,15 +88,17 @@ class RepositoryManager:
             local_repo_path (str): Local path where the repository should be cloned.
         """
         if not self.preprocess:
-            local_repo_path = os.path.join(self.repo_directory, self.repo_name)
-            if self._is_repo_exists_locally(local_repo_path):
+            self.repo_directory = os.path.join(self.repo_directory,
+                                               self.repo_name)
+            if self._is_repo_exists_locally(self.repo_directory):
                 print("Repo is already cloned.")
                 return
         try:
-            subprocess.run(['git', 'clone', repo_url, local_repo_path],
+            subprocess.run(['git', 'clone', self.git_url, self.repo_directory],
                            check=True)
             logging.info(
-                f"Successfully cloned {repo_url} into {local_repo_path}")
+                f"Successfully cloned {self.git_url} into {self.repo_directory}"
+            )
         except subprocess.CalledProcessError as e:
             logging.error(f"Failed to clone repository: {e}")
 

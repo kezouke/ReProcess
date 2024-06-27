@@ -145,6 +145,48 @@ If you're using ``in_place = False``, you need to call function ``get_processed_
 ```python 
 processed_container = Compose(repository_container, [Processors_list], in_place=False).get_processed_container()
 ```
+### List of repository processors:
+- **CloneRepository**: This processor clones repository from given git url.
+**Example**: 
+```python 
+Compose(repository_container, [CloneRepository("https://github.com/arXiv/arxiv-feed")])
+```
+
+- **GraphBuilder**: This processor builds graph of the given repository and saves it into the defined ``db_path``, also GraphBuilder fills given repository container.
+**Example**: 
+```python 
+Compose(repository_container, [GraphBuilder()])
+```
+- **GraphUpdater**: This processor updates graph of the given repository and changes the ``json`` file according to updates, also refine given repository container.
+**Example**: 
+```python 
+Compose(repository_container, [GraphUpdater()])
+```
+- **JsonConverter**: This processor convertes fields of the given ``repository container`` into the ``json`` file, placed according to given ``db_path``.
+**Example**: 
+```python 
+Compose(repository_container, [JsonConverter()])
+```
+- **JsonDeconverter**: This processor deconvertes ``json`` from ``repository_container.db_path`` field and fills in all attributes of ``repository_container``.
+**Example**: 
+```python 
+Compose(repository_container, [JsonDeconverter()])
+```
+- **RegExpFinder**: This processor searches components by name in given ``repository container``, returns ``CodeComponent`` class.
+**Example**: 
+```python 
+Compose(repository_container, [RegExpFinder(r'\bfeed\.routes\.status\b')])
+```
+- **Compose**: This is processor to execute sequence of the other processors on the given ``repository_container``, has input value: ``in_place: bool = True``.
+**Example**: 
+```python 
+Compose(repository_container, [Processors_list])
+```
+If you're using ``in_place = False``, you need to call function ``get_processed_container``
+**Example**: 
+```python 
+processed_container = Compose(repository_container, [Processors_list], in_place=False).get_processed_container()
+```
 ### JSON Tree Structure Description
 
 After running the analysis, the JSON structure stored at `db_url` will have the following format:

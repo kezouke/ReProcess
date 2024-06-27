@@ -12,7 +12,7 @@ class CloneRepository(RepositoryProcessor):
     def __call__(self, repository_container: RepositoryContainer):
         store_repo_path = os.path.dirname(repository_container.repo_path)
         repo_manager = RepositoryManager(store_repo_path, self.git_url, False)
-        repo_manager.clone_repo(self.git_url, store_repo_path)
+        repo_manager.clone_repo()
         repo_info = repo_manager.get_hash_and_author(
             repository_container.repo_path)
         repository_container.repo_author = repo_info[1]
