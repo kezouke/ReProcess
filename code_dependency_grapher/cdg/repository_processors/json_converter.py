@@ -11,17 +11,7 @@ class JsonConverter(RepositoryProcessor):
     This class inherits from RepositoryProcessor and overrides the `process` method to convert the repository's components and files into a structured JSON object.
     It also handles saving this JSON object to a file within the repository's database path.
     """
-
-    def __call__(self,
-                 repository_container: RepositoryContainer,
-                 inplace: bool = True):
-        """
-        Processes the given repository container and saves its data in JSON format to a file.
-        
-        :param repository_container: An instance of RepositoryContainer containing the repository's data.
-        """
-
-        def class_to_dict(obj):
+    def class_to_dict(self, obj):
             """
             Recursively converts a class instance to a dictionary.
             
@@ -32,26 +22,39 @@ class JsonConverter(RepositoryProcessor):
             """
             if isinstance(obj, dict):
                 return {
-                    key: class_to_dict(value)
+                    key: self.class_to_dict(value)
                     for key, value in obj.items()
                 }
             elif isinstance(obj, list):
-                return [class_to_dict(element) for element in obj]
+                return [self.class_to_dict(element) for element in obj]
             elif hasattr(obj, "__dict__"):
                 data = {
-                    key: class_to_dict(value)
+                    key: self.class_to_dict(value)
                     for key, value in obj.__dict__.items()
                 }
                 data['__class__'] = obj.__class__.__name__
                 return data
             else:
                 return obj
-
-        # Function to handle serialization of sets to lists
-        def set_default(obj):
+            
+    def set_default(self, obj):
             if isinstance(obj, set):
                 return list(obj)
             raise TypeError(f"{type(obj)}")
+            
+    def __call__(self,
+                 repository_container: RepositoryContainer,
+                 inplace: bool = True):
+        """
+        Processes the given repository container and saves its data in JSON format to a file.
+        
+        :param repository_container: An instance of RepositoryContainer containing the repository's data.
+        """
+
+        
+
+        # Function to handle serialization of sets to lists
+        
 
         predefined_attributes = []
         result_json = {}
@@ -62,7 +65,7 @@ class JsonConverter(RepositoryProcessor):
                     attribute] = repository_container.__dict__[attribute]
 
         # Add these additional attributes to the main JSON structure
-        addition_fields_for_json = class_to_dict(
+        addition_fields_for_json = self.class_to_dict(
             external_attributes_of_repository)
         for key in addition_fields_for_json:
             result_json[key] = addition_fields_for_json[key]
@@ -78,7 +81,7 @@ class JsonConverter(RepositoryProcessor):
 
         # Save the JSON structure to a file
         with open(db_path, "w") as file:
-            file.write(json.dumps(result_json, indent=4, default=set_default))
+            file.write(json.dumps(result_json, indent=4, default=self.set_default))
             print(f"The graph was successfully built and saved to {db_path}.")
 
         return {"is_converted": True}
