@@ -219,35 +219,36 @@ This structure helps in understanding the relationships and dependencies among v
                 "c1327f0a-b679-4c91-aa98-e4ccd2ed4b73",
                 "782625df-3b8b-4cee-b489-ac154218837d"
             ],
+            "component_type": "function",
             "__class__": "CodeComponentContainer"
         }
     ],
     "files": [
         {
-            "file_id": "bb2bd632-a392-429d-9b04-fc6e70fd5875",
-            "file_path": "feed/routes.py",
+            "file_id": "03ea4512-375c-457e-b8c9-a53f70c0c1c5",
+            "file_path": "feed/serializers/extensions.py",
             "imports": [
-                "Union",
-                "timedelta",
-                "Response",
-                "request",
-                "Blueprint",
-                "make_response",
-                "redirect",
-                "url_for",
-                "current_app",
-                "ARCHIVES_ACTIVE",
-                "add_surrogate_key",
-                "controller",
-                "FeedVersion",
-                "serialize",
-                "FeedError",
-                "FeedVersionError",
-                "get_arxiv_midnight",
-                "utc_now",
-                "check_service"
+                "Dict",
+                "List",
+                "Optional",
+                "etree",
+                "Element",
+                "BaseEntryExtension",
+                "BaseExtension",
+                "Author"
             ],
-        }
+            "called_components": [
+                "SubElement",
+                "__add_authors",
+                "join"
+            ],
+            "callable_components": [
+                "ArxivAtomExtension",
+                "ArxivExtension",
+                "ArxivEntryExtension"
+            ],
+            "__class__": "FileContainer"
+        },
     ],
     "repo_author": "78058179+kyokukou@users.noreply.github.com",
     "repo_hash": "3720f2018d8e59b6c760de53f515e7eda0ed16c7",
