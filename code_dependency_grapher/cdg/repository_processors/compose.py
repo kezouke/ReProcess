@@ -1,4 +1,3 @@
-import copy
 from code_dependency_grapher.cdg.repository_processors.abstract_processor import RepositoryProcessor
 from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
 from typing import List
