@@ -183,7 +183,7 @@ class GraphUpdater(RepositoryProcessor):
 
         external_components.update(repository_container.external_components)
         files = repository_container.files + new_files
-        code_components = repository_container.code_components + new_code_components
+        code_components = repository_container.code_components + code_component
 
         return {
             "external_components": external_components,
