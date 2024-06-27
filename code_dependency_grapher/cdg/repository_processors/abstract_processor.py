@@ -111,8 +111,7 @@ class Meta(type):
                 result = original_call(self, repository_container, *args,
                                        **kwargs)
 
-                assert type(
-                    result) == dict, "You should return attributes to update"
+                assert isinstance(result, dict), "You should return attributes to update"
                 assert original_container == repository_container, f"You should not explicitly modify repository container inside the {name}"
 
                 active_container = repository_container if cls._init_kwargs.get(

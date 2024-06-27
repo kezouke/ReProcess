@@ -27,7 +27,7 @@ class AttributeLinker:
         # after we deleted old records
         self.cls_to_attrs[cls_name] = attr_list
         for attr_name in attr_list:
-            if not attr_name in self.attrs_to_class.keys():
+            if attr_name not in self.attrs_to_class.keys():
                 self.attrs_to_class[attr_name] = []
             self.attrs_to_class[attr_name].append(cls_name)
 
