@@ -1,4 +1,5 @@
 import uuid
+import os
 import hashlib
 from code_dependency_grapher.cdg.CodeComponent import CodeComponentFiller
 from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapper
@@ -36,6 +37,8 @@ class GraphBuilder(RepositoryProcessor):
         Returns:
             None
         """
+        if not repository_container.is_downloaded:
+            return dict()
         # Find all Python files within the repository
         python_files = find_python_files(repository_container.repo_path)
 

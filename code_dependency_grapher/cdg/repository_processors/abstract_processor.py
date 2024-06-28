@@ -57,7 +57,7 @@ class AbsentAttributesException(Exception):
         attr_strings = []
         
         for attr, classes in attr_cls_map.items():
-            attr_strings.append(f"To create `{attr}`, refer to:\n" +
+            attr_strings.append(f"To assign `{attr}`, refer to:\n" +
                                 ",\n".join(classes))
 
         answer_string += "\n\n".join(attr_strings)
@@ -124,6 +124,8 @@ class Meta(type):
                 # update repository container attributes
                 for key, value in result.items():
                     setattr(active_container, key, value)
+
+                # Debugging: print final state of containers
 
                 return active_container
 
