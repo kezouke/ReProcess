@@ -60,7 +60,7 @@ class JsonConverter(RepositoryProcessor):
         predefined_attributes = []
         result_json = {}
         external_attributes_of_repository = {}
-        for attribute in repository_container.__dict__:
+        for attribute in vars(repository_container):
             if attribute not in predefined_attributes:
                 external_attributes_of_repository[
                     attribute] = repository_container.__dict__[attribute]
