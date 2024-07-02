@@ -52,10 +52,10 @@ class AbsentAttributesException(Exception):
         attribute_linker = get_attribute_linker()
         formatted_attrs = [f"`{attr}`" for attr in self.absent_list]
         answer_string = f"\nAbsent attributes during execution of {self.cls_name}: {', '.join(formatted_attrs)}\n"
-        
+
         attr_cls_map = attribute_linker.get_classes_by_attrs(self.absent_list)
         attr_strings = []
-        
+
         for attr, classes in attr_cls_map.items():
             attr_strings.append(f"To assign `{attr}`, refer to:\n" +
                                 ",\n".join(classes))
@@ -92,7 +92,8 @@ class Meta(type):
                 if param_index == 1 and param_type == RepositoryContainer:
                     req_attrs_list = list(analyzer.used_attrs)
 
-            req_attrs_list = list(filter(lambda x: x[:2] != "__", req_attrs_list))
+            req_attrs_list = list(
+                filter(lambda x: x[:2] != "__", req_attrs_list))
             return_attrs = find_return_attributes(normalized_source)
             attribute_linker = get_attribute_linker()
             attribute_linker(name, return_attrs)
