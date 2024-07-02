@@ -4,7 +4,7 @@ from code_dependency_grapher.utils.attribute_linker import get_attribute_linker
 repo_container = RepositoryContainer("arxiv-feed", "/home/arxiv-feed",
                                      "/home/db")
 composition = Compose([
-    # CloneRepository("https://github.com/arXiv/arxiv-feed"),
+    CloneRepository("https://github.com/arXiv/arxiv-feed"),
     GraphBuilder(),
     JsonConverter()
 ])

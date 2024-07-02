@@ -1,5 +1,4 @@
 import uuid
-import os
 import hashlib
 from code_dependency_grapher.cdg.CodeComponent import CodeComponentFiller
 from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapper
