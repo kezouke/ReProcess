@@ -3,7 +3,6 @@ import re
 import os
 from code_dependency_grapher.cdg.repository_processors.abstract_processor import RepositoryProcessor
 from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
-from code_dependency_grapher.cdg.CodeComponent import CodeComponentContainer
 
 
 class RegExpFinder(RepositoryProcessor):
@@ -14,12 +13,7 @@ class RegExpFinder(RepositoryProcessor):
     def __call__(self, repository_container: RepositoryContainer, **kwargs):
 
         try:
-            path_to_repo = os.path.join(repository_container.db_path,
-                                        repository_container.repo_name,
-                                        "data.json")
             re.compile(self.regExpStr)
-            with open(path_to_repo, "r") as file:
-                json_data = json.load(file)
 
             components = repository_container.code_components
 
