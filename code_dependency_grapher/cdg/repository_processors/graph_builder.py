@@ -23,7 +23,7 @@ class GraphBuilder(RepositoryProcessor):
         process(repository_container: RepositoryContainer): Constructs the dependency graph and populates the given repository container with the constructed graph and associated data.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, **kwargs) -> None:
         super().__init__()
 
     def __call__(self, repository_container: RepositoryContainer):
@@ -36,6 +36,8 @@ class GraphBuilder(RepositoryProcessor):
         Returns:
             None
         """
+        if not repository_container.is_downloaded:
+            return dict()
         # Find all Python files within the repository
         python_files = find_python_files(repository_container.repo_path)
 

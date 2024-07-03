@@ -14,7 +14,7 @@ class JsonDeconverter(RepositoryProcessor):
     It also handles the reconstruction of complex objects like `FileAnalyzer` and `CodeComponent` instances based on the JSON data.
     """
 
-    def __init__(self, class_map: dict = {}):
+    def __init__(self, class_map: dict = {}, **kwargs):
         """
         Initializes the JsonDeconverter with a mapping of class names to classes.
         
@@ -26,6 +26,36 @@ class JsonDeconverter(RepositoryProcessor):
         self.class_map["CodeComponentContainer"] = CodeComponentContainer
         self.class_map["FileContainer"] = FileContainer
 
+    def dict_to_class(self, d, class_map):
+        """
+        Recursively converts a dictionary to a class instance using the provided class map.
+        
+        This function assumes that dictionaries may contain a special key '__class__' indicating the class name of the object they represent.
+        
+        :param d: The dictionary to convert.
+        :param class_map: A mapping of class names to their corresponding classes.
+        :return: A class instance reconstructed from the dictionary.
+        """
+        if isinstance(d, dict):
+            if '__class__' in d:
+                class_name = d.pop('__class__')
+                if class_name in class_map:
+                    cls = class_map[class_name]
+                    instance = cls.__new__(
+                        cls)  # Create a new instance without calling __init__
+                    for key, value in d.items():
+                        setattr(instance, key,
+                                self.dict_to_class(value, class_map))
+                    return instance
+            return {
+                key: self.dict_to_class(value, class_map)
+                for key, value in d.items()
+            }
+        elif isinstance(d, list):
+            return [self.dict_to_class(element, class_map) for element in d]
+        else:
+            return d
+
     def __call__(self,
                  repository_container: RepositoryContainer,
                  inplace: bool = True):
@@ -34,37 +64,6 @@ class JsonDeconverter(RepositoryProcessor):
         
         :param repository_container: An instance of RepositoryContainer to be populated with data from the JSON file.
         """
-
-        def dict_to_class(d, class_map):
-            """
-            Recursively converts a dictionary to a class instance using the provided class map.
-            
-            This function assumes that dictionaries may contain a special key '__class__' indicating the class name of the object they represent.
-            
-            :param d: The dictionary to convert.
-            :param class_map: A mapping of class names to their corresponding classes.
-            :return: A class instance reconstructed from the dictionary.
-            """
-            if isinstance(d, dict):
-                if '__class__' in d:
-                    class_name = d.pop('__class__')
-                    if class_name in class_map:
-                        cls = class_map[class_name]
-                        instance = cls.__new__(
-                            cls
-                        )  # Create a new instance without calling __init__
-                        for key, value in d.items():
-                            setattr(instance, key,
-                                    dict_to_class(value, class_map))
-                        return instance
-                return {
-                    key: dict_to_class(value, class_map)
-                    for key, value in d.items()
-                }
-            elif isinstance(d, list):
-                return [dict_to_class(element, class_map) for element in d]
-            else:
-                return d
 
         # Define the path to the JSON file
         self.json_path = os.path.join(repository_container.db_path,
@@ -84,10 +83,8 @@ class JsonDeconverter(RepositoryProcessor):
                 external_attributes[key] = json_dict[key]
 
         # Convert external attributes back to class instances
-        external_attributes = dict_to_class(external_attributes,
-                                            self.class_map)
+        external_attributes = self.dict_to_class(external_attributes,
+                                                 self.class_map)
 
         # Populate the repository container with converted external attributes
         return external_attributes
-        # for key in external_attributes:
-        #     setattr(repository_container, key, external_attributes[key])

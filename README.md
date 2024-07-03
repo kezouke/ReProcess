@@ -33,7 +33,7 @@ These steps will set up the necessary environment for using the library in your 
 To execute the usage example script of our library, use the following command:
 
 ```bash
-python -m code_dependency_grapher.usage_examples.building_dependency_graph
+python -m code_dependency_grapher.usage_examples.build_dependency_graph
 ```
 
 This script demonstrates how to utilize the Code Dependency Grapher library.
