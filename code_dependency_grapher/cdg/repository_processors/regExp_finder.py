@@ -5,6 +5,7 @@ from code_dependency_grapher.cdg.repository_processors.abstract_processor import
 from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
 from code_dependency_grapher.cdg.CodeComponent import CodeComponentContainer
 
+
 class RegExpFinder(RepositoryProcessor):
 
     def __init__(self, regExpStr: str):
@@ -29,7 +30,7 @@ class RegExpFinder(RepositoryProcessor):
                 match = re.search(self.regExpStr, component_name)
                 if match:
                     found_components.append(component)
-                    
+
             return {self.regExpStr: found_components}
 
         except FileNotFoundError:

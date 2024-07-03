@@ -86,12 +86,14 @@ class GraphUpdater(RepositoryProcessor):
             elif code_component.file_id in updated_files_ids:
                 updated_components_ids.append(code_component.component_id)
 
-        temporary_code_components = deepcopy(list(
-            filter(
-                lambda code_component:
-                (code_component.component_id not in removed_components_ids and
-                 code_component.component_id not in updated_components_ids),
-                repository_container.code_components)))
+        temporary_code_components = deepcopy(
+            list(
+                filter(
+                    lambda code_component:
+                    (code_component.component_id not in removed_components_ids
+                     and code_component.component_id not in
+                     updated_components_ids),
+                    repository_container.code_components)))
 
         # Adjust linked component IDs based on changes
         changed_components_ids = set(removed_components_ids +
