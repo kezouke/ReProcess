@@ -3,7 +3,7 @@ import re
 import os
 from code_dependency_grapher.cdg.repository_processors.abstract_processor import RepositoryProcessor
 from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
-
+from code_dependency_grapher.cdg.CodeComponent import CodeComponentContainer
 
 class RegExpFinder(RepositoryProcessor):
 
@@ -20,18 +20,17 @@ class RegExpFinder(RepositoryProcessor):
             with open(path_to_repo, "r") as file:
                 json_data = json.load(file)
 
-            components = json_data.get("components", [])
+            components = repository_container.code_components
+
+            found_components = []
 
             for component in components:
-                component_name = component.get("component_name", "")
+                component_name = component.component_name
                 match = re.search(self.regExpStr, component_name)
                 if match:
-                    print(
-                        f"Found match '{match.group()}' in component: {component_name}"
-                    )
-                    return component
-            print("No match found in any component.")
-            return None
+                    found_components.append(component)
+                    
+            return {self.regExpStr: found_components}
 
         except FileNotFoundError:
             raise FileNotFoundError(f"File not found: {path_to_repo}")
