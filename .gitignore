@@ -4,3 +4,4 @@ code_dependency_grapher.egg-info/*
 cdg_env
 __pycache__/*
 __pycache__/
+code_dependency_grapher.egg-info
