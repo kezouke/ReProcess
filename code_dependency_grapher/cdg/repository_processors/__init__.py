@@ -4,6 +4,7 @@ from .graph_updater import GraphUpdater
 from .json_converter import JsonConverter
 from .json_deconverter import JsonDeconverter
 from .compose import Compose
+from .regExp_finder import RegExpFinder
 from .clone_repository import CloneRepository
 
 if __file__ == "__main__":
@@ -14,3 +15,4 @@ if __file__ == "__main__":
     JsonDeconverter
     Compose(r_c, [])
     CloneRepository("")
+    RegExpFinder(".a")
