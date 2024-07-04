@@ -1,16 +1,16 @@
 import uuid
 import hashlib
-from code_dependency_grapher.cdg.CodeComponent import CodeComponentFiller
-from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapper
-from code_dependency_grapher.utils.mappers.IdComponentMapper import IdComponentMapper
-from code_dependency_grapher.utils.mappers.IdFileAnalyzerMapper import IdFileAnalyzerMapper
-from code_dependency_grapher.utils.find_components import extract_components_from_files
-from code_dependency_grapher.cdg.repository_processors.abstract_processor import RepositoryProcessor
-from code_dependency_grapher.utils.find_python_files import find_python_files
-from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
+from reprocess.code_component import CodeComponentFiller
+from reprocess.utils.mappers.file_path_ast_mapper import FilePathAstMapper
+from reprocess.utils.mappers.id_component_mapper import IdComponentMapper
+from reprocess.utils.mappers.id_file_analyzer_mapper import IdFileAnalyzerMapper
+from reprocess.utils.find_components import extract_components_from_files
+from reprocess.repository_processors.processor import ReProcessor
+from reprocess.utils.find_python_files import find_python_files
+from reprocess.repository_processors.repository_container import ReContainer
 
 
-class GraphBuilder(RepositoryProcessor):
+class GraphBuilder(ReProcessor):
     """
     This class is responsible for building a directed acyclic graph (DAG) representing the structure and dependencies
     within a set of Python files. It analyzes the files to identify components and their relationships, then constructs
@@ -23,10 +23,10 @@ class GraphBuilder(RepositoryProcessor):
         process(repository_container: RepositoryContainer): Constructs the dependency graph and populates the given repository container with the constructed graph and associated data.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, **kwargs) -> None:
         super().__init__()
 
-    def __call__(self, repository_container: RepositoryContainer):
+    def __call__(self, repository_container: ReContainer):
         """
         Orchestrates the construction of a dependency graph from a set of Python files contained within a repository.
 
@@ -36,6 +36,8 @@ class GraphBuilder(RepositoryProcessor):
         Returns:
             None
         """
+        if not repository_container.is_downloaded:
+            return dict()
         # Find all Python files within the repository
         python_files = find_python_files(repository_container.repo_path)
 

@@ -1,7 +1,0 @@
-LICENSE
-README.md
-setup.py
-code_dependency_grapher.egg-info/PKG-INFO
-code_dependency_grapher.egg-info/SOURCES.txt
-code_dependency_grapher.egg-info/dependency_links.txt
-code_dependency_grapher.egg-info/top_level.txt

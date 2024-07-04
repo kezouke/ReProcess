@@ -1,16 +1,18 @@
 import uuid
 import hashlib
-from code_dependency_grapher.cdg.requests_handling.RepositoryManager import RepositoryManager
-from code_dependency_grapher.cdg.CodeComponent import CodeComponentFiller
-from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapper
-from code_dependency_grapher.utils.mappers.IdComponentMapper import IdComponentMapper
-from code_dependency_grapher.utils.mappers.IdFileAnalyzerMapper import IdFileAnalyzerMapper
-from code_dependency_grapher.utils.find_components import extract_components_from_files
-from code_dependency_grapher.cdg.repository_processors.abstract_processor import RepositoryProcessor
-from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
+import subprocess
+import logging
+from copy import deepcopy
+from reprocess.code_component import CodeComponentFiller
+from reprocess.utils.mappers.file_path_ast_mapper import FilePathAstMapper
+from reprocess.utils.mappers.id_component_mapper import IdComponentMapper
+from reprocess.utils.mappers.id_file_analyzer_mapper import IdFileAnalyzerMapper
+from reprocess.utils.find_components import extract_components_from_files
+from reprocess.repository_processors.processor import ReProcessor
+from reprocess.repository_processors.repository_container import ReContainer
 
 
-class GraphUpdater(RepositoryProcessor):
+class GraphUpdater(ReProcessor):
     """
     A class responsible for updating the repository's dependency graph based on changes detected in the repository.
     
@@ -18,7 +20,7 @@ class GraphUpdater(RepositoryProcessor):
     It processes changes in files and components, updates the repository's structure accordingly, and constructs a new dependency graph.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, **kwargs) -> None:
         """
         Initializes the GraphUpdater.
         
@@ -26,8 +28,38 @@ class GraphUpdater(RepositoryProcessor):
         """
         super().__init__()
 
+    def _get_changed_files(self, local_repo_path: str) -> list:
+        """
+        Retrieves a list of files that have changed in the local repository since the last commit.
+        
+        Args:
+            local_repo_path (str): Local path of the repository.
+            
+        Returns:
+            list: A list of changed file paths.
+        """
+        try:
+            result = subprocess.run(
+                ['git', '-C', local_repo_path, 'diff', '--name-status'],
+                capture_output=True,
+                text=True,
+                check=True)
+            return result.stdout.splitlines()
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Failed to get changed files: {e}")
+            return []
+
+    def is_removed(self, changed_file_status: str):
+        """
+            Checks if a file has been removed based on its status string.
+            
+            :param changed_file_status: The status string of a file ('A' for added, 'M' for modified, 'D' for deleted).
+            :return: True if the file has been removed, False otherwise.
+            """
+        return changed_file_status[0] == 'D'
+
     def __call__(self,
-                 repository_container: RepositoryContainer,
+                 repository_container: ReContainer,
                  inplace: bool = True):
         """
         Updates the repository's dependency graph based on changes detected in the repository.
@@ -35,31 +67,20 @@ class GraphUpdater(RepositoryProcessor):
         :param repository_container: The repository container holding the current state of the repository.
         """
 
-        def is_removed(changed_file_status: str):
-            """
-            Checks if a file has been removed based on its status string.
-            
-            :param changed_file_status: The status string of a file ('A' for added, 'M' for modified, 'D' for deleted).
-            :return: True if the file has been removed, False otherwise.
-            """
-            return changed_file_status[0] == 'D'
-
         # Retrieve and process changed files
-        changed_files = RepositoryManager(
-            repository_directory=repository_container.repo_path,
-            preprocess=False).get_changed_files(repository_container.repo_path)
+        changed_files = self._get_changed_files(repository_container.repo_path)
         status_file_name = [line.split('\t') for line in changed_files]
 
         # Separate removed and updated files
         removed_files_relative_paths = [
-            line[1] for line in status_file_name if is_removed(line)
+            line[1] for line in status_file_name if self.is_removed(line)
         ]
         updated_files = [
             repository_container.repo_path + "/" + line[1]
-            for line in status_file_name if not is_removed(line)
+            for line in status_file_name if not self.is_removed(line)
         ]
         updated_files_relative_paths = [
-            line[1] for line in status_file_name if not is_removed(line)
+            line[1] for line in status_file_name if not self.is_removed(line)
         ]
 
         # Update the repository container's files list based on changes
@@ -71,7 +92,7 @@ class GraphUpdater(RepositoryProcessor):
             elif file.file_path in updated_files_relative_paths:
                 updated_files_ids.append(file.file_id)
 
-        repository_container.files = list(
+        temproral_files = list(
             filter(
                 lambda file: file.file_id not in removed_file_ids and file.
                 file_id not in updated_files_ids, repository_container.files))
@@ -85,17 +106,19 @@ class GraphUpdater(RepositoryProcessor):
             elif code_component.file_id in updated_files_ids:
                 updated_components_ids.append(code_component.component_id)
 
-        repository_container.code_components = list(
-            filter(
-                lambda code_component:
-                (code_component.component_id not in removed_components_ids and
-                 code_component.component_id not in updated_components_ids),
-                repository_container.code_components))
+        temporary_code_components = deepcopy(
+            list(
+                filter(
+                    lambda code_component:
+                    (code_component.component_id not in removed_components_ids
+                     and code_component.component_id not in
+                     updated_components_ids),
+                    repository_container.code_components)))
 
         # Adjust linked component IDs based on changes
         changed_components_ids = set(removed_components_ids +
                                      updated_components_ids)
-        for code_component in repository_container.code_components:
+        for code_component in temporary_code_components:
             code_component.linked_component_ids = \
                 set(code_component.linked_component_ids).difference(changed_components_ids)
 
@@ -112,7 +135,7 @@ class GraphUpdater(RepositoryProcessor):
         id_component_manager = IdComponentMapper(
             repository_container.repo_path, file_components_map)
 
-        for code_component in repository_container.code_components:
+        for code_component in temporary_code_components:
             id_component_manager.component_id_map[
                 code_component.component_name] = code_component.component_id
 
@@ -149,7 +172,7 @@ class GraphUpdater(RepositoryProcessor):
         }
 
         all_packages = [
-            cmp.component_name for cmp in repository_container.code_components
+            cmp.component_name for cmp in temporary_code_components
         ]
         all_internal_components = set(package_components_names + all_packages)
         for cmp in code_components:
@@ -182,8 +205,8 @@ class GraphUpdater(RepositoryProcessor):
         }
 
         external_components.update(repository_container.external_components)
-        files = repository_container.files + new_files
-        code_components = repository_container.code_components + code_component
+        files = temproral_files + new_files
+        code_components = temporary_code_components + code_components
 
         return {
             "external_components": external_components,

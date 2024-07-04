@@ -1,9 +1,11 @@
 import ast
 from typing import List, Optional, Dict
-from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapError
-from code_dependency_grapher.utils.import_path_extractor import get_import_statement_path
+from dataclasses import dataclass
+from reprocess.utils.mappers.file_path_ast_mapper import FilePathAstMapError
+from reprocess.utils.import_path_extractor import get_import_statement_path
 
 
+@dataclass
 class FileContainer:
     """
     Encapsulates information about a specific Python file, including its unique identifier, path, imports, called components, and callable components.
@@ -42,6 +44,22 @@ class FileContainer:
     def __hash__(self) -> int:
         """Returns the hash value of the file path."""
         return hash(self.file_path)
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, FileContainer):
+            self_attrs = vars(self)
+            other_attrs = vars(other)
+
+            if self_attrs.keys() != other_attrs.keys():
+                return False
+
+            for key in self_attrs.keys():
+                if key not in other_attrs or self_attrs[key] != other_attrs[
+                        key]:
+                    return False
+            return True
+        else:
+            return False
 
 
 class FileFiller:
