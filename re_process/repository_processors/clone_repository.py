@@ -6,7 +6,7 @@ from re_process.repository_processors.repository_container import RepositoryCont
 
 class CloneRepository(RepositoryProcessor):
 
-    def __init__(self, git_url: str, **kwargs):
+    def __init__(self, git_url: str = None, **kwargs):
         self.git_url = git_url
 
     def __call__(self, repository_container: RepositoryContainer):
