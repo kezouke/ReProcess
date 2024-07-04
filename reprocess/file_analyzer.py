@@ -1,9 +1,11 @@
 import ast
 from typing import List, Optional, Dict
+from dataclasses import dataclass
 from reprocess.utils.mappers.file_path_ast_mapper import FilePathAstMapError
 from reprocess.utils.import_path_extractor import get_import_statement_path
 
 
+@dataclass
 class FileContainer:
     """
     Encapsulates information about a specific Python file, including its unique identifier, path, imports, called components, and callable components.

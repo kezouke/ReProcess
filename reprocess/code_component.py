@@ -1,13 +1,14 @@
 import ast
 from typing import List, Optional, Dict, Tuple
 from uuid import UUID
-
+from dataclasses import dataclass
 from reprocess.utils.import_path_extractor import get_import_statement_path
 from reprocess.utils.mappers.file_path_ast_mapper import FilePathAstMapError
 from reprocess.utils.mappers.id_component_mapper import IdComponentMapError
 from reprocess.utils.mappers.id_file_analyzer_mapper import IdFileAnalyzerMapper, IdFileAnalyzeMapError
 
 
+@dataclass
 class CodeComponentContainer:
     """
     Represents a container for a single code component (function or class) within a Python file.
