@@ -1,5 +1,5 @@
 import os
-from reprocess.requests_handling.repository_manager import RepositoryManager
+from reprocess.requests_handling.repository_manager import ReManager
 from reprocess.repository_processors.abstract_processor import ReProcessor
 from reprocess.repository_processors.repository_container import ReContainer
 
@@ -11,10 +11,9 @@ class CloneRepository(ReProcessor):
 
     def __call__(self, repository_container: ReContainer):
         store_repo_path = os.path.dirname(repository_container.repo_path)
-        repo_manager = RepositoryManager(store_repo_path, self.git_url, False)
+        repo_manager = ReManager(store_repo_path, self.git_url)
         repo_manager.clone_repo()
-        repo_info = repo_manager.get_hash_and_author(
-            repository_container.repo_path)
+        repo_info = repo_manager.get_hash_and_author()
 
         return {
             "repo_author": repo_info[1],

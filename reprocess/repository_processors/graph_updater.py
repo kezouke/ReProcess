@@ -1,7 +1,9 @@
 import uuid
 import hashlib
+import subprocess
+import logging
 from copy import deepcopy
-from reprocess.requests_handling.repository_manager import RepositoryManager
+from reprocess.requests_handling.repository_manager import ReManager
 from reprocess.code_component import CodeComponentFiller
 from reprocess.utils.mappers.file_path_ast_mapper import FilePathAstMapper
 from reprocess.utils.mappers.id_component_mapper import IdComponentMapper
@@ -27,6 +29,27 @@ class GraphUpdater(ReProcessor):
         """
         super().__init__()
 
+    def _get_changed_files(self, local_repo_path: str) -> list:
+        """
+        Retrieves a list of files that have changed in the local repository since the last commit.
+        
+        Args:
+            local_repo_path (str): Local path of the repository.
+            
+        Returns:
+            list: A list of changed file paths.
+        """
+        try:
+            result = subprocess.run(
+                ['git', '-C', local_repo_path, 'diff', '--name-status'],
+                capture_output=True,
+                text=True,
+                check=True)
+            return result.stdout.splitlines()
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Failed to get changed files: {e}")
+            return []
+
     def is_removed(self, changed_file_status: str):
         """
             Checks if a file has been removed based on its status string.
@@ -46,9 +69,7 @@ class GraphUpdater(ReProcessor):
         """
 
         # Retrieve and process changed files
-        changed_files = RepositoryManager(
-            repository_directory=repository_container.repo_path,
-            preprocess=False).get_changed_files(repository_container.repo_path)
+        changed_files = self._get_changed_files(repository_container.repo_path)
         status_file_name = [line.split('\t') for line in changed_files]
 
         # Separate removed and updated files
