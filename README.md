@@ -1,29 +1,44 @@
-# ReProcess README
+# ReProcess
+_release version: 0.2_
 
-## Release Version 
-# `0.2`
+----
 
-## Introduction
-ReProcess is a tool designed to manage dependencies within code repositories. This document provides instructions on how to set up and use the current version of ReProcess.
+ReProcess is an open-source system designed for the easy management of Git Python repositories.
 
-## Installation Steps
-1. **Clone the Repository**: Begin by cloning the ReProcess repository to your local machine.
+----
 
-   ```bash
-   git clone https://github.com/kezouke/TestGena
-   ```
 
-2. **Navigate to the Project Directory**: Change directory to enter the project folder.
+## Features
 
-   ```bash
-   cd TestGena
-   ```
+ReProcess provides several key features:
+- **Dependency Tree Generation**: Build a dependency tree of all components (class, class method, or function) within a repository, showing how these components are related.
+- **Dependency Tree Update**: Update an existing Git repository's dependency tree when changes are made to the code after an initial tree is built.
+- **Component Search**: Quickly find code components whose names match a given regular expression (default is `r "*"`).
+- **Data Persistence**: Save and read built trees, found components, and other repository data attributes to/from JSON.
 
-3. **Install the Library**: Execute the setup.py script to install the `reprocess` library.
+Users can use local folders with their repositories or use the `CloneRepository` predefined ReProcessor to download the repository.
 
-   ```bash
-   python3 -m pip install -e .
-   ```
+Currently, ReProcess supports Git repositories and Python files. Users can also write their own custom repository handlers using the full functionality of ReProcess.
+
+## Installation
+
+### Step 1: Clone the Repository
+Begin by cloning the ReProcess repository to your local machine.
+```bash
+git clone https://github.com/kezouke/TestGena
+```
+
+### Step 2: Navigate to the Project Directory
+Change the directory to enter the project folder.
+```bash
+cd TestGena
+```
+
+### Step 3: Install the Library
+Execute the `setup.py` script to install the `reprocess` library.
+```bash
+python3 -m pip install -e .
+```
 
 These steps will set up the necessary environment for using the library in your local development environment.
 
@@ -31,7 +46,6 @@ These steps will set up the necessary environment for using the library in your 
 
 ### Running the ReProcess Example Script
 To execute the usage example script of our library, use the following command:
-
 ```bash
 python -m reprocess.usage_examples.build_dependency_graph
 ```
@@ -40,9 +54,9 @@ This script demonstrates how to utilize the ReProcess library.
 
 ### Example Usage Script
 ```python
-from code_dependency_grapher.cdg.repository_processors import JsonConverter, RepositoryContainer, GraphBuilder, CloneRepository, Compose, RegExpFinder
+from code_dependency_grapher.cdg.repository_processors import JsonConverter, ReContainer, GraphBuilder, CloneRepository, Compose, RegExpFinder
 
-repo_container = RepositoryContainer(
+repo_container = ReContainer(
     "arxiv-feed", "/home/test_repo_folder/arxiv-feed",
     "/home/test_repo_folder/db")
 
@@ -54,70 +68,61 @@ composition = Compose([
 ])
 
 new_container = composition(repo_container)
-
 ```
 
-### Parameters of the Repository Container
+### Parameters of the ReContainer
 - **repo_name**: Name of the repository.
 - **repo_path**: Directory where the repository will be cloned.
 - **db_path**: Directory where the JSON graphs will be saved.
 
-### List of Repository Processors:
+### List of Repository Processors
 - **CloneRepository**: Clones a repository from a given Git URL.
-  **Example**: 
   ```python
   Compose(repo_container, [CloneRepository("https://github.com/arXiv/arxiv-feed")])
   ```
 
 - **GraphBuilder**: Builds a graph of the repository and saves it into the specified `db_path`. It also populates the repository container.
-  **Example**: 
   ```python
   Compose(repo_container, [GraphBuilder()])
   ```
 
 - **GraphUpdater**: Updates the graph of the repository and updates the `json` file accordingly, refining the repository container.
-  **Example**: 
   ```python
   Compose(repo_container, [GraphUpdater()])
   ```
 
 - **JsonConverter**: Converts fields of the repository container into a `json` file, placed according to the specified `db_path`.
-  **Example**: 
   ```python
   Compose(repo_container, [JsonConverter()])
   ```
 
 - **JsonDeconverter**: Converts `json` from the `repository_container.db_path` field and populates all attributes of the repository container.
-  **Example**: 
   ```python
   Compose(repo_container, [JsonDeconverter()])
   ```
 
-- **RegExpFinder**: Searches components by regular expression for the name and saves all found `CodeComponent`s in the repostory container.
-  **Example**: 
+- **RegExpFinder**: Searches components by regular expression for the name and saves all found `CodeComponent`s in the repository container.
   ```python
   Compose(repo_container, [RegExpFinder(r'\bfeed\.routes\.status\b')])
   ```
+  This processor will update `repo_container` by adding a new attribute with the same name as the passed regular expression and will store all found    code components satisfying that regular expression.
 
 - **Compose**: Executes a sequence of other processors on the repository container.
-  **Example**: 
   ```python
   Compose(repo_container, [Processors_list])
   new_container = composition(repo_container)
   ```
-  
+
 This set of processors allows flexible management and analysis of code dependencies within repositories.
 
 ## Creating Custom Repository Processors
 
-Users can create their own repository processors by making classes that inherit from `RepositoryProcessor`. When creating a custom processor, the class should:
+Users can create their own repository processors by making classes that inherit from `ReProcessor`. When creating a custom processor, the class should:
 
-1. **Inherit from `RepositoryProcessor`**: This ensures that the necessary checks and behaviors are inherited.
-
-2. **Implement the `__call__` Method**: This method should accept a `RepositoryContainer` instance as an argument and return a dictionary with updated attributes and their values. The `RepositoryContainer` should not be explicitly modified within the `__call__` method.
+1. **Inherit from `ReProcessor`**: This ensures that the necessary checks and behaviors are inherited.
+2. **Implement the `__call__` Method**: This method should accept a `RepositoryContainer` instance as an argument and return a dictionary with updated attributes and their values. The `ReContainer` should not be explicitly modified within the `__call__` method.
 
 ### Example Code for a Custom Repository Processor
-
 ```python
 from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
 from code_dependency_grapher.utils.attribute_linker import get_attribute_linker
@@ -139,18 +144,18 @@ class CustomProcessor(RepositoryProcessor):
 
 ### Handling Incorrect Usage
 
-If the `RepositoryContainer` is used or changed in an incorrect manner, the user will be guided automatically on how to resolve the issue. This is done through the `AbsentAttributesException` and internal checks that ensure required attributes are present and the container is not modified explicitly.
+If the `ReContainer` is used or changed in an incorrect manner, the user will be guided automatically on how to resolve the issue. This is done through the `AbsentAttributesException` and internal checks that ensure required attributes are present and the container is not modified explicitly.
 
 ### JSON Tree Structure Description
 
 After running the analysis, the JSON structure stored at `db_url` will have the following format:
 
-#### Top-Level Structure:
+#### Top-Level Structure
 - `files`: A list of dictionaries, each representing a file analyzed.
-- `code_components`: A list of dictionaries, each representing a component (function or class or method) identified within the files.
-- `external_components`: A list of ids of external import statements (components outside the parsed repo)
+- `code_components`: A list of dictionaries, each representing a component (function, class, or method) identified within the files.
+- `external_components`: A list of IDs of external import statements (components outside the parsed repo).
 
-#### `files` List:
+#### `files` List
 Each dictionary in the `files` list contains:
 - `file_id`: A unique identifier for the file.
 - `file_path`: The relative path to the file.
@@ -158,19 +163,19 @@ Each dictionary in the `files` list contains:
 - `called_components`: A list of strings representing all components or functions called within the file.
 - `callable_components`: A list of strings representing all functions or classes defined in the file that can be called.
 
-#### `code_components` List:
+#### `code_components` List
 Each dictionary in the `components` list contains:
 - `component_id`: A unique identifier for the component.
 - `component_name`: The full name of the component, including its module or file context.
 - `component_code`: The actual code of the component.
 - `linked_component_ids`: A list of component IDs representing other components that are linked or associated with this component.
-- `file_id`: The ID of the file  that processed this component.
+- `file_id`: The ID of the file that processed this component.
 - `external_component_ids`: A list of IDs representing external components that this component interacts with.
-- `component_type`: One of 3 possible types of component ("class", "method" or "function")
+- `component_type`: One of 3 possible types of components ("class", "method", or "function").
 
 This structure helps in understanding the relationships and dependencies among various files and components in the project.
 
-### Real Example of the json:
+### Real Example of the JSON
 ```json
 {
     "external_components": {
@@ -198,7 +203,9 @@ This structure helps in understanding the relationships and dependencies among v
     ],
     "files": [
         {
-            "file_id": "03ea4512-375c-457e-b8c9-a53f70c0c1c5",
+            "file_id": "03ea4512-375c-457e-b8c9-a53
+
+f70c0c1c5",
             "file_path": "feed/serializers/extensions.py",
             "imports": [
                 "Dict",
@@ -221,7 +228,7 @@ This structure helps in understanding the relationships and dependencies among v
                 "ArxivEntryExtension"
             ],
             "__class__": "FileContainer"
-        },
+        }
     ],
     "repo_author": "78058179+kyokukou@users.noreply.github.com",
     "repo_hash": "3720f2018d8e59b6c760de53f515e7eda0ed16c7",
