@@ -2,7 +2,6 @@ from typing import Optional, Tuple, List
 import os
 import subprocess
 import logging
-from reprocess.requests_handling.request_enum import RequestType
 
 # Configure logging to display errors only
 logging.basicConfig(level=logging.ERROR)
@@ -22,9 +21,6 @@ class RepositoryManager:
                               managed locally.
         repo_name (str): Extracted name of the repository from 
                               the URL or directory path.
-        request_type (RequestType): Indicates how the repository 
-                              should be processed based on its
-                              state.
         updated_files (list): List of files that have been updated
                               since the last operation.
         removed_files (list): List of files that have been removed 
@@ -56,10 +52,9 @@ class RepositoryManager:
             self.repo_name = self.repo_directory.split('/')[-1].split('.')[0]
 
         if preprocess:
-            self.request_type, self.updated_files, self.removed_files, self.repo_info = self._preprocess_repo(
+            self.updated_files, self.removed_files, self.repo_info = self._preprocess_repo(
             )
         else:
-            self.request_type = RequestType.FROM_SCRATCH
             self.updated_files = []
             self.removed_files = []
             self.repo_info = [
@@ -165,7 +160,7 @@ class RepositoryManager:
             logging.error(f"Failed to get commit hash and author: {e}")
 
     def _preprocess_repo(
-            self) -> Tuple[RequestType, List[str], List[str], List[str]]:
+            self) -> Tuple[List[str], List[str], List[str]]:
         """
         Preprocesses the repository by checking if it exists locally, fetching changes, and determining the type of request needed.
         
@@ -195,9 +190,9 @@ class RepositoryManager:
                 self.pull_latest_changes(local_repo_path)
             else:
                 logging.info("No changes detected.")
-            return RequestType.FROM_SCRATCH, updated_files, removed_files, repo_info
+            return updated_files, removed_files, repo_info
         else:
             logging.info(f"Cloning {self.git_url}...")
             self.clone_repo(self.git_url, local_repo_path)
-            return RequestType.FROM_SCRATCH, [], [], self.get_hash_and_author(
+            return [], [], self.get_hash_and_author(
                 local_repo_path)
