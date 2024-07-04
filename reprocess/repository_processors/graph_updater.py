@@ -3,7 +3,6 @@ import hashlib
 import subprocess
 import logging
 from copy import deepcopy
-from reprocess.requests_handling.repository_manager import ReManager
 from reprocess.code_component import CodeComponentFiller
 from reprocess.utils.mappers.file_path_ast_mapper import FilePathAstMapper
 from reprocess.utils.mappers.id_component_mapper import IdComponentMapper
