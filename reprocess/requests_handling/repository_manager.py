@@ -196,8 +196,8 @@ class RepositoryManager:
             else:
                 logging.info("No changes detected.")
             return RequestType.FROM_SCRATCH, updated_files, removed_files, repo_info
-
-        logging.info(f"Cloning {self.git_url}...")
-        self.clone_repo(self.git_url, local_repo_path)
-        return RequestType.FROM_SCRATCH, [], [], self.get_hash_and_author(
-            local_repo_path)
+        else:
+            logging.info(f"Cloning {self.git_url}...")
+            self.clone_repo(self.git_url, local_repo_path)
+            return RequestType.FROM_SCRATCH, [], [], self.get_hash_and_author(
+                local_repo_path)
