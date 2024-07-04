@@ -1,7 +1,7 @@
 import os
 from reprocess.requests_handling.repository_manager import RepositoryManager
-from reprocess.repository_processors.abstract_processor import RepositoryProcessor
-from reprocess.repository_processors.repository_container import RepositoryContainer
+from reprocess.repository_processors.abstract_processor import ReProcessor
+from reprocess.repository_processors.repository_container import ReContainer
 
 
 class CloneRepository(ReProcessor):
