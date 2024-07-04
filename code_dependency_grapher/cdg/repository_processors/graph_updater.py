@@ -181,10 +181,9 @@ class GraphUpdater(RepositoryProcessor):
             for k, v in external_components_dict.items()
         }
 
-        external_components.update(repository_container.external_components)
+        external_components.update(repository_container.external_components)    
         files = temproral_files + new_files
-        code_components = temporary_code_components + code_component
-
+        code_components = temporary_code_components + code_components
         return {
             "external_components": external_components,
             "code_components": code_components,

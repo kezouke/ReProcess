@@ -126,8 +126,6 @@ class Meta(type):
                 for key, value in result.items():
                     setattr(active_container, key, value)
 
-                # Debugging: print final state of containers
-
                 return active_container
 
             setattr(cls, '__call__', wrapped_call)
