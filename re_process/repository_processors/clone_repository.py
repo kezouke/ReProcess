@@ -1,7 +1,7 @@
 import os
-from code_dependency_grapher.cdg.requests_handling.RepositoryManager import RepositoryManager
-from code_dependency_grapher.cdg.repository_processors.abstract_processor import RepositoryProcessor
-from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
+from re_process.requests_handling.repository_manager import RepositoryManager
+from re_process.repository_processors.abstract_processor import RepositoryProcessor
+from re_process.repository_processors.repository_container import RepositoryContainer
 
 
 class CloneRepository(RepositoryProcessor):

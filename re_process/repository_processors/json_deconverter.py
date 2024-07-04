@@ -1,9 +1,9 @@
 import os
 import json
-from code_dependency_grapher.cdg.CodeComponent import CodeComponentContainer
-from code_dependency_grapher.cdg.FileAnalyzer import FileContainer
-from code_dependency_grapher.cdg.repository_processors.abstract_processor import RepositoryProcessor
-from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
+from re_process.code_component import CodeComponentContainer
+from re_process.file_analyzer import FileContainer
+from re_process.repository_processors.abstract_processor import RepositoryProcessor
+from re_process.repository_processors.repository_container import RepositoryContainer
 
 
 class JsonDeconverter(RepositoryProcessor):

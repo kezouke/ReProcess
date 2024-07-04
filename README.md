@@ -33,7 +33,7 @@ These steps will set up the necessary environment for using the library in your 
 To execute the usage example script of our library, use the following command:
 
 ```bash
-python -m reprocess.usage_examples.build_dependency_graph
+python -m re_process.usage_examples.build_dependency_graph
 ```
 
 This script demonstrates how to utilize the ReProcess library.

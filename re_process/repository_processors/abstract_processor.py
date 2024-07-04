@@ -1,5 +1,5 @@
-from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
-from code_dependency_grapher.utils.attribute_linker import get_attribute_linker
+from re_process.repository_processors.repository_container import RepositoryContainer
+from re_process.utils.attribute_linker import get_attribute_linker
 from abc import ABC, abstractmethod, ABCMeta
 import ast
 import inspect

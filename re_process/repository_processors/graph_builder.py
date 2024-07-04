@@ -1,13 +1,13 @@
 import uuid
 import hashlib
-from code_dependency_grapher.cdg.CodeComponent import CodeComponentFiller
-from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapper
-from code_dependency_grapher.utils.mappers.IdComponentMapper import IdComponentMapper
-from code_dependency_grapher.utils.mappers.IdFileAnalyzerMapper import IdFileAnalyzerMapper
-from code_dependency_grapher.utils.find_components import extract_components_from_files
-from code_dependency_grapher.cdg.repository_processors.abstract_processor import RepositoryProcessor
-from code_dependency_grapher.utils.find_python_files import find_python_files
-from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
+from re_process.code_component import CodeComponentFiller
+from re_process.utils.mappers.file_path_ast_mapper import FilePathAstMapper
+from re_process.utils.mappers.id_component_mapper import IdComponentMapper
+from re_process.utils.mappers.id_file_analyzer_mapper import IdFileAnalyzerMapper
+from re_process.utils.find_components import extract_components_from_files
+from re_process.repository_processors.abstract_processor import RepositoryProcessor
+from re_process.utils.find_python_files import find_python_files
+from re_process.repository_processors.repository_container import RepositoryContainer
 
 
 class GraphBuilder(RepositoryProcessor):

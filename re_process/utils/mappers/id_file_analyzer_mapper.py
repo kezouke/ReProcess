@@ -1,6 +1,6 @@
 import uuid
-from code_dependency_grapher.cdg.FileAnalyzer import FileFiller
-from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapper
+from re_process.file_analyzer import FileFiller
+from re_process.utils.mappers.file_path_ast_mapper import FilePathAstMapper
 from typing import List
 
 

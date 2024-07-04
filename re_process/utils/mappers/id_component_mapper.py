@@ -1,5 +1,5 @@
 import uuid
-from code_dependency_grapher.utils.import_path_extractor import get_import_statement_path
+from re_process.utils.import_path_extractor import get_import_statement_path
 
 
 class IdComponentMapper:

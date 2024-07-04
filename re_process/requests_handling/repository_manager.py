@@ -2,7 +2,7 @@ from typing import Optional
 import os
 import subprocess
 import logging
-from code_dependency_grapher.cdg.requests_handling.RequestEnum import RequestType
+from re_process.requests_handling.request_enum import RequestType
 
 # Configure logging to display errors only
 logging.basicConfig(level=logging.ERROR)
