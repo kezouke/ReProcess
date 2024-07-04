@@ -5,7 +5,7 @@ from reprocess.utils.mappers.file_path_ast_mapper import FilePathAstMapper
 from reprocess.utils.mappers.id_component_mapper import IdComponentMapper
 from reprocess.utils.mappers.id_file_analyzer_mapper import IdFileAnalyzerMapper
 from reprocess.utils.find_components import extract_components_from_files
-from reprocess.repository_processors.abstract_processor import ReProcessor
+from reprocess.repository_processors.processor import ReProcessor
 from reprocess.utils.find_python_files import find_python_files
 from reprocess.repository_processors.repository_container import ReContainer
 

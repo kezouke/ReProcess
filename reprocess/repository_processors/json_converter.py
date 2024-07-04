@@ -1,6 +1,6 @@
 import os
 import json
-from reprocess.repository_processors.abstract_processor import ReProcessor
+from reprocess.repository_processors.processor import ReProcessor
 from reprocess.repository_processors.repository_container import ReContainer
 
 
