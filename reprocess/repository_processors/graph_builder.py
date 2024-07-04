@@ -1,13 +1,13 @@
 import uuid
 import hashlib
-from re_process.code_component import CodeComponentFiller
-from re_process.utils.mappers.file_path_ast_mapper import FilePathAstMapper
-from re_process.utils.mappers.id_component_mapper import IdComponentMapper
-from re_process.utils.mappers.id_file_analyzer_mapper import IdFileAnalyzerMapper
-from re_process.utils.find_components import extract_components_from_files
-from re_process.repository_processors.abstract_processor import ReProcessor
-from re_process.utils.find_python_files import find_python_files
-from re_process.repository_processors.repository_container import ReContainer
+from reprocess.code_component import CodeComponentFiller
+from reprocess.utils.mappers.file_path_ast_mapper import FilePathAstMapper
+from reprocess.utils.mappers.id_component_mapper import IdComponentMapper
+from reprocess.utils.mappers.id_file_analyzer_mapper import IdFileAnalyzerMapper
+from reprocess.utils.find_components import extract_components_from_files
+from reprocess.repository_processors.abstract_processor import ReProcessor
+from reprocess.utils.find_python_files import find_python_files
+from reprocess.repository_processors.repository_container import ReContainer
 
 
 class GraphBuilder(ReProcessor):

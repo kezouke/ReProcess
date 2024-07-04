@@ -1,6 +1,6 @@
 import uuid
-from re_process.file_analyzer import FileFiller
-from re_process.utils.mappers.file_path_ast_mapper import FilePathAstMapper
+from reprocess.file_analyzer import FileFiller
+from reprocess.utils.mappers.file_path_ast_mapper import FilePathAstMapper
 from typing import List
 
 

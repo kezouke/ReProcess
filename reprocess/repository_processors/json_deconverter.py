@@ -1,9 +1,9 @@
 import os
 import json
-from re_process.code_component import CodeComponentContainer
-from re_process.file_analyzer import FileContainer
-from re_process.repository_processors.abstract_processor import ReProcessor
-from re_process.repository_processors.repository_container import ReContainer
+from reprocess.code_component import CodeComponentContainer
+from reprocess.file_analyzer import FileContainer
+from reprocess.repository_processors.abstract_processor import ReProcessor
+from reprocess.repository_processors.repository_container import ReContainer
 
 
 class JsonDeconverter(ReProcessor):

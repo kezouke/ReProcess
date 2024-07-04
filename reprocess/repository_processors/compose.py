@@ -1,5 +1,5 @@
-from re_process.repository_processors.abstract_processor import ReProcessor
-from re_process.repository_processors.repository_container import ReContainer
+from reprocess.repository_processors.abstract_processor import ReProcessor
+from reprocess.repository_processors.repository_container import ReContainer
 from typing import List
 
 

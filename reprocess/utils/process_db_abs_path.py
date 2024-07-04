@@ -2,7 +2,7 @@ import os
 from typing import Optional
 import json
 
-from re_process.utils.find_root_directory import find_project_root
+from reprocess.utils.find_root_directory import find_project_root
 
 
 def process_abs_db_path(abs_db_path: Optional[str]):

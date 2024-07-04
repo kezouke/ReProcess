@@ -1,5 +1,5 @@
-from re_process.repository_processors.repository_container import ReContainer
-from re_process.utils.attribute_linker import get_attribute_linker
+from reprocess.repository_processors.repository_container import RepositoryContainer
+from reprocess.utils.attribute_linker import get_attribute_linker
 from abc import ABC, abstractmethod, ABCMeta
 import ast
 import inspect

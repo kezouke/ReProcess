@@ -1,8 +1,8 @@
-from typing import Optional
+from typing import Optional, Tuple, List
 import os
 import subprocess
 import logging
-from re_process.requests_handling.request_enum import RequestType
+from reprocess.requests_handling.request_enum import RequestType
 
 # Configure logging to display errors only
 logging.basicConfig(level=logging.ERROR)
@@ -87,6 +87,8 @@ class RepositoryManager:
             repo_url (str): URL of the Git repository to clone.
             local_repo_path (str): Local path where the repository should be cloned.
         """
+
+        assert self.git_url is not None, "Git URL can not be None"
         if not self.preprocess:
             self.repo_directory = os.path.join(self.repo_directory,
                                                self.repo_name)
@@ -149,7 +151,7 @@ class RepositoryManager:
             logging.error(f"Failed to get changed files: {e}")
             return []
 
-    def get_hash_and_author(self, local_repo_path) -> list:
+    def get_hash_and_author(self, local_repo_path) -> List[str]:
         try:
             result = subprocess.run([
                 'git', '-C', local_repo_path, 'log', '-1',
@@ -162,7 +164,8 @@ class RepositoryManager:
         except subprocess.CalledProcessError as e:
             logging.error(f"Failed to get commit hash and author: {e}")
 
-    def _preprocess_repo(self) -> tuple:
+    def _preprocess_repo(
+            self) -> Tuple[RequestType, List[str], List[str], List[str]]:
         """
         Preprocesses the repository by checking if it exists locally, fetching changes, and determining the type of request needed.
         
