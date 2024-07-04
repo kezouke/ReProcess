@@ -6,7 +6,7 @@ from re_process.repository_processors.repository_container import RepositoryCont
 
 class RegExpFinder(RepositoryProcessor):
 
-    def __init__(self, regExpStr: str):
+    def __init__(self, regExpStr: str = "*"):
         self.regExpStr = regExpStr
 
     def __call__(self, repository_container: RepositoryContainer, **kwargs):
