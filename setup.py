@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-setup(name='re_process',
+setup(name='reprocess',
       version='0.1',
       description=
       'A tool for generating dependency graphs from code repositories.',

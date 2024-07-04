@@ -2,7 +2,7 @@ from typing import Optional, Tuple, List
 import os
 import subprocess
 import logging
-from re_process.requests_handling.request_enum import RequestType
+from reprocess.requests_handling.request_enum import RequestType
 
 # Configure logging to display errors only
 logging.basicConfig(level=logging.ERROR)

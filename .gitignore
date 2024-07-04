@@ -1,7 +1,7 @@
-re_process/data/path.json
-re_process/data/repos/*
-re_process.egg-info/*
+reprocess/data/path.json
+reprocess/data/repos/*
+reprocess.egg-info/*
 cdg_env
 __pycache__/*
 __pycache__/
-re_process.egg-info
+reprocess.egg-info

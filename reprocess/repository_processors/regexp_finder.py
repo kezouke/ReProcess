@@ -1,7 +1,7 @@
 import json
 import re
-from re_process.repository_processors.abstract_processor import RepositoryProcessor
-from re_process.repository_processors.repository_container import RepositoryContainer
+from reprocess.repository_processors.abstract_processor import RepositoryProcessor
+from reprocess.repository_processors.repository_container import RepositoryContainer
 
 
 class RegExpFinder(RepositoryProcessor):

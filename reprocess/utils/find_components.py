@@ -1,7 +1,7 @@
 import ast
 from typing import Dict, List, Tuple
-from re_process.utils.mappers.file_path_ast_mapper import FilePathAstMapError
-from re_process.utils.import_path_extractor import get_import_statement_path
+from reprocess.utils.mappers.file_path_ast_mapper import FilePathAstMapError
+from reprocess.utils.import_path_extractor import get_import_statement_path
 
 
 def extract_components(file_path: str, repos_dir: str,

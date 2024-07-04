@@ -2,10 +2,10 @@ import ast
 from typing import List, Optional, Dict, Tuple
 from uuid import UUID
 
-from re_process.utils.import_path_extractor import get_import_statement_path
-from re_process.utils.mappers.file_path_ast_mapper import FilePathAstMapError
-from re_process.utils.mappers.id_component_mapper import IdComponentMapError
-from re_process.utils.mappers.id_file_analyzer_mapper import IdFileAnalyzerMapper, IdFileAnalyzeMapError
+from reprocess.utils.import_path_extractor import get_import_statement_path
+from reprocess.utils.mappers.file_path_ast_mapper import FilePathAstMapError
+from reprocess.utils.mappers.id_component_mapper import IdComponentMapError
+from reprocess.utils.mappers.id_file_analyzer_mapper import IdFileAnalyzerMapper, IdFileAnalyzeMapError
 
 
 class CodeComponentContainer:
