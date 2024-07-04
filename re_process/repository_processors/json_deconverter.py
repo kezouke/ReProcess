@@ -2,11 +2,11 @@ import os
 import json
 from re_process.code_component import CodeComponentContainer
 from re_process.file_analyzer import FileContainer
-from re_process.repository_processors.abstract_processor import RepositoryProcessor
-from re_process.repository_processors.repository_container import RepositoryContainer
+from re_process.repository_processors.abstract_processor import ReProcessor
+from re_process.repository_processors.repository_container import ReContainer
 
 
-class JsonDeconverter(RepositoryProcessor):
+class JsonDeconverter(ReProcessor):
     """
     A class that processes a JSON file representing a repository's state and reconstructs the repository's structure.
     
@@ -57,7 +57,7 @@ class JsonDeconverter(RepositoryProcessor):
             return d
 
     def __call__(self,
-                 repository_container: RepositoryContainer,
+                 repository_container: ReContainer,
                  inplace: bool = True):
         """
         Processes the given repository container by loading its state from a JSON file and populating the container.

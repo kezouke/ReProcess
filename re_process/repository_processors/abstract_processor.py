@@ -1,4 +1,4 @@
-from re_process.repository_processors.repository_container import RepositoryContainer
+from re_process.repository_processors.repository_container import ReContainer
 from re_process.utils.attribute_linker import get_attribute_linker
 from abc import ABC, abstractmethod, ABCMeta
 import ast
@@ -89,7 +89,7 @@ class Meta(type):
                     'repository_container')
                 param_type = original_call.__annotations__.get(
                     'repository_container', None)
-                if param_index == 1 and param_type == RepositoryContainer:
+                if param_index == 1 and param_type == ReContainer:
                     req_attrs_list = list(analyzer.used_attrs)
 
             req_attrs_list = list(
@@ -137,12 +137,12 @@ class CombinedMeta(ABCMeta, Meta):
     pass
 
 
-class RepositoryProcessor(ABC, metaclass=CombinedMeta):
+class ReProcessor(ABC, metaclass=CombinedMeta):
 
     def __new__(cls, *args, **kwargs):
         cls._init_kwargs = kwargs
         return super().__new__(cls)
 
     @abstractmethod
-    def __call__(self, repository_container: RepositoryContainer):
+    def __call__(self, repository_container: ReContainer):
         pass

@@ -1,10 +1,10 @@
 import os
 import json
-from re_process.repository_processors.abstract_processor import RepositoryProcessor
-from re_process.repository_processors.repository_container import RepositoryContainer
+from re_process.repository_processors.abstract_processor import ReProcessor
+from re_process.repository_processors.repository_container import ReContainer
 
 
-class JsonConverter(RepositoryProcessor):
+class JsonConverter(ReProcessor):
     """
     A class that processes a repository container and converts its data into JSON format.
     
@@ -47,7 +47,7 @@ class JsonConverter(RepositoryProcessor):
         raise TypeError(f"{type(obj)}")
 
     def __call__(self,
-                 repository_container: RepositoryContainer,
+                 repository_container: ReContainer,
                  inplace: bool = True):
         """
         Processes the given repository container and saves its data in JSON format to a file.

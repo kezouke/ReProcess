@@ -7,11 +7,11 @@ from re_process.utils.mappers.file_path_ast_mapper import FilePathAstMapper
 from re_process.utils.mappers.id_component_mapper import IdComponentMapper
 from re_process.utils.mappers.id_file_analyzer_mapper import IdFileAnalyzerMapper
 from re_process.utils.find_components import extract_components_from_files
-from re_process.repository_processors.abstract_processor import RepositoryProcessor
-from re_process.repository_processors.repository_container import RepositoryContainer
+from re_process.repository_processors.abstract_processor import ReProcessor
+from re_process.repository_processors.repository_container import ReContainer
 
 
-class GraphUpdater(RepositoryProcessor):
+class GraphUpdater(ReProcessor):
     """
     A class responsible for updating the repository's dependency graph based on changes detected in the repository.
     
@@ -37,7 +37,7 @@ class GraphUpdater(RepositoryProcessor):
         return changed_file_status[0] == 'D'
 
     def __call__(self,
-                 repository_container: RepositoryContainer,
+                 repository_container: ReContainer,
                  inplace: bool = True):
         """
         Updates the repository's dependency graph based on changes detected in the repository.

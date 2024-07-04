@@ -1,15 +1,15 @@
 import os
 from re_process.requests_handling.repository_manager import RepositoryManager
-from re_process.repository_processors.abstract_processor import RepositoryProcessor
-from re_process.repository_processors.repository_container import RepositoryContainer
+from re_process.repository_processors.abstract_processor import ReProcessor
+from re_process.repository_processors.repository_container import ReContainer
 
 
-class CloneRepository(RepositoryProcessor):
+class CloneRepository(ReProcessor):
 
     def __init__(self, git_url: str, **kwargs):
         self.git_url = git_url
 
-    def __call__(self, repository_container: RepositoryContainer):
+    def __call__(self, repository_container: ReContainer):
         store_repo_path = os.path.dirname(repository_container.repo_path)
         repo_manager = RepositoryManager(store_repo_path, self.git_url, False)
         repo_manager.clone_repo()

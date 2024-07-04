@@ -1,15 +1,15 @@
 import json
 import re
-from re_process.repository_processors.abstract_processor import RepositoryProcessor
-from re_process.repository_processors.repository_container import RepositoryContainer
+from re_process.repository_processors.abstract_processor import ReProcessor
+from re_process.repository_processors.repository_container import ReContainer
 
 
-class RegExpFinder(RepositoryProcessor):
+class RegExpFinder(ReProcessor):
 
     def __init__(self, regExpStr: str = "*"):
         self.regExpStr = regExpStr
 
-    def __call__(self, repository_container: RepositoryContainer, **kwargs):
+    def __call__(self, repository_container: ReContainer, **kwargs):
 
         try:
             re.compile(self.regExpStr)

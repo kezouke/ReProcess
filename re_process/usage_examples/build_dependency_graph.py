@@ -1,6 +1,6 @@
-from re_process.repository_processors import JsonConverter, RepositoryContainer, GraphBuilder, CloneRepository, Compose, RegExpFinder
+from re_process.repository_processors import JsonConverter, ReContainer, GraphBuilder, CloneRepository, Compose, RegExpFinder
 
-repo_container = RepositoryContainer("arxiv-feed", "/home/arxiv-feed",
+repo_container = ReContainer("arxiv-feed", "/home/arxiv-feed",
                                      "/home/db")
 composition = Compose([
     CloneRepository("https://github.com/arXiv/arxiv-feed"),

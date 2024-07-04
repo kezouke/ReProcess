@@ -1,4 +1,4 @@
-class RepositoryContainer:
+class ReContainer:
 
     def __init__(self, repo_name: str, repo_path: str, db_path: str) -> None:
         self.repo_name = repo_name
@@ -6,7 +6,7 @@ class RepositoryContainer:
         self.db_path = db_path
 
     def __eq__(self, other) -> bool:
-        if isinstance(other, RepositoryContainer):
+        if isinstance(other, ReContainer):
             self_attrs = vars(self)
             other_attrs = vars(other)
 

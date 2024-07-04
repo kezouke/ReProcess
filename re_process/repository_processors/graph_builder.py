@@ -5,12 +5,12 @@ from re_process.utils.mappers.file_path_ast_mapper import FilePathAstMapper
 from re_process.utils.mappers.id_component_mapper import IdComponentMapper
 from re_process.utils.mappers.id_file_analyzer_mapper import IdFileAnalyzerMapper
 from re_process.utils.find_components import extract_components_from_files
-from re_process.repository_processors.abstract_processor import RepositoryProcessor
+from re_process.repository_processors.abstract_processor import ReProcessor
 from re_process.utils.find_python_files import find_python_files
-from re_process.repository_processors.repository_container import RepositoryContainer
+from re_process.repository_processors.repository_container import ReContainer
 
 
-class GraphBuilder(RepositoryProcessor):
+class GraphBuilder(ReProcessor):
     """
     This class is responsible for building a directed acyclic graph (DAG) representing the structure and dependencies
     within a set of Python files. It analyzes the files to identify components and their relationships, then constructs
@@ -26,7 +26,7 @@ class GraphBuilder(RepositoryProcessor):
     def __init__(self, **kwargs) -> None:
         super().__init__()
 
-    def __call__(self, repository_container: RepositoryContainer):
+    def __call__(self, repository_container: ReContainer):
         """
         Orchestrates the construction of a dependency graph from a set of Python files contained within a repository.
 
