@@ -1,5 +1,6 @@
 import uuid
 import hashlib
+from copy import deepcopy
 from code_dependency_grapher.cdg.requests_handling.RepositoryManager import RepositoryManager
 from code_dependency_grapher.cdg.CodeComponent import CodeComponentFiller
 from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapper
@@ -85,12 +86,14 @@ class GraphUpdater(RepositoryProcessor):
             elif code_component.file_id in updated_files_ids:
                 updated_components_ids.append(code_component.component_id)
 
-        temporary_code_components = list(
-            filter(
-                lambda code_component:
-                (code_component.component_id not in removed_components_ids and
-                 code_component.component_id not in updated_components_ids),
-                repository_container.code_components))
+        temporary_code_components = deepcopy(
+            list(
+                filter(
+                    lambda code_component:
+                    (code_component.component_id not in removed_components_ids
+                     and code_component.component_id not in
+                     updated_components_ids),
+                    repository_container.code_components)))
 
         # Adjust linked component IDs based on changes
         changed_components_ids = set(removed_components_ids +
@@ -184,6 +187,7 @@ class GraphUpdater(RepositoryProcessor):
         external_components.update(repository_container.external_components)    
         files = temproral_files + new_files
         code_components = temporary_code_components + code_components
+
         return {
             "external_components": external_components,
             "code_components": code_components,
