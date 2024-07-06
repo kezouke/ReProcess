@@ -3,7 +3,7 @@ _release version: 0.2_
 
 ----
 
-ReProcess is an open-source system designed for the easy management of Git Python repositories.
+ReProcess (`Re` stands for `Repository`) is an open-source system designed for the easy processing and analyzing of Git Python repositories.
 
 ----
 
@@ -54,28 +54,44 @@ This script demonstrates how to utilize the ReProcess library.
 
 ### Example Usage Script
 ```python
-from code_dependency_grapher.cdg.repository_processors import JsonConverter, ReContainer, GraphBuilder, CloneRepository, Compose, RegExpFinder
+from reprocess.repository_processors import JsonConverter, ReContainer, GraphBuilder, CloneRepository, Compose, RegExpFinder
 
+# Initialize a ReContainer object with the name of the repository, the path where the repository will be cloned,
+# and the path where the JSON graphs will be saved.
 repo_container = ReContainer(
     "arxiv-feed", "/home/test_repo_folder/arxiv-feed",
     "/home/test_repo_folder/db")
 
+# Create a Compose object that specifies a sequence of operations to be performed on the repository.
+# This sequence includes cloning the repository, building a dependency graph, searching for components matching a regex pattern,
+# and converting the repository data to JSON format.
 composition = Compose([
+    # Clone the repository from the specified URL.
     CloneRepository("https://github.com/arXiv/arxiv-feed"),
+    # Build a dependency graph of the repository.
     GraphBuilder(),
+    # Search for components in the repository that match the specified regex pattern.
     RegExpFinder("^(.*test.*)$|^((?:.*[Tt]est).*)$"),
+    # Convert the repository data to JSON format and save it to the specified location.
     JsonConverter()
 ])
 
+# Execute the sequence of operations on the repository container.
 new_container = composition(repo_container)
 ```
+
+### Description of ReContainer
+The `ReContainer` (`Re` stands for `Repository`) is the main class for handling repositories within ReProcess. This class stores any attributes related to the repository that the user is processing, such as the hash of the last commit, all `.py` files in the repository, etc. The `ReContainer` is central to the processing of repositories. The set of attributes that an `ReContainer` instance can store is flexible and dynamic; each repository handler can expect and create attributes as needed, making the `ReContainer` highly adaptable to different processing requirements.
 
 ### Parameters of the ReContainer
 - **repo_name**: Name of the repository.
 - **repo_path**: Directory where the repository will be cloned.
 - **db_path**: Directory where the JSON graphs will be saved.
 
-### List of Repository Processors
+Note that each ReProcessor (`Re` stands for `Repository`) will be able to add new attributes to the container instance in the future, so the above parameters are not the only ones.
+
+
+### List of ReProcessors
 - **CloneRepository**: Clones a repository from a given Git URL.
   ```python
   Compose(repo_container, [CloneRepository("https://github.com/arXiv/arxiv-feed")])
@@ -120,20 +136,20 @@ This set of processors allows flexible management and analysis of code dependenc
 Users can create their own repository processors by making classes that inherit from `ReProcessor`. When creating a custom processor, the class should:
 
 1. **Inherit from `ReProcessor`**: This ensures that the necessary checks and behaviors are inherited.
-2. **Implement the `__call__` Method**: This method should accept a `RepositoryContainer` instance as an argument and return a dictionary with updated attributes and their values. The `ReContainer` should not be explicitly modified within the `__call__` method.
+2. **Implement the `__call__` Method**: This method should accept a `ReContainer` instance as an argument and return a dictionary with updated attributes and their values. The `ReContainer` should not be explicitly modified within the `__call__` method.
 
 ### Example Code for a Custom Repository Processor
 ```python
-from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
-from code_dependency_grapher.utils.attribute_linker import get_attribute_linker
+from reprocess.repository_processors import ReContainer
+from reprocess.utils.attribute_linker import get_attribute_linker
 from abc import ABC, abstractmethod, ABCMeta
 import ast
 import inspect
 import functools
 import copy
 
-class CustomProcessor(RepositoryProcessor):
-    def __call__(self, repository_container: RepositoryContainer):
+class CustomProcessor(ReProcessor):
+    def __call__(self, repository_container: ReContainer):
         # Your processing logic here
         code_components = repository_container.code_components # you can still access any attributes you want 
         updated_attributes = {
@@ -146,9 +162,11 @@ class CustomProcessor(RepositoryProcessor):
 
 If the `ReContainer` is used or changed in an incorrect manner, the user will be guided automatically on how to resolve the issue. This is done through the `AbsentAttributesException` and internal checks that ensure required attributes are present and the container is not modified explicitly.
 
-### JSON Tree Structure Description
+## JSON Tree Structure Description
 
-After running the analysis, the JSON structure stored at `db_url` will have the following format:
+The JSON structure generated by ReProcess can have an arbitrary structure. The exact format depends on the ReProcessors that have been executed before running the JsonConverter. The JsonConverter stores every attribute in the ReContainer, including nested ones, making the JSON output highly flexible and tailored to the specific processing performed on the repository.
+
+The example below is obtained after running the ReProcessors sequence of `CloneRepository`, `GraphBuilder`, and `JsonConverter`.
 
 #### Top-Level Structure
 - `files`: A list of dictionaries, each representing a file analyzed.
@@ -203,9 +221,7 @@ This structure helps in understanding the relationships and dependencies among v
     ],
     "files": [
         {
-            "file_id": "03ea4512-375c-457e-b8c9-a53
-
-f70c0c1c5",
+            "file_id": "03ea4512-375c-457e-b8c9-a53f70c0c1c5",
             "file_path": "feed/serializers/extensions.py",
             "imports": [
                 "Dict",
