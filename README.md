@@ -47,36 +47,36 @@ These steps will set up the necessary environment for using the library in your 
 ### Running the ReProcess Example Script
 To execute the usage example script of our library, use the following command:
 ```bash
-python -m reprocess.usage_examples.build_dependency_graph
+python -m reprocess.usage_examples.re_processing_example 
 ```
 
 This script demonstrates how to utilize the ReProcess library.
 
 ### Example Usage Script
 ```python
-from reprocess.repository_processors import JsonConverter, ReContainer, GraphBuilder, CloneRepository, Compose, RegExpFinder
+from reprocess.re_processors import JsonConverter, ReContainer, GraphBuilder, CloneRepository, Compose, RegExpFinder
 
-# Initialize a ReContainer object with the name of the repository, the path where the repository will be cloned,
+# Initialize a ReContainer object with the name of the repository,
+# the path where the repository will be cloned,
 # and the path where the JSON graphs will be saved.
-repo_container = ReContainer(
-    "arxiv-feed", "/home/test_repo_folder/arxiv-feed",
-    "/home/test_repo_folder/db")
+repo_container = ReContainer("arxiv-feed",
+                             "/Users/elisey/AES/test_repo_folder/arxiv-feed",
+                             "/Users/elisey/AES/test_repo_folder/db")
 
-# Create a Compose object that specifies a sequence of operations to be performed on the repository.
-# This sequence includes cloning the repository, building a dependency graph, searching for components matching a regex pattern,
-# and converting the repository data to JSON format.
+# Create a Compose object that specifies a sequence of operations
+# to be performed on the repository. This sequence includes cloning
+# the repository, building a dependency graph, searching for components
+# matching a regex pattern, and converting the repository data
+# to JSON format.
 composition = Compose([
-    # Clone the repository from the specified URL.
     CloneRepository("https://github.com/arXiv/arxiv-feed"),
-    # Build a dependency graph of the repository.
     GraphBuilder(),
-    # Search for components in the repository that match the specified regex pattern.
     RegExpFinder("^(.*test.*)$|^((?:.*[Tt]est).*)$"),
-    # Convert the repository data to JSON format and save it to the specified location.
     JsonConverter()
 ])
 
-# Execute the sequence of operations on the repository container.
+# Execute the sequence of operations on
+# the repository container.
 new_container = composition(repo_container)
 ```
 
@@ -138,25 +138,99 @@ Users can create their own repository processors by making classes that inherit 
 1. **Inherit from `ReProcessor`**: This ensures that the necessary checks and behaviors are inherited.
 2. **Implement the `__call__` Method**: This method should accept a `ReContainer` instance as an argument and return a dictionary with updated attributes and their values. The `ReContainer` should not be explicitly modified within the `__call__` method.
 
-### Example Code for a Custom Repository Processor
-```python
-from reprocess.repository_processors import ReContainer
-from reprocess.utils.attribute_linker import get_attribute_linker
-from abc import ABC, abstractmethod, ABCMeta
-import ast
-import inspect
-import functools
-import copy
+### Example with Custom Processors
 
-class CustomProcessor(ReProcessor):
+To demonstrate creating and using custom processors with the ReProcess library, follow the example below:
+
+```python
+# Import necessary classes and exceptions from the reprocess package
+from reprocess.re_processors.processor import ReProcessor, AbsentAttributesException
+from reprocess.repository_container import ReContainer
+from reprocess.re_processors import Compose
+
+
+# Define a custom ReProcessorA class that extends the ReProcessor class
+class ReProcessorA(ReProcessor):
+
     def __call__(self, repository_container: ReContainer):
-        # Your processing logic here
-        code_components = repository_container.code_components # you can still access any attributes you want 
-        updated_attributes = {
-            'new_attribute': 'new_value'
-        }
-        return updated_attributes
+        # Return a dictionary with the attribute 'attr_a' set to 10
+        return {"attr_a": 10}
+
+
+# Define a custom ReProcessorB class that extends the ReProcessor class
+class ReProcessorB(ReProcessor):
+
+    def __call__(self, repository_container: ReContainer):
+        # Access the 'attr_a' attribute from the repository container
+        attr_a = repository_container.attr_a
+        # Calculate 'attr_b' as 'attr_a' multiplied by 10
+        attr_b = attr_a * 10
+        # Return a dictionary with the attribute 'attr_b'
+        return {"attr_b": attr_b}
+
+
+# Create an example repository container with specific paths
+re_container_example = ReContainer("test_1", "/test_1", "/db")
+
+# Instantiate the custom ReProcessors
+a = ReProcessorA()
+b = ReProcessorB()
+
+# Separator for clarity
+print("_" * 10)
+print("Trying to access an undefined ReContainer attribute example:")
+
+# Create a composition with only ReProcessorB
+composition_example_1 = Compose([b])
+
+# Attempt to run the composition and catch any AbsentAttributesException
+try:
+    new_container = composition_example_1(re_container_example)
+except AbsentAttributesException as e:
+    print(f"An error occurred: {e}")
+'''
+Expected output:
+__________
+Trying to access an undefined ReContainer attribute example:
+An error occurred: 
+Absent attributes during execution of ReProcessorB: `attr_a`
+To assign `attr_a`, refer to:
+ReProcessorA
+__________
+'''
+
+# Separator for clarity
+print("_" * 10)
+print()
+print("Using the hints we obtained above, run the correct pipeline:")
+
+# Create a composition with both ReProcessorA and ReProcessorB
+composition_example_2 = Compose([a, b])
+
+# Run the composition to process the repository container
+new_container = composition_example_2(re_container_example)
+
+# Print the attributes of the new container
+print(new_container.__dict__)
+'''
+Expected output:
+{'repo_name': 'test_1',
+ 'repo_path': '/test_1', 
+ 'db_path': '/db', 
+ 'attr_a': 10, 
+ 'attr_b': 100}
+'''
 ```
+
+---
+
+This script showcases how to define and compose custom processors (`ReProcessorA` and `ReProcessorB`) to manipulate attributes (`attr_a` and `attr_b`) within a `ReContainer` instance (`re_container_example`). Use the following command to execute this example:
+
+```bash
+python3 -m reprocess.usage_examples.creating_custom_re_processor
+```
+
+This demonstrates the flexibility of creating and using custom processors within the ReProcess library.
 
 ### Handling Incorrect Usage
 
