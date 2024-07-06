@@ -18,7 +18,8 @@ class ReManager:
         repo_name (str): Extracted name of the repository from the URL.
     """
 
-    def __init__(self, repository_directory: str, git_url: Optional[str]) -> None:
+    def __init__(self, repository_directory: str,
+                 git_url: Optional[str]) -> None:
         """
         Initializes the ReManager instance.
 
@@ -31,7 +32,8 @@ class ReManager:
 
         if self.git_url:
             self.repo_name = self.git_url.split('/')[-1].split('.')[0]
-            self.repo_directory = os.path.join(self.repo_directory, self.repo_name)
+            self.repo_directory = os.path.join(self.repo_directory,
+                                               self.repo_name)
         else:
             raise ValueError("Git URL must be provided")
 
@@ -53,8 +55,11 @@ class ReManager:
             return
 
         try:
-            subprocess.run(['git', 'clone', self.git_url, self.repo_directory], check=True)
-            logging.info(f"Successfully cloned {self.git_url} into {self.repo_directory}")
+            subprocess.run(['git', 'clone', self.git_url, self.repo_directory],
+                           check=True)
+            logging.info(
+                f"Successfully cloned {self.git_url} into {self.repo_directory}"
+            )
         except subprocess.CalledProcessError as e:
             logging.error(f"Failed to clone repository: {e}")
             raise
@@ -64,8 +69,11 @@ class ReManager:
         Pulls the latest changes from the remote repository.
         """
         try:
-            subprocess.run(['git', '-C', self.repo_directory, 'pull'], check=True)
-            logging.info(f"Successfully pulled latest changes into {self.repo_directory}")
+            subprocess.run(['git', '-C', self.repo_directory, 'pull'],
+                           check=True)
+            logging.info(
+                f"Successfully pulled latest changes into {self.repo_directory}"
+            )
         except subprocess.CalledProcessError as e:
             logging.error(f"Failed to pull latest changes: {e}")
             raise
@@ -92,8 +100,13 @@ class ReManager:
             list: A list containing the latest commit hash and author email.
         """
         try:
-            result = subprocess.run(['git', '-C', self.repo_directory, 'log', '-1', '--pretty=format:%H%n%ae'],
-                                    capture_output=True, text=True, check=True)
+            result = subprocess.run([
+                'git', '-C', self.repo_directory, 'log', '-1',
+                '--pretty=format:%H%n%ae'
+            ],
+                                    capture_output=True,
+                                    text=True,
+                                    check=True)
             return result.stdout.split('\n')
         except subprocess.CalledProcessError as e:
             logging.error(f"Failed to get commit hash and author: {e}")
