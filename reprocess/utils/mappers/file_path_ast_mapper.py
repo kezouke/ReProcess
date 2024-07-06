@@ -43,4 +43,7 @@ class FilePathAstMapError(Exception):
     Custom exception class raised when attempting to access the file_path_ast_map attribute of an instance of FilePathAstMapper
     when it has not been properly initialized or is otherwise unavailable.
     """
-    pass
+
+    def __init__(self, message="file_path_ast_map is None"):
+        self.message = message
+        super().__init__(self.message)

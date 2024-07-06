@@ -65,4 +65,7 @@ class IdFileAnalyzeMapError(Exception):
     This exception is designed to handle cases where the expected mapping between identifiers and components is missing,
     indicating a potential issue with the initialization or generation of the mapping.
     """
-    pass
+
+    def __init__(self, message="id_files_manager is None"):
+        self.message = message
+        super().__init__(self.message)

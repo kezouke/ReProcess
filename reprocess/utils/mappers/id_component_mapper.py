@@ -59,4 +59,7 @@ class IdComponentMapError(Exception):
     Custom exception class raised when attempting to access the id_component_map attribute of an instance of IdComponentMapper
     when it has not been properly initialized or is otherwise unavailable.
     """
-    pass
+
+    def __init__(self, message="id_component_map is None"):
+        self.message = message
+        super().__init__(self.message)
