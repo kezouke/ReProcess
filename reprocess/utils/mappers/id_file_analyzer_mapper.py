@@ -75,3 +75,16 @@ class IdFileAnalyzerMapper(Mapper):
             'id_file_map': self.id_file_map,
             'path_id_map': self.path_id_map
         }
+
+
+class IdFileAnalyzeMapError(Exception):
+    """
+    Custom exception raised when attempting to access id_component_map with a None value.
+    
+    This exception is designed to handle cases where the expected mapping between identifiers and components is missing,
+    indicating a potential issue with the initialization or generation of the mapping.
+    """
+
+    def __init__(self, message="id_files_manager is None"):
+        self.message = message
+        super().__init__(self.message)
