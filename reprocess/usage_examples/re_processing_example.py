@@ -1,4 +1,4 @@
-from reprocess.re_processors import JsonConverter, ReContainer, GraphBuilder, CloneRepository, Compose, RegExpFinder
+from reprocess.re_processors import JsonConverter, ReContainer, GraphBuilder, CloneRepository, Compose, RegExpFinder, JsonDeconverter, GraphUpdater
 
 # Initialize a ReContainer object with the name of the repository,
 # the path where the repository will be cloned,
@@ -13,9 +13,9 @@ repo_container = ReContainer("arxiv-feed",
 # matching a regex pattern, and converting the repository data
 # to JSON format.
 composition = Compose([
-    CloneRepository("https://github.com/arXiv/arxiv-feed"),
-    GraphBuilder(),
-    RegExpFinder("^(.*test.*)$|^((?:.*[Tt]est).*)$"),
+    # CloneRepository("https://github.com/arXiv/arxiv-feed"),
+    JsonDeconverter(),
+    GraphUpdater(),
     JsonConverter()
 ])
 

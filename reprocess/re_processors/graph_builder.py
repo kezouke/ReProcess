@@ -1,13 +1,7 @@
-import uuid
-import hashlib
-from reprocess.code_component import CodeComponentFiller
-from reprocess.utils.mappers.file_path_ast_mapper import FilePathAstMapper
-from reprocess.utils.mappers.id_component_mapper import IdComponentMapper
-from reprocess.utils.mappers.id_file_analyzer_mapper import IdFileAnalyzerMapper
-from reprocess.utils.find_components import extract_components_from_files
 from reprocess.re_processors.processor import ReProcessor
 from reprocess.utils.find_python_files import find_python_files
 from reprocess.repository_container import ReContainer
+from reprocess.utils.graph_utils import *
 
 
 class GraphBuilder(ReProcessor):
@@ -38,67 +32,23 @@ class GraphBuilder(ReProcessor):
         """
         if not repository_container.is_downloaded:
             return dict()
+
         # Find all Python files within the repository
         python_files = find_python_files(repository_container.repo_path)
 
         # Map file paths to their abstract syntax trees (ASTs)
-        ast_manager = FilePathAstMapper(repository_container.repo_path,
-                                        python_files)
+        ast_manager, id_component_manager, id_files_manager, package_components_names = \
+        map_files_and_components(repository_container.repo_path, python_files)
 
-        # Extract components from the found Python files
-        file_components_map, _, package_components_names = extract_components_from_files(
-            python_files, repository_container.repo_path,
-            ast_manager.file_path_ast_map)
+        # Construct code components
+        code_components = construct_code_components(
+            id_component_manager, id_files_manager, ast_manager,
+            package_components_names, repository_container.repo_path)
 
-        # Map component identifiers to their corresponding components
-        id_component_manager = IdComponentMapper(
-            repository_container.repo_path, file_components_map)
-
-        # Analyze files to map them to their unique identifiers and other relevant data
-        id_files_manager = IdFileAnalyzerMapper(python_files, ast_manager,
-                                                package_components_names,
-                                                repository_container.repo_path)
-
-        # Initialize a list to hold the constructed code components
-        code_components = []
-
-        # Construct code components based on the identified components and their relationships
-        for cmp_id in id_component_manager.id_component_map:
-            code_components.append(
-                CodeComponentFiller(cmp_id, repository_container.repo_path,
-                                    id_files_manager,
-                                    ast_manager.file_path_ast_map,
-                                    id_component_manager.id_component_map,
-                                    package_components_names))
-
-        for cmp_to_hash in code_components:
-            hashId = hashlib.sha256(
-                (cmp_to_hash.component_name +
-                 cmp_to_hash.getComponentAttribute('component_code')
-                 ).encode('utf-8')).hexdigest()
-            id_component_manager.component_id_map[
-                cmp_to_hash.getComponentAttribute('component_name')] = hashId
-            cmp_to_hash.setComponentAttribute('component_id', hashId)
-
-        # Identify external components and link internal components based on imports
-        external_components_dict = {}
-        all_internal_components = set(package_components_names)
-        for cmp in code_components:
-            cmp_imports = set(cmp.extract_imports())
-            linked_components = all_internal_components.intersection(
-                cmp_imports)
-            external_components = cmp_imports.difference(linked_components)
-
-            for l_cmp in linked_components:
-                l_cmp_id = id_component_manager.component_id_map[l_cmp]
-                cmp.linked_component_ids.append(l_cmp_id)
-
-            for e_cmp in external_components:
-                e_id = external_components_dict.get(e_cmp, None)
-                if e_id is None:
-                    e_id = str(uuid.uuid4())
-                    external_components_dict[e_cmp] = e_id
-                cmp.external_component_ids.append(e_id)
+        # Link components
+        external_components_dict = link_components(code_components,
+                                                   id_component_manager,
+                                                   package_components_names)
 
         # Populate the repository container with the constructed code components and files
         code_components = list(
@@ -107,12 +57,9 @@ class GraphBuilder(ReProcessor):
             value.get_file_container()
             for _, value in id_files_manager.id_file_map.items()
         ]
-        external_components = {
-            v: k
-            for k, v in external_components_dict.items()
-        }
+
         return {
             "code_components": code_components,
             "files": files,
-            "external_components": external_components
+            "external_components": external_components_dict
         }
