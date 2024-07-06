@@ -1,7 +1,7 @@
 from reprocess.re_processors.processor import ReProcessor
 from reprocess.utils.find_python_files import find_python_files
 from reprocess.repository_container import ReContainer
-from reprocess.utils.graph_utils import *
+from reprocess.utils.graph_utils import map_files_and_components, construct_code_components, link_components
 
 
 class GraphBuilder(ReProcessor):
