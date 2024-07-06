@@ -3,32 +3,29 @@ from reprocess.re_processors.processor import ReProcessor, AbsentAttributesExcep
 from reprocess.repository_container import ReContainer
 from reprocess.re_processors import Compose
 
+
 # Define a custom ReProcessorA class that extends the ReProcessor class
 class ReProcessorA(ReProcessor):
+
     def __call__(self, repository_container: ReContainer):
         # Return a dictionary with the attribute 'attr_a' set to 10
-        return {
-            "attr_a": 10
-        }
+        return {"attr_a": 10}
+
 
 # Define a custom ReProcessorB class that extends the ReProcessor class
 class ReProcessorB(ReProcessor):
+
     def __call__(self, repository_container: ReContainer):
         # Access the 'attr_a' attribute from the repository container
         attr_a = repository_container.attr_a
         # Calculate 'attr_b' as 'attr_a' multiplied by 10
         attr_b = attr_a * 10
         # Return a dictionary with the attribute 'attr_b'
-        return {
-            "attr_b": attr_b
-        }
+        return {"attr_b": attr_b}
+
 
 # Create an example repository container with specific paths
-re_container_example = ReContainer(
-    "test_1", 
-    "/test_1",
-    "/db"
-)
+re_container_example = ReContainer("test_1", "/test_1", "/db")
 
 # Instantiate the custom ReProcessors
 a = ReProcessorA()
@@ -46,7 +43,6 @@ try:
     new_container = composition_example_1(re_container_example)
 except AbsentAttributesException as e:
     print(f"An error occurred: {e}")
-
 '''
 Expected output:
 __________
@@ -71,7 +67,6 @@ new_container = composition_example_2(re_container_example)
 
 # Print the attributes of the new container
 print(new_container.__dict__)
-
 '''
 Expected output:
 {'repo_name': 'test_1',
