@@ -1,4 +1,4 @@
-from .repository_container import ReContainer
+from ..repository_container import ReContainer
 from .graph_builder import GraphBuilder
 from .graph_updater import GraphUpdater
 from .json_converter import JsonConverter

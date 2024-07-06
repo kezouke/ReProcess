@@ -1,4 +1,4 @@
-from reprocess.repository_processors import JsonConverter, ReContainer, GraphBuilder, CloneRepository, Compose, RegExpFinder
+from reprocess.re_processors import JsonConverter, ReContainer, GraphBuilder, CloneRepository, Compose, RegExpFinder
 
 repo_container = ReContainer("arxiv-feed",
                              "/Users/elisey/AES/test_repo_folder/arxiv-feed",
