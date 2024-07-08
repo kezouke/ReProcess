@@ -24,20 +24,18 @@ class FilePathAstMapper(Mapper):
             python_files (List[str]): A list of file paths to Python files whose ASTs should be parsed and stored.
         """
         super().__init__(repos_dir)
+        self.python_files = python_files
         self.file_path_ast_map = {}
-        self.generate_mapping(python_files)
+        self.generate_mapping()
 
-    def generate_mapping(self, python_files: List[str]):
+    def generate_mapping(self):
         """
         Generates mappings between file paths and their AST representations.
 
         This method reads each Python file from the provided list, parses it into an AST,
         and stores the AST in the file_path_ast_map dictionary.
-
-        Args:
-            python_files (List[str]): A list of file paths to Python files whose ASTs should be parsed and stored.
         """
-        for file_path in python_files:
+        for file_path in self.python_files:
             try:
                 with open(file_path, 'r', encoding='utf-8') as file:
                     # Parse the file content into an AST

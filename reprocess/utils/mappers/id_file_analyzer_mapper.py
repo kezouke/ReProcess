@@ -31,30 +31,26 @@ class IdFileAnalyzerMapper(Mapper):
         super().__init__(repos_dir)
         self.id_file_map = {}
         self.path_id_map = {}
-        self.generate_mapping(python_files, ast_manager,
-                              package_components_names)
+        self.python_files = python_files
+        self.ast_manager = ast_manager
+        self.package_components_names = package_components_names
+        self.generate_mapping()
 
-    def generate_mapping(self, python_files: List[str],
-                         ast_manager: FilePathAstMapper,
-                         package_components_names: List[str]):
+    def generate_mapping(self):
         """
         Generates mappings between file paths and unique identifiers using FileAnalyzer instances.
 
         This method iterates over the provided list of file paths, creates a unique identifier for each,
         initializes a FileAnalyzer instance for each file, and populates both the id_file_map and path_id_map dictionaries.
-
-        Args:
-            python_files (List[str]): List of file paths to analyze.
-            ast_manager (FilePathAstMapper): An instance of FilePathAstMapper used to manage the AST mapping.
-            package_components_names (List[str]): List of component names.
         """
-        for path in python_files:
+        for path in self.python_files:
             try:
                 id = str(uuid.uuid4()
                          )  # Generate a unique identifier for the current file
                 file_analyzer = FileFiller(
-                    id, path, self.repos_dir, ast_manager.file_path_ast_map,
-                    package_components_names
+                    id, path, self.repos_dir,
+                    self.ast_manager.file_path_ast_map,
+                    self.package_components_names
                 )  # Initialize a FileAnalyzer instance
                 self.id_file_map[
                     id] = file_analyzer  # Map the unique identifier to the FileAnalyzer instance

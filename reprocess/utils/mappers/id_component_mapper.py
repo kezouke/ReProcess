@@ -28,21 +28,19 @@ class IdComponentMapper(Mapper):
         super().__init__(repos_dir)
         self.id_component_map = {}
         self.component_id_map = {}
-        self.generate_mapping(file_components_map)
+        self.file_components_map = file_components_map
+        self.generate_mapping()
 
-    def generate_mapping(self, file_components_map: Dict[str, List[str]]):
+    def generate_mapping(self):
         """
         Generates mappings between file paths, component names, and unique IDs.
 
         This method populates the id_component_map and component_id_map dictionaries based on the provided
         file_components_map.
-
-        Args:
-            file_components_map (Dict[str, List[str]]): A dictionary mapping file paths to lists of component names found within those files.
         """
         base_path = self.repos_dir
 
-        for path, components in file_components_map.items():
+        for path, components in self.file_components_map.items():
             for component_name in components:
                 # Generate a unique ID for each component
                 id = str(uuid.uuid4())
