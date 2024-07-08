@@ -1,6 +1,7 @@
-code_dependency_grapher/data/path.json
-code_dependency_grapher/data/repos/*
-code_dependency_grapher.egg-info
+reprocess/data/path.json
+reprocess/data/repos/*
+reprocess.egg-info/*
 cdg_env
 __pycache__/*
 __pycache__/
+reprocess.egg-info

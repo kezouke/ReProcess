@@ -1,10 +1,68 @@
 import ast
 from typing import List, Optional, Dict
-from code_dependency_grapher.utils.mappers.FilePathAstMapper import FilePathAstMapError
-from code_dependency_grapher.utils.import_path_extractor import get_import_statement_path
+from dataclasses import dataclass
+from reprocess.utils.mappers.file_path_ast_mapper import FilePathAstMapError
+from reprocess.utils.import_path_extractor import get_import_statement_path
 
 
-class FileAnalyzer:
+@dataclass
+class FileContainer:
+    """
+    Encapsulates information about a specific Python file, including its unique identifier, path, imports, called components, and callable components.
+    
+    Attributes:
+        file_id (str): Unique identifier for the file.
+        file_path (str): Path to the file.
+        imports (List[str]): List of imported modules or names.
+        called_components (List[str]): List of components that are called within the file.
+        callable_components (List[str]): List of components that can be called, including functions and classes.
+    """
+
+    def __init__(self, file_id: str, file_path: str, imports: List[str],
+                 called_components: List[str],
+                 callable_components: List[str]) -> None:
+        """
+        Initializes a new instance of the FileContainer class.
+        
+        Parameters:
+            file_id (str): Unique identifier for the file.
+            file_path (str): Path to the file.
+            imports (List[str]): List of imported modules or names.
+            called_components (List[str]): List of components that are called within the file.
+            callable_components (List[str]): List of components that can be called, including functions and classes.
+        """
+        self.file_id = file_id
+        self.file_path = file_path
+        self.imports = imports
+        self.called_components = called_components
+        self.callable_components = callable_components
+
+    def __str__(self) -> str:
+        """Returns the file path as a string representation of the object."""
+        return self.file_path
+
+    def __hash__(self) -> int:
+        """Returns the hash value of the file path."""
+        return hash(self.file_path)
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, FileContainer):
+            self_attrs = vars(self)
+            other_attrs = vars(other)
+
+            if self_attrs.keys() != other_attrs.keys():
+                return False
+
+            for key in self_attrs.keys():
+                if key not in other_attrs or self_attrs[key] != other_attrs[
+                        key]:
+                    return False
+            return True
+        else:
+            return False
+
+
+class FileFiller:
     """
     Analyzes a Python file to extract various components such as imports, called components, and callable components.
     
@@ -167,3 +225,7 @@ class FileAnalyzer:
     def __hash__(self) -> int:
         """Returns the hash value of the file path."""
         return hash(self.file_path)
+
+    def get_file_container(self) -> FileContainer:
+        return FileContainer(self.file_id, self.file_path, self.imports,
+                             self.called_components, self.callable_components)

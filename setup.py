@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
-setup(name='code_dependency_grapher',
-      version='0.1',
+setup(name='reprocess',
+      version='0.2',
       description=
       'A tool for generating dependency graphs from code repositories.',
       author='Advanced Engineering School',

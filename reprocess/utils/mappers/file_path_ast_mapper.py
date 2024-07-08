@@ -1,41 +1,62 @@
 import ast
-from typing import List
+from typing import List, Dict
+from reprocess.utils.mappers.mapper import Mapper
 
 
-class FilePathAstMapper:
+class FilePathAstMapper(Mapper):
     """
     Maps Python file paths to their corresponding Abstract Syntax Trees (ASTs).
-    
+
     This class reads Python files and parses them into their AST representations, storing these trees
     in a dictionary keyed by the file path. This allows for easy retrieval and manipulation of the ASTs
     for further analysis or modification of the original Python code.
+
+    Attributes:
+        file_path_ast_map (Dict): Maps file paths to their AST representations.
     """
 
-    def __init__(self, repos_dir, python_files: List[str]):
+    def __init__(self, repos_dir: str, python_files: List[str]):
         """
         Initializes a new instance of the FilePathAstMapper class.
-        
+
         Args:
+            repos_dir (str): The base directory of the repository.
             python_files (List[str]): A list of file paths to Python files whose ASTs should be parsed and stored.
         """
-        self.file_path_ast_map = {
-        }  # Dictionary to store mappings of file paths to their ASTs
+        super().__init__(repos_dir)
+        self.python_files = python_files
+        self.file_path_ast_map = {}
+        self.generate_mapping()
 
-        # Iterate over each file path in the provided list
-        for file_path in python_files:
+    def generate_mapping(self):
+        """
+        Generates mappings between file paths and their AST representations.
+
+        This method reads each Python file from the provided list, parses it into an AST,
+        and stores the AST in the file_path_ast_map dictionary.
+        """
+        for file_path in self.python_files:
             try:
-                # Open the file in read mode with UTF-8 encoding
                 with open(file_path, 'r', encoding='utf-8') as file:
                     # Parse the file content into an AST
                     tree = ast.parse(file.read())
 
                     # Store the AST in the file_path_ast_map dictionary, keyed by the file path
                     relative_repo_path = "/".join(
-                        file_path.split(f'{repos_dir}')[1].split("/")[1:])
+                        file_path.split(f'{self.repos_dir}')[1].split("/")[1:])
                     self.file_path_ast_map[relative_repo_path] = tree
             except Exception as e:
                 print(f"Failed to parse {file_path}: {e}")
                 continue
+
+    def get_mapping(self) -> Dict:
+        """
+        Returns the generated mapping.
+
+        Returns:
+            dict: The generated mapping dictionary containing file_path_ast_map.
+        """
+        return {'file_path_ast_map': self.file_path_ast_map}
 
 
 class FilePathAstMapError(Exception):
@@ -43,4 +64,7 @@ class FilePathAstMapError(Exception):
     Custom exception class raised when attempting to access the file_path_ast_map attribute of an instance of FilePathAstMapper
     when it has not been properly initialized or is otherwise unavailable.
     """
-    pass
+
+    def __init__(self, message="file_path_ast_map is None"):
+        self.message = message
+        super().__init__(self.message)
