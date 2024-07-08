@@ -140,22 +140,41 @@ Users can create their own repository processors by making classes that inherit 
 
 ### Example Code for a Custom Repository Processor
 ```python
-from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
-from code_dependency_grapher.utils.attribute_linker import get_attribute_linker
-from abc import ABC, abstractmethod, ABCMeta
-import ast
-import inspect
-import functools
-import copy
+# Import necessary classes and exceptions from the reprocess package
+from reprocess.re_processors.processor import ReProcessor
+from reprocess.repository_container import ReContainer
+from reprocess.re_processors import Compose
 
-class CustomProcessor(RepositoryProcessor):
-    def __call__(self, repository_container: RepositoryContainer):
-        # Your processing logic here
-        code_components = repository_container.code_components # you can still access any attributes you want 
-        updated_attributes = {
-            'new_attribute': 'new_value'
-        }
-        return updated_attributes
+
+# Define a custom ReProcessorA class that extends the ReProcessor class
+class ReProcessorA(ReProcessor):
+
+    def __call__(self, repository_container: ReContainer):
+        # Return a dictionary with the attribute 'attr_a' set to 10
+        return {"attr_a": 10}
+
+# Create an example repository container with specific paths
+re_container_example = ReContainer("test_1", "/test_1", "/db")
+
+# Instantiate the custom ReProcessors
+a = ReProcessorA()
+
+# Create a composition with both ReProcessorA
+composition_example = Compose([a])
+
+# Run the composition to process the repository container
+new_container = composition_example(re_container_example)
+
+# Print the attributes of the new container
+print(new_container.__dict__)
+'''
+Expected output:
+{'repo_name': 'test_1',
+ 'repo_path': '/test_1', 
+ 'db_path': '/db', 
+ 'attr_a': 10
+}
+'''
 ```
 
 This script showcases how to define and compose custom processor. If you want to dive into the intricacies of creating and working with custom processors, we advise you to run the usage example `creating_custom_re_processor.py`:
