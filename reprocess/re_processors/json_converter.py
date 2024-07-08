@@ -1,7 +1,7 @@
 import os
 import json
-from reprocess.repository_processors.processor import ReProcessor
-from reprocess.repository_processors.repository_container import ReContainer
+from reprocess.re_processors.processor import ReProcessor
+from reprocess.re_container import ReContainer
 
 
 class JsonConverter(ReProcessor):
@@ -56,7 +56,6 @@ class JsonConverter(ReProcessor):
         """
 
         # Function to handle serialization of sets to lists
-
         predefined_attributes = []
         result_json = {}
         external_attributes_of_repository = {}

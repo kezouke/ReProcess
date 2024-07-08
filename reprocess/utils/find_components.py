@@ -11,6 +11,7 @@ def extract_components(file_path: str, repos_dir: str,
     
     Args:
         file_path (str): The path to the file to analyze.
+        repos_dir (str): The directory where the repository is located. Used to calculate the relative path within the repo.
         file_path_ast_map (Dict[str, ast.Module]): A dictionary mapping file paths to their corresponding AST Module objects.
     
     Raises:

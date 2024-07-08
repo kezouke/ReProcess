@@ -32,9 +32,12 @@ class AttributeLinker:
             self.attrs_to_class[attr_name].append(cls_name)
 
     def get_classes_by_attrs(self, attr_list):
-        assert all([
-            attr_name in self.attrs_to_class.keys() for attr_name in attr_list
-        ]), "Attribute is not registered for any RepositoryProcessor"
+        assert all(
+            [
+                attr_name in self.attrs_to_class.keys()
+                for attr_name in attr_list
+            ]
+        ), f"Attributes {attr_list} must be created in at least one ReProcessor class."
 
         class_dict = dict()
         for attr_name in attr_list:

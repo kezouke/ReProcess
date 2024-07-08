@@ -9,9 +9,9 @@ logging.basicConfig(level=logging.ERROR)
 
 class ReManager:
     """
-    Manages operations on a Git repository such as cloning 
-    and retrieving repository information.
-    
+    Manages operations on a Git repository such as cloning,
+    pulling, and retrieving repository information.
+
     Attributes:
         repo_directory (str): The directory where the repository will be stored.
         git_url (Optional[str]): The URL of the Git repository.
@@ -22,7 +22,7 @@ class ReManager:
                  git_url: Optional[str]) -> None:
         """
         Initializes the ReManager instance.
-        
+
         Args:
             repository_directory (str): Path to the directory where the repository will be located.
             git_url (Optional[str]): URL of the Git repository.
@@ -40,7 +40,7 @@ class ReManager:
     def _is_repo_exists_locally(self) -> bool:
         """
         Checks if the repository exists at the given local path.
-        
+
         Returns:
             bool: True if the repository exists, False otherwise.
         """
@@ -64,10 +64,38 @@ class ReManager:
             logging.error(f"Failed to clone repository: {e}")
             raise
 
+    def pull_repo(self) -> None:
+        """
+        Pulls the latest changes from the remote repository.
+        """
+        try:
+            subprocess.run(['git', '-C', self.repo_directory, 'pull'],
+                           check=True)
+            logging.info(
+                f"Successfully pulled latest changes into {self.repo_directory}"
+            )
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Failed to pull latest changes: {e}")
+            raise
+
+    def update_or_clone_repo(self) -> List[str]:
+        """
+        Clones the repository if it does not exist, or pulls the latest changes if it does.
+
+        Returns:
+            list: A list containing the latest commit hash and author email.
+        """
+        if self._is_repo_exists_locally():
+            self.pull_repo()
+        else:
+            self.clone_repo()
+
+        return self.get_hash_and_author()
+
     def get_hash_and_author(self) -> List[str]:
         """
         Retrieves the latest commit hash and author from the local repository.
-        
+
         Returns:
             list: A list containing the latest commit hash and author email.
         """
