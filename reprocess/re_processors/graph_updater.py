@@ -2,7 +2,7 @@ import subprocess
 import logging
 from copy import deepcopy
 from reprocess.re_processors.processor import ReProcessor
-from reprocess.repository_container import ReContainer
+from reprocess.re_container import ReContainer
 from reprocess.utils.graph_utils import map_files_and_components, construct_code_components, link_components
 
 

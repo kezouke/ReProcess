@@ -1,4 +1,5 @@
-from reprocess.re_processors import JsonConverter, ReContainer, GraphBuilder, CloneRepository, Compose, RegExpFinder
+from reprocess.re_processors import JsonConverter, GraphBuilder, CloneRepository, Compose, RegExpFinder
+from reprocess.re_container import ReContainer
 
 # Initialize a ReContainer object with the name of the repository,
 # the path where the repository will be cloned,

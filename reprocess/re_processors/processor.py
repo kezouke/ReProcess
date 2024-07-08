@@ -1,4 +1,4 @@
-from reprocess.repository_container import ReContainer
+from reprocess.re_container import ReContainer
 from reprocess.utils.attribute_linker import get_attribute_linker
 from abc import ABC, abstractmethod, ABCMeta
 import ast

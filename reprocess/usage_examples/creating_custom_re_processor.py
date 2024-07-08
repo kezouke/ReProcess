@@ -1,6 +1,6 @@
 # Import necessary classes and exceptions from the reprocess package
 from reprocess.re_processors.processor import ReProcessor, AbsentAttributesException
-from reprocess.repository_container import ReContainer
+from reprocess.re_container import ReContainer
 from reprocess.re_processors import Compose
 
 

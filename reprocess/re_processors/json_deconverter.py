@@ -3,7 +3,7 @@ import json
 from reprocess.code_component import CodeComponentContainer
 from reprocess.file_analyzer import FileContainer
 from reprocess.re_processors.processor import ReProcessor
-from reprocess.repository_container import ReContainer
+from reprocess.re_container import ReContainer
 
 
 class JsonDeconverter(ReProcessor):
