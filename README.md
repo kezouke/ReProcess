@@ -88,7 +88,7 @@ The `ReContainer` (`Re` stands for `Repository`) is the main class for handling 
 - **repo_path**: Directory where the repository will be cloned.
 - **db_path**: Directory where the JSON graphs will be saved.
 
-Note that each ReProcessor (`Re` stands for `Repository`) will be able to add new attributes to the container instance in the future, so the above parameters are not the only ones.
+Note that each individual `ReProcessor` is capable of adding new attributes to the container instance, so the above parameters are not the only ones. They are defined by the `ReProcessor` that has been applied to the `ReContainer`.
 
 
 ### List of ReProcessors
@@ -138,93 +138,27 @@ Users can create their own repository processors by making classes that inherit 
 1. **Inherit from `ReProcessor`**: This ensures that the necessary checks and behaviors are inherited.
 2. **Implement the `__call__` Method**: This method should accept a `ReContainer` instance as an argument and return a dictionary with updated attributes and their values. The `ReContainer` should not be explicitly modified within the `__call__` method.
 
-### Example with Custom Processors
-
-To demonstrate creating and using custom processors with the ReProcess library, follow the example below:
-
+### Example Code for a Custom Repository Processor
 ```python
-# Import necessary classes and exceptions from the reprocess package
-from reprocess.re_processors.processor import ReProcessor, AbsentAttributesException
-from reprocess.repository_container import ReContainer
-from reprocess.re_processors import Compose
+from code_dependency_grapher.cdg.repository_processors.repository_container import RepositoryContainer
+from code_dependency_grapher.utils.attribute_linker import get_attribute_linker
+from abc import ABC, abstractmethod, ABCMeta
+import ast
+import inspect
+import functools
+import copy
 
-
-# Define a custom ReProcessorA class that extends the ReProcessor class
-class ReProcessorA(ReProcessor):
-
-    def __call__(self, repository_container: ReContainer):
-        # Return a dictionary with the attribute 'attr_a' set to 10
-        return {"attr_a": 10}
-
-
-# Define a custom ReProcessorB class that extends the ReProcessor class
-class ReProcessorB(ReProcessor):
-
-    def __call__(self, repository_container: ReContainer):
-        # Access the 'attr_a' attribute from the repository container
-        attr_a = repository_container.attr_a
-        # Calculate 'attr_b' as 'attr_a' multiplied by 10
-        attr_b = attr_a * 10
-        # Return a dictionary with the attribute 'attr_b'
-        return {"attr_b": attr_b}
-
-
-# Create an example repository container with specific paths
-re_container_example = ReContainer("test_1", "/test_1", "/db")
-
-# Instantiate the custom ReProcessors
-a = ReProcessorA()
-b = ReProcessorB()
-
-# Separator for clarity
-print("_" * 10)
-print("Trying to access an undefined ReContainer attribute example:")
-
-# Create a composition with only ReProcessorB
-composition_example_1 = Compose([b])
-
-# Attempt to run the composition and catch any AbsentAttributesException
-try:
-    new_container = composition_example_1(re_container_example)
-except AbsentAttributesException as e:
-    print(f"An error occurred: {e}")
-'''
-Expected output:
-__________
-Trying to access an undefined ReContainer attribute example:
-An error occurred: 
-Absent attributes during execution of ReProcessorB: `attr_a`
-To assign `attr_a`, refer to:
-ReProcessorA
-__________
-'''
-
-# Separator for clarity
-print("_" * 10)
-print()
-print("Using the hints we obtained above, run the correct pipeline:")
-
-# Create a composition with both ReProcessorA and ReProcessorB
-composition_example_2 = Compose([a, b])
-
-# Run the composition to process the repository container
-new_container = composition_example_2(re_container_example)
-
-# Print the attributes of the new container
-print(new_container.__dict__)
-'''
-Expected output:
-{'repo_name': 'test_1',
- 'repo_path': '/test_1', 
- 'db_path': '/db', 
- 'attr_a': 10, 
- 'attr_b': 100}
-'''
+class CustomProcessor(RepositoryProcessor):
+    def __call__(self, repository_container: RepositoryContainer):
+        # Your processing logic here
+        code_components = repository_container.code_components # you can still access any attributes you want 
+        updated_attributes = {
+            'new_attribute': 'new_value'
+        }
+        return updated_attributes
 ```
 
----
-
-This script showcases how to define and compose custom processors (`ReProcessorA` and `ReProcessorB`) to manipulate attributes (`attr_a` and `attr_b`) within a `ReContainer` instance (`re_container_example`). Use the following command to execute this example:
+This script showcases how to define and compose custom processor. If you want to dive into the intricacies of creating and working with custom processors, we advise you to run the usage example `creating_custom_re_processor.py`:
 
 ```bash
 python3 -m reprocess.usage_examples.creating_custom_re_processor
