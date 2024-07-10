@@ -4,6 +4,7 @@ from typing import List
 from copy import deepcopy
 import asyncio
 
+
 class Compose():
 
     def __init__(self, processor_list: List[ReProcessor], **kwargs):
@@ -15,7 +16,7 @@ class Compose():
             repository_container = processor(repository_container)
 
         return repository_container
-    
+
 
 class AsyncCompose(Compose):
 
@@ -32,4 +33,3 @@ class AsyncCompose(Compose):
                 setattr(repository_container, key, value)
 
         return repository_container
-
