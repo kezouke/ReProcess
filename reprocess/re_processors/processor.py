@@ -146,3 +146,10 @@ class ReProcessor(ABC, metaclass=CombinedMeta):
     @abstractmethod
     def __call__(self, repository_container: ReContainer):
         pass
+
+
+class AsyncReProcessor(ReProcessor):
+
+    @abstractmethod
+    async def __call__(self, repository_container: ReContainer):
+        pass
