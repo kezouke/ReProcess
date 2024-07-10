@@ -113,7 +113,6 @@ class Meta(type):
                 original_container = copy.deepcopy(repository_container)
                 result = original_call(self, repository_container, *args,
                                        **kwargs)
-
                 assert isinstance(
                     result, dict
                 ), "You should return dict with updated attributes and their values"
@@ -133,7 +132,74 @@ class Meta(type):
         return cls
 
 
+class AsyncMeta(type):
+
+    def __new__(mcs, name, bases, attrs, **kwargs):
+        cls = super().__new__(mcs, name, bases, attrs)
+        cls._init_kwargs = kwargs
+        if '__call__' in attrs:
+
+            # prepare code for the parsing
+            original_call = attrs['__call__']
+            source = inspect.getsource(original_call)
+            lines = source.split('\n')
+            first_line = lines[0]
+            leading_spaces = len(first_line) - len(first_line.lstrip())
+            normalized_source = '\n'.join(line[leading_spaces:]
+                                          for line in lines)
+            tree = ast.parse(normalized_source)
+
+            analyzer = FunctionAnalyzer()
+            analyzer.visit(tree)
+
+            if 'repository_container' in original_call.__code__.co_varnames:
+                param_index = original_call.__code__.co_varnames.index(
+                    'repository_container')
+                param_type = original_call.__annotations__.get(
+                    'repository_container', None)
+                if param_index == 1 and param_type == ReContainer:
+                    req_attrs_list = list(analyzer.used_attrs)
+
+            req_attrs_list = list(
+                filter(lambda x: x[:2] != "__", req_attrs_list))
+            return_attrs = find_return_attributes(normalized_source)
+            attribute_linker = get_attribute_linker()
+            attribute_linker(name, return_attrs)
+
+            # rewritten call method
+            @functools.wraps(original_call)
+            async def wrapped_call(self, repository_container, *args,
+                                   **kwargs):
+                # assert that all the required attributes are given
+                absent_attrs = []
+                existing_attrs = vars(repository_container).keys()
+                for attr in self.required_attrs:
+                    if attr not in existing_attrs:
+                        absent_attrs.append(attr)
+                if absent_attrs:
+                    raise AbsentAttributesException(absent_attrs, name)
+
+                original_container = copy.deepcopy(repository_container)
+                result = await original_call(self, repository_container, *args,
+                                             **kwargs)
+
+                assert isinstance(
+                    result, dict
+                ), "You should return dict with updated attributes and their values"
+                assert original_container == repository_container, f"You should not explicitly modify repository container inside the {name}"
+
+                return result
+
+            setattr(cls, '__call__', wrapped_call)
+            setattr(cls, "required_attrs", req_attrs_list)
+        return cls
+
+
 class CombinedMeta(ABCMeta, Meta):
+    pass
+
+
+class AsyncCombinedMeta(ABCMeta, AsyncMeta):
     pass
 
 
@@ -148,7 +214,11 @@ class ReProcessor(ABC, metaclass=CombinedMeta):
         pass
 
 
-class AsyncReProcessor(ReProcessor):
+class AsyncReProcessor(ABC, metaclass=AsyncCombinedMeta):
+
+    def __new__(cls, *args, **kwargs):
+        cls._init_kwargs = kwargs
+        return super().__new__(cls)
 
     @abstractmethod
     async def __call__(self, repository_container: ReContainer):

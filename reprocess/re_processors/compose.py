@@ -18,9 +18,12 @@ class Compose():
         return repository_container
 
 
-class AsyncCompose(Compose):
+class AsyncCompose:
 
-    async def __call__(self, repository_container: AsyncReProcessor):
+    def __init__(self, processor_list: List[AsyncReProcessor], **kwargs):
+        self.processor_list = processor_list
+
+    async def __call__(self, repository_container: ReContainer):
         tasks = [
             processor(deepcopy(repository_container))
             for processor in self.processor_list
@@ -29,7 +32,11 @@ class AsyncCompose(Compose):
 
         # Merge the results back into the original container
         for result in results:
-            for key, value in result.items():
-                setattr(repository_container, key, value)
+            if isinstance(result, dict):
+                for key, value in result.items():
+                    setattr(repository_container, key, value)
+            else:
+                raise TypeError(
+                    f"Processor returned a non-dictionary result: {result}")
 
         return repository_container
