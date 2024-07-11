@@ -188,7 +188,14 @@ class AsyncMeta(type):
                 ), "You should return dict with updated attributes and their values"
                 assert original_container == repository_container, f"You should not explicitly modify repository container inside the {name}"
 
-                return result
+                active_container = repository_container if cls._init_kwargs.get(
+                    'inplace') else copy.deepcopy(repository_container)
+
+                # update repository container attributes
+                for key, value in result.items():
+                    setattr(active_container, key, value)
+
+                return active_container
 
             setattr(cls, '__call__', wrapped_call)
             setattr(cls, "required_attrs", req_attrs_list)
