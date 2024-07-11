@@ -5,6 +5,8 @@ import ast
 import inspect
 import functools
 import copy
+import os
+import aiohttp
 
 
 class FunctionAnalyzer(ast.NodeVisitor):
@@ -230,3 +232,29 @@ class AsyncReProcessor(ABC, metaclass=AsyncCombinedMeta):
     @abstractmethod
     async def __call__(self, repository_container: ReContainer):
         pass
+
+
+class AsyncVLLMReProcessor(ABC, metaclass=AsyncCombinedMeta):
+
+    class LLM:
+
+        def __init__(self) -> None:
+            self.url = os.getenv('LLM_URL')
+            if not self.url:
+                raise ValueError("Environment variable LLM_URL is not set")
+
+        async def get_response(self, json_data):
+            async with aiohttp.ClientSession() as session:
+                async with session.post(self.url, json=json_data) as response:
+                    if response.status != 200:
+                        raise Exception(f"Error: {response.status}")
+                    return await response.json()
+
+        def __new__(cls, *args, **kwargs):
+            cls._init_kwargs = kwargs
+            cls.llm = AsyncVLLMReProcessor.LLM()
+            return super().__new__(cls)
+
+        @abstractmethod
+        async def __call__(self, repository_container: ReContainer):
+            pass
