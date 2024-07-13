@@ -7,6 +7,7 @@ import functools
 import copy
 import os
 import aiohttp
+import asyncio
 
 
 class FunctionAnalyzer(ast.NodeVisitor):
@@ -194,6 +195,22 @@ class AsyncReProcessor(ABC, metaclass=AsyncCombinedMeta):
     @abstractmethod
     async def __call__(self, repository_container: ReContainer):
         pass
+
+    def run_synchronously(self, repository_container: ReContainer):
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:  # No running event loop
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        if loop.is_running():
+            result = loop.create_task(self.__call__(repository_container))
+            repository_container = asyncio.run_coroutine_threadsafe(
+                result, loop).result()
+            return repository_container
+        else:
+            repository_container = asyncio.run(
+                self.__call__(repository_container))
+            return repository_container
 
 
 class AsyncVLLMReProcessor(ABC, metaclass=AsyncCombinedMeta):
