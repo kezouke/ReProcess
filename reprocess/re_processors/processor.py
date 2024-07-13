@@ -108,36 +108,41 @@ def process_call_method(original_call, cls, name, async_=False):
 
         return active_container
 
-    def wrapped_call(self, repository_container, *args, **kwargs):
-        check_attrs(self, repository_container)
-
-        original_container = copy.deepcopy(repository_container)
-        result = original_call(self, repository_container, *args, **kwargs)
-        assert isinstance(
-            result, dict
-        ), "You should return dict with updated attributes and their values"
-        assert original_container == repository_container, f"You should not explicitly modify repository container inside the {name}"
-
-        return set_re_container_attrs(self, repository_container, result)
-
-    async def async_wrapped_call(self, repository_container, *args, **kwargs):
-        check_attrs(self, repository_container)
-
-        original_container = copy.deepcopy(repository_container)
-        result = await original_call(self, repository_container, *args,
-                                     **kwargs)
-        assert isinstance(
-            result, dict
-        ), "You should return dict with updated attributes and their values"
-        assert original_container == repository_container, f"You should not explicitly modify repository container inside the {name}"
-
-        return set_re_container_attrs(self, repository_container, result)
-
     if async_:
-        wrapped_call = async_wrapped_call
 
-    functools.wraps(original_call)(wrapped_call)
-    setattr(cls, '__call__', wrapped_call)
+        async def async_wrapped_call(self, repository_container, *args,
+                                     **kwargs):
+            check_attrs(self, repository_container)
+
+            original_container = copy.deepcopy(repository_container)
+            result = await original_call(self, repository_container, *args,
+                                         **kwargs)
+            assert isinstance(
+                result, dict
+            ), "You should return dict with updated attributes and their values"
+            assert original_container == repository_container, f"You should not explicitly modify repository container inside the {name}"
+
+            return set_re_container_attrs(self, repository_container, result)
+
+        functools.wraps(original_call)(async_wrapped_call)
+        setattr(cls, '__call__', async_wrapped_call)
+    else:
+
+        def wrapped_call(self, repository_container, *args, **kwargs):
+            check_attrs(self, repository_container)
+
+            original_container = copy.deepcopy(repository_container)
+            result = original_call(self, repository_container, *args, **kwargs)
+            assert isinstance(
+                result, dict
+            ), "You should return dict with updated attributes and their values"
+            assert original_container == repository_container, f"You should not explicitly modify repository container inside the {name}"
+
+            return set_re_container_attrs(self, repository_container, result)
+
+        functools.wraps(original_call)(wrapped_call)
+        setattr(cls, '__call__', wrapped_call)
+
     setattr(cls, "required_attrs", req_attrs_list)
 
 
@@ -197,7 +202,6 @@ class AsyncVLLMReProcessor(ABC, metaclass=AsyncCombinedMeta):
 
         def __init__(self) -> None:
             self.url = os.getenv('LLM_URL')
-            result = result.split('"')[0]
             if not self.url:
 
                 raise ValueError("Environment variable LLM_URL is not set")
