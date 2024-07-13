@@ -13,10 +13,6 @@ class Compose:
     def __call__(self, repository_container: ReContainer):
 
         for processor in self.processor_list:
-            if isinstance(processor, AsyncReProcessor):
-                repository_container = processor.run_synchronously(
-                    repository_container)
-            else:
-                repository_container = processor(repository_container)
+            repository_container = processor(repository_container)
 
         return repository_container

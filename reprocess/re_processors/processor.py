@@ -9,6 +9,16 @@ import os
 import aiohttp
 import asyncio
 
+def syncify(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        if inspect.iscoroutinefunction(func):
+            # Run the coroutine synchronously
+            return asyncio.run(func(*args, **kwargs))
+        else:
+            # Call the function normally
+            return func(*args, **kwargs)
+    return wrapper
 
 class FunctionAnalyzer(ast.NodeVisitor):
 
@@ -110,7 +120,7 @@ def process_call_method(original_call, cls, name, async_=False):
         return active_container
 
     if async_:
-
+        @syncify
         async def async_wrapped_call(self, repository_container, *args,
                                      **kwargs):
             check_attrs(self, repository_container)
@@ -191,26 +201,12 @@ class AsyncReProcessor(ABC, metaclass=AsyncCombinedMeta):
     def __new__(cls, *args, **kwargs):
         cls._init_kwargs = kwargs
         return super().__new__(cls)
-
+        
+    
     @abstractmethod
+    @syncify
     async def __call__(self, repository_container: ReContainer):
         pass
-
-    def run_synchronously(self, repository_container: ReContainer):
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:  # No running event loop
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        if loop.is_running():
-            result = loop.create_task(self.__call__(repository_container))
-            repository_container = asyncio.run_coroutine_threadsafe(
-                result, loop).result()
-            return repository_container
-        else:
-            repository_container = asyncio.run(
-                self.__call__(repository_container))
-            return repository_container
 
 
 class AsyncVLLMReProcessor(ABC, metaclass=AsyncCombinedMeta):
