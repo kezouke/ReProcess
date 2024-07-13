@@ -230,11 +230,11 @@ class AsyncVLLMReProcessor(ABC, metaclass=AsyncCombinedMeta):
                         raise Exception(f"Error: {response.status}")
                     return await response.json()
 
-        def __new__(cls, *args, **kwargs):
-            cls._init_kwargs = kwargs
-            cls.llm = AsyncVLLMReProcessor.LLM()
-            return super().__new__(cls)
+    def __new__(cls, *args, **kwargs):
+        cls._init_kwargs = kwargs
+        cls.llm = AsyncVLLMReProcessor.LLM()
+        return super().__new__(cls)
 
-        @abstractmethod
-        async def __call__(self, repository_container: ReContainer):
-            pass
+    @abstractmethod
+    async def __call__(self, repository_container: ReContainer):
+        pass
