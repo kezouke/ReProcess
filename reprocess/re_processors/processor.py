@@ -9,7 +9,9 @@ import os
 import aiohttp
 import asyncio
 
+
 def syncify(func):
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         if inspect.iscoroutinefunction(func):
@@ -18,7 +20,9 @@ def syncify(func):
         else:
             # Call the function normally
             return func(*args, **kwargs)
+
     return wrapper
+
 
 class FunctionAnalyzer(ast.NodeVisitor):
 
@@ -120,6 +124,7 @@ def process_call_method(original_call, cls, name, async_=False):
         return active_container
 
     if async_:
+
         @syncify
         async def async_wrapped_call(self, repository_container, *args,
                                      **kwargs):
@@ -201,8 +206,7 @@ class AsyncReProcessor(ABC, metaclass=AsyncCombinedMeta):
     def __new__(cls, *args, **kwargs):
         cls._init_kwargs = kwargs
         return super().__new__(cls)
-        
-    
+
     @abstractmethod
     @syncify
     async def __call__(self, repository_container: ReContainer):
