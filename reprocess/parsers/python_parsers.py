@@ -4,6 +4,7 @@ from reprocess.utils.import_path_extractor import get_import_statement_path
 
 
 class PythonFileParser(TreeSitterFileParser):
+
     def __init__(self, file_path: str) -> None:
         super().__init__(file_path)
         try:
@@ -13,24 +14,24 @@ class PythonFileParser(TreeSitterFileParser):
                 self.tree = tree
         except Exception as e:
             print(f"Failed to parse {self.file_path}: {e}")
-        
+
     def extract_component_names(self):
         components = []
-        
+
         def visit_node(node):
             if isinstance(node, ast.ClassDef):
                 components.append(node.name)
                 for class_body_node in node.body:
                     if isinstance(class_body_node, ast.FunctionDef):
-                        components.append(f"{node.name}.{class_body_node.name}")
+                        components.append(
+                            f"{node.name}.{class_body_node.name}")
             elif isinstance(node, ast.FunctionDef):
                 components.append(node.name)
-        
+
         for node in self.tree.body:
             visit_node(node)
         return components
 
-    
     def extract_called_components(self):
         called_components = set()
 
@@ -42,7 +43,7 @@ class PythonFileParser(TreeSitterFileParser):
                     called_components.add(node.func.attr)
 
         return list(called_components)
-    
+
     def extract_callable_components(self):
         callable_components = set()
 
@@ -55,7 +56,7 @@ class PythonFileParser(TreeSitterFileParser):
                 callable_components.add(node.name)
 
         return list(callable_components)
-    
+
     def extract_imports(self):
         imports = []
 

@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 
+
 class TreeSitterFileParser(ABC):
-    def __init__(self,
-                 file_path: str) -> None:
+
+    def __init__(self, file_path: str) -> None:
         self.file_path = file_path
 
         try:
@@ -12,21 +13,20 @@ class TreeSitterFileParser(ABC):
             raise ImportError(
                 "Could not import tree_sitter/tree_sitter_languages Python packages. "
                 "Please install them with "
-                "`pip install tree-sitter tree-sitter-languages`."
-            )
-        
+                "`pip install tree-sitter tree-sitter-languages`.")
+
     @abstractmethod
     def extract_component_names(self):
         raise NotImplementedError()
-    
+
     @abstractmethod
     def extract_imports(self):
         raise NotImplementedError()
-    
+
     @abstractmethod
     def extract_called_components(self):
         raise NotImplementedError()
-    
+
     @abstractmethod
     def extract_callable_components(self):
         raise NotImplementedError()
@@ -34,9 +34,7 @@ class TreeSitterFileParser(ABC):
 
 class TreeSitterComponentFillerHelper(ABC):
 
-    def __init__(self,
-                 component_name: str,
-                 component_file_path: str) -> None:
+    def __init__(self, component_name: str, component_file_path: str) -> None:
         try:
             import tree_sitter
             import tree_sitter_languages
@@ -44,10 +42,8 @@ class TreeSitterComponentFillerHelper(ABC):
             raise ImportError(
                 "Could not import tree_sitter/tree_sitter_languages Python packages. "
                 "Please install them with "
-                "`pip install tree-sitter tree-sitter-languages`."
-            )
-        
-    
+                "`pip install tree-sitter tree-sitter-languages`.")
+
     @abstractmethod
     def extract_component_code(self):
         raise NotImplementedError()
