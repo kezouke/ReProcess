@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-class TreeSitterComponentsFinder(ABC):
+class TreeSitterFileParser(ABC):
     def __init__(self,
                  file_path: str) -> None:
         self.file_path = file_path
