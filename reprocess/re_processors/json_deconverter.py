@@ -66,9 +66,7 @@ class JsonDeconverter(ReProcessor):
         """
 
         # Define the path to the JSON file
-        self.json_path = os.path.join(repository_container.db_path,
-                                      repository_container.repo_name,
-                                      'data.json')
+        self.json_path = repository_container.db_path
 
         # Load the JSON data
         with open(self.json_path, 'r') as file:

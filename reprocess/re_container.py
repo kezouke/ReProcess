@@ -1,7 +1,7 @@
 class ReContainer:
 
-    def __init__(self, repo_name: str) -> None:
-        self.repo_name = repo_name
+    def __init__(self) -> None:
+        pass
 
     def __eq__(self, other) -> bool:
         if isinstance(other, ReContainer):

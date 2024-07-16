@@ -59,7 +59,7 @@ from reprocess.re_processors import JsonConverter, ReContainer, GraphBuilder, Cl
 # Initialize a ReContainer object with the name of the repository,
 # the path where the repository will be cloned,
 # and the path where the JSON graphs will be saved.
-repo_container = ReContainer("arxiv-feed")
+repo_container = ReContainer()
 
 # Create a Compose object that specifies a sequence of operations
 # to be performed on the repository. This sequence includes cloning
@@ -70,7 +70,7 @@ composition = Compose([
     CloneRepository(repo_path="/Users/elisey/AES/test_repo_folder/arxiv-feed", git_url="https://github.com/arXiv/arxiv-feed"),
     GraphBuilder(),
     RegExpFinder("^(.*test.*)$|^((?:.*[Tt]est).*)$"),
-    JsonConverter(db_path="/Users/elisey/AES/test_repo_folder/db")
+    JsonConverter(db_path="/Users/elisey/AES/test_repo_folder/db/arxiv-feed/test.json")
 ])
 
 # Execute the sequence of operations on
@@ -105,7 +105,7 @@ Note that each individual `ReProcessor` is capable of adding new attributes to t
 
 - **JsonConverter**: Converts fields of the repository container into a `json` file, placed according to the specified `db_path`.
   ```python
-  Compose(repo_container, [JsonConverter(db_path="/Users/elisey/AES/test_repo_folder/db")])
+  Compose(repo_container, [JsonConverter(db_path="/Users/elisey/AES/test_repo_folder/db/data.json")])
   ```
 
 - **JsonDeconverter**: Converts `json` from the `repository_container.db_path` field and populates all attributes of the repository container.
@@ -121,7 +121,7 @@ Note that each individual `ReProcessor` is capable of adding new attributes to t
 
 - **LocalLoader**: Loads local repository and checks if given path to the repo exists.
   ```python
-    Compose(repo_container, [LocalLoader(repo_path="/home/example_path")])
+    Compose(repo_container, [LocalLoader(repo_path="/home/example_path/example_repo")])
     ```
 - **Compose**: Executes a sequence of other processors on the repository container.
   ```python
