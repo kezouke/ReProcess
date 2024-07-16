@@ -1,5 +1,4 @@
 import os
-from reprocess.requests_handling.repository_manager import ReManager
 from reprocess.re_processors.processor import ReProcessor
 from reprocess.re_container import ReContainer
 
