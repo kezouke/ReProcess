@@ -123,6 +123,10 @@ Note that each individual `ReProcessor` is capable of adding new attributes to t
   ```
   This processor will update `repo_container` by adding a new attribute with the same name as the passed regular expression and will store all found    code components satisfying that regular expression.
 
+- **LocalLoader**: Loads local repository and checks if given path to the repo exists.
+  ```python
+    Compose(repo_container, [LocalLoader()])
+    ```
 - **Compose**: Executes a sequence of other processors on the repository container.
   ```python
   Compose(repo_container, [Processors_list])

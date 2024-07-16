@@ -5,6 +5,7 @@ from .json_deconverter import JsonDeconverter
 from .compose import Compose
 from .regexp_finder import RegExpFinder
 from .clone_repository import CloneRepository
+from .local_loader import LocalLoader
 
 if __file__ == "__main__":
     GraphBuilder()
@@ -14,3 +15,4 @@ if __file__ == "__main__":
     Compose([])
     CloneRepository("")
     RegExpFinder(".a")
+    LocalLoader()
