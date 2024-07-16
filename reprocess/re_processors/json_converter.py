@@ -14,7 +14,9 @@ class JsonConverter(ReProcessor):
 
     def __init__(self, db_path, **kwargs):
         self.database_path = db_path
-        assert self.database_path.endswith('.json'), "Provided path is not valid, it should contain .json file"
+        assert self.database_path.endswith(
+            '.json'
+        ), "Provided path is not valid, it should contain .json file"
 
     def class_to_dict(self, obj):
         """
@@ -72,7 +74,7 @@ class JsonConverter(ReProcessor):
             result_json[key] = addition_fields_for_json[key]
 
         # Define the path where the JSON will be saved
-        
+
         directory = os.path.dirname(self.database_path)
 
         # Ensure the directory exists
@@ -83,6 +85,8 @@ class JsonConverter(ReProcessor):
         with open(self.database_path, "w") as file:
             file.write(
                 json.dumps(result_json, indent=4, default=self.set_default))
-            print(f"The graph was successfully built and saved to {self.database_path}.")
+            print(
+                f"The graph was successfully built and saved to {self.database_path}."
+            )
 
         return {"is_converted": True, "db_path": self.database_path}
