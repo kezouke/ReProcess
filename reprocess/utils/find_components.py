@@ -1,6 +1,5 @@
 import ast
 from typing import Dict, List, Tuple
-from reprocess.utils.mappers.file_path_ast_mapper import FilePathAstMapError
 from reprocess.utils.import_path_extractor import get_import_statement_path
 
 

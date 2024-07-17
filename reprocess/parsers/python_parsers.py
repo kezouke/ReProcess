@@ -6,9 +6,13 @@ import uuid
 
 class PythonFileParser(TreeSitterFileParser):
 
-    def __init__(self, file_path: str) -> None:
+    def __init__(self, file_path: str, repo_name: str) -> None:
         self.file_path = file_path
         self.file_id = str(uuid.uuid4())
+
+        cutted_path = self.file_path.split(repo_name)[-1]
+        self.packages = get_import_statement_path(cutted_path)
+
         try:
             with open(self.file_path, 'r', encoding='utf-8') as file:
                 # Parse the file content into an AST
@@ -17,7 +21,7 @@ class PythonFileParser(TreeSitterFileParser):
         except Exception as e:
             print(f"Failed to parse {self.file_path}: {e}")
 
-    def extract_component_names(self, repo_name: str):
+    def extract_component_names(self):
         components = []
 
         def visit_node(node):
@@ -33,11 +37,8 @@ class PythonFileParser(TreeSitterFileParser):
         for node in self.tree.body:
             visit_node(node)
 
-        cutted_path = self.file_path.split(repo_name)[-1]
-        packages = get_import_statement_path(cutted_path)
-
         modules = [
-            f"{packages}.{component}".replace("-", "_")
+            f"{self.packages}.{component}".replace("-", "_")
             for component in components
         ]
 
@@ -120,19 +121,22 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
         except Exception as e:
             print(f"Failed to parse {self.component_file_path}: {e}")
 
+        self.component_code = self.extract_component_code()
+
     def _extract_component_code(self):
-        component_name_splitted = self.component_name.split(".")
+        component_name_splitted = self.component_name.split(
+            self.file_parser.packages)[-1].split(".")[1:]
         for node in self.tree.body:
             if isinstance(node, ast.FunctionDef
                           ) and node.name == component_name_splitted[0]:
                 self.component_type = "function"
-                return node, ast.unparse(node)
+                return ast.unparse(node)
             elif isinstance(
                     node,
                     ast.ClassDef) and node.name == component_name_splitted[0]:
                 if len(component_name_splitted) == 1:
                     self.component_type = "class"
-                    return node, ast.unparse(node)
+                    return ast.unparse(node)
                 else:
                     # If it's a method within a class
                     for class_node in node.body:

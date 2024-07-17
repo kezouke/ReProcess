@@ -34,10 +34,11 @@ class GraphBuilder(ReProcessor):
             return {}
 
         python_files = find_python_files(repository_container.repo_path)
-        python_parsers_map = create_parsers_map(python_files)
+        python_parsers_map = create_parsers_map(python_files,
+                                                repository_container.repo_name)
 
         component_names, component_fillers = extract_components(
-            python_parsers_map, repository_container.repo_name)
+            python_parsers_map)
         code_components = construct_code_components(
             list(component_fillers.values()))
         component_id_map = {

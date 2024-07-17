@@ -7,17 +7,17 @@ from reprocess.parsers.python_parsers import PythonFileParser, PythonComponentFi
 from typing import List
 
 
-def create_parsers_map(python_files):
+def create_parsers_map(python_files, repo_name):
     """Creates a map of Python file parsers."""
-    return {file: PythonFileParser(file) for file in python_files}
+    return {file: PythonFileParser(file, repo_name) for file in python_files}
 
 
-def extract_components(python_parsers_map, repo_name):
+def extract_components(python_parsers_map):
     """Extracts component names and fillers from the parsers."""
     component_names = []
     component_fillers = {}
     for file, parser in python_parsers_map.items():
-        code_components_names = parser.extract_component_names(repo_name)
+        code_components_names = parser.extract_component_names()
         component_names.extend(code_components_names)
         for cmp in code_components_names:
             component_fillers[cmp] = PythonComponentFillerHelper(
@@ -47,7 +47,7 @@ def construct_code_components(
         component = CodeComponentContainer(
             component_id=helper.component_id,
             component_name=helper.component_name,
-            component_code=helper.extract_component_code(),
+            component_code=helper.component_code,
             linked_component_ids=[],
             external_component_ids=[],
             file_id=helper.file_id,
