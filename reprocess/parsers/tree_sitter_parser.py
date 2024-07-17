@@ -5,7 +5,6 @@ class TreeSitterFileParser(ABC):
 
     def __init__(self, file_path: str) -> None:
         self.file_path = file_path
-
         try:
             import tree_sitter
             import tree_sitter_languages
@@ -16,7 +15,7 @@ class TreeSitterFileParser(ABC):
                 "`pip install tree-sitter tree-sitter-languages`.")
 
     @abstractmethod
-    def extract_component_names(self):
+    def extract_component_names(self, repo_name: str):
         raise NotImplementedError()
 
     @abstractmethod
@@ -34,7 +33,8 @@ class TreeSitterFileParser(ABC):
 
 class TreeSitterComponentFillerHelper(ABC):
 
-    def __init__(self, component_name: str, component_file_path: str) -> None:
+    def __init__(self, component_name: str, component_file_path: str,
+                 file_parser: TreeSitterFileParser) -> None:
         try:
             import tree_sitter
             import tree_sitter_languages

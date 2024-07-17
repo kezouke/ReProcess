@@ -1,7 +1,7 @@
 from reprocess.re_processors.processor import ReProcessor
 from reprocess.utils.find_python_files import find_python_files
 from reprocess.re_container import ReContainer
-from reprocess.utils.graph_utils import map_files_and_components, construct_code_components, link_components
+from reprocess.utils.graph_utils import construct_code_components, link_components, create_parsers_map, extract_components, map_files_to_ids
 
 
 class GraphBuilder(ReProcessor):
@@ -31,35 +31,27 @@ class GraphBuilder(ReProcessor):
             None
         """
         if not repository_container.is_downloaded:
-            return dict()
+            return {}
 
-        # Find all Python files within the repository
         python_files = find_python_files(repository_container.repo_path)
+        python_parsers_map = create_parsers_map(python_files)
 
-        # Map file paths to their abstract syntax trees (ASTs)
-        ast_manager, id_component_manager, id_files_manager, package_components_names = \
-        map_files_and_components(repository_container.repo_path, python_files)
-
-        # Construct code components
+        component_names, component_fillers = extract_components(
+            python_parsers_map, repository_container.repo_name)
         code_components = construct_code_components(
-            id_component_manager, id_files_manager, ast_manager,
-            package_components_names, repository_container.repo_path)
+            list(component_fillers.values()))
+        component_id_map = {
+            component.component_name: component.component_id
+            for component in code_components
+        }
 
-        # Link components
+        id_files_map = map_files_to_ids(python_parsers_map)
         external_components_dict = link_components(code_components,
-                                                   id_component_manager,
-                                                   package_components_names)
-
-        # Populate the repository container with the constructed code components and files
-        code_components = list(
-            map(lambda c: c.get_code_component_container(), code_components))
-        files = [
-            value.get_file_container()
-            for _, value in id_files_manager.id_file_map.items()
-        ]
+                                                   component_id_map,
+                                                   component_names)
 
         return {
             "code_components": code_components,
-            "files": files,
+            "files": list(id_files_map.values()),
             "external_components": external_components_dict
         }
