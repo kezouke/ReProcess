@@ -21,6 +21,8 @@ class PythonFileParser(TreeSitterFileParser):
         except Exception as e:
             print(f"Failed to parse {self.file_path}: {e}")
 
+        self.file_path = cutted_path[1:]
+
     def extract_component_names(self):
         components = []
 
@@ -126,7 +128,7 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
     def _extract_component_code(self):
         component_name_splitted = self.component_name.split(
             self.file_parser.packages)[-1].split(".")[1:]
-        
+
         for node in self.tree.body:
             if isinstance(node, ast.FunctionDef
                           ) and node.name == component_name_splitted[0]:

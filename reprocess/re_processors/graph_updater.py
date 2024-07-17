@@ -178,7 +178,6 @@ class GraphUpdater(ReProcessor):
                                                    component_id_map,
                                                    component_names)
 
-        
         return id_files_map, external_components_dict, code_components
 
     def _merge_updated_with_existing(self, repository_container,
@@ -241,9 +240,9 @@ class GraphUpdater(ReProcessor):
             repository_container.repo_path + "/" + path
             for path in updated_files_relative_paths
         ]
-        print(updated_files)
 
-        id_files_map, external_components_dict, new_code_components = self._process_updated_files(repository_container, updated_files)
+        id_files_map, external_components_dict, new_code_components = self._process_updated_files(
+            repository_container, updated_files)
 
         # Construct code components for updated files
         new_files = list(id_files_map.values())
