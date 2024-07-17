@@ -3,7 +3,7 @@ import logging
 from copy import deepcopy
 from reprocess.re_processors.processor import ReProcessor
 from reprocess.re_container import ReContainer
-from reprocess.utils.graph_utils import map_files_and_components, construct_code_components, link_components
+from reprocess.utils.graph_utils import construct_code_components, link_components, create_parsers_map, extract_components, map_files_to_ids
 
 
 class GraphUpdater(ReProcessor):
@@ -162,17 +162,24 @@ class GraphUpdater(ReProcessor):
         Returns:
             tuple: Updated AST manager, component manager, file manager, package components, and external components dictionary.
         """
-        ast_manager, id_component_manager, id_files_manager, package_components_names = map_files_and_components(
-            repository_container.repo_path, updated_files)
+        python_parsers_map = create_parsers_map(updated_files,
+                                                repository_container.repo_name)
 
+        component_names, component_fillers = extract_components(
+            python_parsers_map)
         code_components = construct_code_components(
-            id_component_manager, id_files_manager, ast_manager,
-            package_components_names, repository_container.repo_path)
-
+            list(component_fillers.values()))
+        component_id_map = {
+            component.component_name: component.component_id
+            for component in code_components
+        }
+        id_files_map = map_files_to_ids(python_parsers_map)
         external_components_dict = link_components(code_components,
-                                                   id_component_manager,
-                                                   package_components_names)
-        return ast_manager, id_component_manager, id_files_manager, package_components_names, external_components_dict
+                                                   component_id_map,
+                                                   component_names)
+
+        
+        return id_files_map, external_components_dict, code_components
 
     def _merge_updated_with_existing(self, repository_container,
                                      temporary_files, new_files,
@@ -234,20 +241,13 @@ class GraphUpdater(ReProcessor):
             repository_container.repo_path + "/" + path
             for path in updated_files_relative_paths
         ]
-        ast_manager, id_component_manager, id_files_manager, package_components_names, external_components_dict = self._process_updated_files(
-            repository_container, updated_files)
+        print(updated_files)
+
+        id_files_map, external_components_dict, new_code_components = self._process_updated_files(repository_container, updated_files)
 
         # Construct code components for updated files
-        new_files = [
-            value.get_file_container()
-            for _, value in id_files_manager.id_file_map.items()
-        ]
-        new_code_components = [
-            cmp.get_code_component_container()
-            for cmp in construct_code_components(
-                id_component_manager, id_files_manager, ast_manager,
-                package_components_names, repository_container.repo_path)
-        ]
+        new_files = list(id_files_map.values())
+        new_code_components
 
         return self._merge_updated_with_existing(repository_container,
                                                  temporary_files, new_files,

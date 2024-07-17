@@ -126,6 +126,7 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
     def _extract_component_code(self):
         component_name_splitted = self.component_name.split(
             self.file_parser.packages)[-1].split(".")[1:]
+        
         for node in self.tree.body:
             if isinstance(node, ast.FunctionDef
                           ) and node.name == component_name_splitted[0]:
@@ -148,10 +149,10 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
 
         return ""
 
-    def _collect_used_imports(self):
+    def _collect_used_imports(self, code):
         file_imports = self.file_parser.extract_imports()
         used_imports = set()
-        for node in ast.walk(self.tree):
+        for node in ast.walk(ast.parse(code)):
             if isinstance(node, ast.Name) and node.id in file_imports:
                 used_imports.add(node.id)
         return used_imports
@@ -218,6 +219,6 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
 
     def extract_component_code(self):
         code = self._extract_component_code()
-        used_imports = self._collect_used_imports()
+        used_imports = self._collect_used_imports(code)
         import_statements_code = self._generate_import_statements(used_imports)
         return import_statements_code + "\n" + code
