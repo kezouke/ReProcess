@@ -28,7 +28,7 @@ class GraphBuilder(ReProcessor):
             repository_container (RepositoryContainer): An instance of the RepositoryContainer class that will hold the constructed dependency graph and associated data.
 
         Returns:
-            None
+            dict: Contains code components, files, and external components.
         """
         if not repository_container.is_downloaded:
             return {}
