@@ -51,6 +51,7 @@ def construct_code_components(
             linked_component_ids=[],
             external_component_ids=[],
             file_id=helper.file_id,
+            called_objects=helper.extract_callable_objects(),
             component_type=helper.component_type)
         code_components.append(component)
 
@@ -72,7 +73,7 @@ def link_components(code_components, component_id_map,
     all_internal_components = set(package_components_names)
 
     for component in code_components:
-        component_imports = set(component.extract_imports())
+        component_imports = set(component.called_objects)
         linked_components = all_internal_components.intersection(
             component_imports)
         external_components = component_imports.difference(linked_components)

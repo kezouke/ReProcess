@@ -224,3 +224,41 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
         used_imports = self._collect_used_imports(code)
         import_statements_code = self._generate_import_statements(used_imports)
         return import_statements_code + "\n" + code
+
+    def extract_callable_objects(self):
+        """
+        Extracts and returns a list of import statements used by the component.
+        
+        Returns:
+            List[str]: A list of import statements.
+        """
+        tree = ast.parse(self.component_code)
+        imports = []
+
+        for node in tree.body:
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    module_name = alias.name
+                    imports.append(module_name)
+            elif isinstance(node, ast.ImportFrom):
+                for alias in node.names:
+                    module_name = node.module
+                    component_name = alias.name
+                    imports.append(f"{module_name}.{component_name}")
+
+        called_components = set()
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Name):
+                    called_components.add(node.func.id)
+                elif isinstance(node.func, ast.Attribute):
+                    called_components.add(node.func.attr)
+
+        called_components = list(called_components)
+        resulted_array = []
+        for cmp in called_components:
+            if cmp in self.file_parser.extract_callable_components():
+                resulted_array.append(f"{self.file_parser.packages}.{cmp}")
+        resulted_array += imports
+        return resulted_array

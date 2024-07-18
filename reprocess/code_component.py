@@ -1,4 +1,3 @@
-import ast
 from typing import List
 from dataclasses import dataclass
 
@@ -20,7 +19,7 @@ class CodeComponentContainer:
     def __init__(self, component_id: str, component_name: str,
                  component_code: str, linked_component_ids: List[str],
                  file_id: str, external_component_ids: List[str],
-                 component_type: str) -> None:
+                 called_objects: List[str], component_type: str) -> None:
         """
         Initializes a new instance of the CodeComponentContainer class.
         
@@ -31,6 +30,7 @@ class CodeComponentContainer:
             linked_component_ids (List[str]): IDs of components this component is linked to.
             file_id (str): Identifier for the file containing the component.
             external_component_ids (List[str]): IDs of external components referenced by this component.
+            called_objects (List[str]): Instances called inside the component
             component_type (str): Whether component is class, method or function
 
         """
@@ -40,6 +40,7 @@ class CodeComponentContainer:
         self.linked_component_ids = linked_component_ids
         self.file_id = file_id
         self.external_component_ids = external_component_ids
+        self.called_objects = called_objects
         self.component_type = component_type
 
     def getComponentAttribute(self, attribute_name):
@@ -63,29 +64,6 @@ class CodeComponentContainer:
             value: New value for the attribute.
         """
         setattr(self, attribute_name, value)
-
-    def extract_imports(self):
-        """
-        Extracts and returns a list of import statements used by the component.
-        
-        Returns:
-            List[str]: A list of import statements.
-        """
-        tree = ast.parse(self.component_code)
-        imports = []
-
-        for node in tree.body:
-            if isinstance(node, ast.Import):
-                for alias in node.names:
-                    module_name = alias.name
-                    imports.append(module_name)
-            elif isinstance(node, ast.ImportFrom):
-                for alias in node.names:
-                    module_name = node.module
-                    component_name = alias.name
-                    imports.append(f"{module_name}.{component_name}")
-
-        return imports
 
     def __eq__(self, other) -> bool:
         if isinstance(other, CodeComponentContainer):
