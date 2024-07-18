@@ -109,17 +109,10 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
 
     def __init__(self, component_name: str, component_file_path: str,
                  file_parser: TreeSitterFileParser) -> None:
-        self.component_name = component_name
-        self.component_file_path = component_file_path
-        self.component_type = None
-        self.file_parser = file_parser
-        self.component_id = str(uuid.uuid4())
-        self.file_id = self.file_parser.file_id
+        super().__init__(component_name, component_file_path, file_parser)
         try:
             with open(self.component_file_path, 'r', encoding='utf-8') as file:
-                # Parse the file content into an AST
-                tree = ast.parse(file.read())
-                self.tree = tree
+                self.tree = ast.parse(file.read())
         except Exception as e:
             print(f"Failed to parse {self.component_file_path}: {e}")
 

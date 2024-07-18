@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import uuid
 
 
 class TreeSitterFileParser(ABC):
@@ -15,7 +16,7 @@ class TreeSitterFileParser(ABC):
                 "`pip install tree-sitter tree-sitter-languages`.")
 
     @abstractmethod
-    def extract_component_names(self, repo_name: str):
+    def extract_component_names(self):
         raise NotImplementedError()
 
     @abstractmethod
@@ -35,6 +36,11 @@ class TreeSitterComponentFillerHelper(ABC):
 
     def __init__(self, component_name: str, component_file_path: str,
                  file_parser: TreeSitterFileParser) -> None:
+        self.component_name = component_name
+        self.component_file_path = component_file_path
+        self.file_parser = file_parser
+        self.component_id = str(uuid.uuid4())
+        self.file_id = self.file_parser.file_id
         try:
             import tree_sitter
             import tree_sitter_languages
@@ -46,4 +52,8 @@ class TreeSitterComponentFillerHelper(ABC):
 
     @abstractmethod
     def extract_component_code(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def extract_callable_objects(self):
         raise NotImplementedError()
