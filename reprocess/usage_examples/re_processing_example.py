@@ -14,10 +14,10 @@ repo_container = ReContainer("arxiv-feed",
 # matching a regex pattern, and converting the repository data
 # to JSON format.
 composition = Compose([
-    JsonDeconverter(),
-    # CloneRepository("https://github.com/arXiv/arxiv-feed"),
-    GraphUpdater(),
-    # GraphBuilder(),
+    # JsonDeconverter(),
+    CloneRepository("https://github.com/arXiv/arxiv-feed"),
+    # GraphUpdater(),
+    GraphBuilder(),
     RegExpFinder("^(.*test.*)$|^((?:.*[Tt]est).*)$"),
     JsonConverter()
 ])

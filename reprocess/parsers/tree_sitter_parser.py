@@ -4,8 +4,9 @@ import uuid
 
 class TreeSitterFileParser(ABC):
 
-    def __init__(self, file_path: str) -> None:
+    def __init__(self, file_path: str, repo_name: str) -> None:
         self.file_path = file_path
+        self.repo_name = repo_name
         try:
             import tree_sitter
             import tree_sitter_languages

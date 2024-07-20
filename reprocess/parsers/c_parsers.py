@@ -7,8 +7,8 @@ from tree_sitter import Language, Parser
 
 class CFileParser(TreeSitterFileParser):
 
-    def __init__(self, file_path: str) -> None:
-        super().__init__(file_path)
+    def __init__(self, file_path: str, repo_name: str) -> None:
+        super().__init__(file_path, repo_name)
         self.file_id = str(uuid.uuid4())
 
         # Load the compiled language grammar
@@ -137,6 +137,7 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
         }  # Dictionary to store variable to struct type mappings
         self.current_scope = [
         ]  # To track the current scope of variable declarations
+        self.component_code = self.extract_component_code()
 
     def extract_component_code(self):
 
@@ -162,41 +163,31 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
         tree = self.parser.parse(bytes(code, "utf8"))
         called_components = set()
 
-        def visit_node(node):
-            if node.type == "call_expression":
-                func_node = node.child_by_field_name("function")
-                if func_node:
-                    called_components.add(func_node.text.decode('utf-8'))
-            elif node.type == "field_expression":
-                field_node = node.child_by_field_name("field")
-                if field_node:
-                    field_name = field_node.text.decode('utf-8')
-                    # Check if the field is accessed through a struct variable in current scope
-                    for var_name, var_type in self.current_scope:
-                        if var_name == field_name:
-                            called_components.add(f"{var_type}.{field_name}")
-
-        def traverse_tree(node):
-            if node.type == "variable_declaration":
-                var_name_node = node.child_by_field_name("name")
-                var_type_node = node.child_by_field_name("type")
-                if var_name_node and var_type_node:
-                    var_name = var_name_node.text.decode('utf-8')
-                    var_type = var_type_node.text.decode('utf-8')
-                    if var_type.startswith("struct "):
-                        var_type = var_type[7:]  # Remove "struct " prefix
-                    self.current_scope.append((var_name, var_type))
-
-            visit_node(node)
+        def _extract_components(node, components, struct_vars):
+            if node.type == 'call_expression':
+                function_name = node.child_by_field_name(
+                    'function').text.decode('utf-8')
+                components.add(function_name)
+            elif node.type == 'field_expression':
+                variable_name = node.child(0).text.decode('utf-8')
+                field_name = node.child(2).text.decode('utf-8')
+                if variable_name in struct_vars:
+                    struct_field = f"{struct_vars[variable_name]}.{field_name}"
+                    components.add(struct_field)
+            elif node.type == 'declaration' and node.child(
+                    0).type == 'struct_specifier':
+                struct_name = node.child(0).child_by_field_name(
+                    'name').text.decode('utf-8')
+                var_name = node.child(1).text.decode('utf-8')
+                struct_vars[var_name] = struct_name
+            # Recursively go through all child nodes
             for child in node.children:
-                traverse_tree(child)
+                _extract_components(child, components, struct_vars)
 
-            if node.type == "variable_declaration":
-                self.current_scope.pop()  # Pop scope after processing children
-
-        traverse_tree(tree.root_node)
-
-        return called_components
+        root_node = tree.root_node
+        struct_vars = {}
+        _extract_components(root_node, called_components, struct_vars)
+        return list(called_components)
 
     def _extract_component_code(self):
         component_name_splitted = self.component_name.split(".")
@@ -204,6 +195,7 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
         def visit_node(node):
             if node.type == "function_definition" and node.child_by_field_name(
                     "declarator"):
+                self.component_type = "function"
                 func_node = node.child_by_field_name(
                     "declarator").child_by_field_name("declarator")
                 if func_node and func_node.text.decode(
@@ -214,17 +206,8 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
                 struct_name = node.child_by_field_name("name").text.decode(
                     'utf-8')
                 if struct_name == component_name_splitted[0]:
-                    if len(component_name_splitted) == 1:
-                        return node
-                    else:
-                        # If it's a method within a struct
-                        for struct_node in node.children:
-                            if struct_node.type == "field_declaration" and struct_node.child_by_field_name(
-                                    "declarator"):
-                                field_name = struct_node.child_by_field_name(
-                                    "declarator").text.decode('utf-8')
-                                if field_name == component_name_splitted[1]:
-                                    return struct_node
+                    self.component_type = "structure"
+                    return node
 
         def traverse_tree(node):
             result_node = visit_node(node)
@@ -238,28 +221,48 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
         root_node = self.tree.root_node
         found_node = traverse_tree(root_node)
         if found_node:
-            return self.file_parser.source_code[found_node.
-                                                start_byte:found_node.end_byte]
+            extracted_code = self.file_parser.source_code[
+                found_node.start_byte:found_node.end_byte]
+            if self.component_type == "structure" and len(
+                    component_name_splitted) > 1:
+                self.component_type = "structure_field"
+                field_name = component_name_splitted[1]
+                field_code = self._extract_field_code(found_node, field_name)
+                if field_code:
+                    return f"struct {component_name_splitted[0]} {{\n{field_code}\n}}"
+            return extracted_code
+        return ""
+
+    def _extract_field_code(self, struct_node, field_name):
+        body = struct_node.child_by_field_name("body")
+        if body:
+            for struct_node in body.children:
+                if struct_node.type == "field_declaration" and struct_node.child_by_field_name(
+                        "declarator"):
+                    if struct_node.child_by_field_name(
+                            "declarator").text.decode('utf-8') == field_name:
+                        return self.file_parser.source_code[
+                            struct_node.start_byte:struct_node.end_byte]
         return ""
 
 
-# Test the parser with a sample C file
-file_path = "/Users/elisey/AES/test_repo_folder/arxiv-feed/test.c"
-parser = CFileParser(file_path)
+# # Test the parser with a sample C file
+# file_path = "/Users/elisey/AES/test_repo_folder/arxiv-feed/test.c"
+# parser = CFileParser(file_path)
 
-print("Component Names:")
-print(parser.extract_component_names())
+# print("Component Names:")
+# print(parser.extract_component_names())
 
-print("\nCalled Components:")
-print(parser.extract_called_components())
+# print("\nCalled Components:")
+# print(parser.extract_called_components())
 
-print("\nCallable Components:")
-print(parser.extract_callable_components())
+# print("\nCallable Components:")
+# print(parser.extract_callable_components())
 
-print("\nImports:")
-print(parser.extract_imports())
+# print("\nImports:")
+# print(parser.extract_imports())
 
-helper = CComponentFillerHelper("main", file_path, parser)
-print(helper.extract_component_code())
-print()
-print(helper.extract_callable_objects())
+# helper = CComponentFillerHelper("main", file_path, parser)
+# print(helper.extract_component_code())
+# print()
+# print(helper.extract_callable_objects())

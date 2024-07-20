@@ -4,24 +4,37 @@ from reprocess.code_component import CodeComponentContainer
 from reprocess.parsers.tree_sitter_parser import TreeSitterComponentFillerHelper
 from reprocess.file_analyzer import FileContainer
 from reprocess.parsers.python_parsers import PythonFileParser, PythonComponentFillerHelper
+from reprocess.parsers.c_parsers import CFileParser, CComponentFillerHelper
 from typing import List
 
 
-def create_parsers_map(python_files, repo_name):
-    """Creates a map of Python file parsers."""
-    return {file: PythonFileParser(file, repo_name) for file in python_files}
+def create_parsers_map(files, repo_name):
+    """Creates a map of file parsers based on file extension."""
+    parsers_map = {}
+    for file in files:
+        if file.endswith('.py'):
+            parsers_map[file] = PythonFileParser(file, repo_name)
+        elif file.endswith('.c'):
+            parsers_map[file] = CFileParser(file, repo_name)
+        # Add more conditions for other file types if needed
+    return parsers_map
 
 
-def extract_components(python_parsers_map):
+def extract_components(parsers_map):
     """Extracts component names and fillers from the parsers."""
     component_names = []
     component_fillers = {}
-    for file, parser in python_parsers_map.items():
+    for file, parser in parsers_map.items():
         code_components_names = parser.extract_component_names()
         component_names.extend(code_components_names)
         for cmp in code_components_names:
-            component_fillers[cmp] = PythonComponentFillerHelper(
-                cmp, file, parser)
+            if file.endswith('.py'):
+                component_fillers[cmp] = PythonComponentFillerHelper(
+                    cmp, file, parser)
+            elif file.endswith('.c'):
+                component_fillers[cmp] = CComponentFillerHelper(
+                    cmp, file, parser)
+            # Add more conditions for other file types if needed
     return component_names, component_fillers
 
 
