@@ -59,9 +59,7 @@ from reprocess.re_processors import JsonConverter, ReContainer, GraphBuilder, Cl
 # Initialize a ReContainer object with the name of the repository,
 # the path where the repository will be cloned,
 # and the path where the JSON graphs will be saved.
-repo_container = ReContainer("arxiv-feed",
-                             "/Users/elisey/AES/test_repo_folder/arxiv-feed",
-                             "/Users/elisey/AES/test_repo_folder/db")
+repo_container = ReContainer()
 
 # Create a Compose object that specifies a sequence of operations
 # to be performed on the repository. This sequence includes cloning
@@ -69,10 +67,10 @@ repo_container = ReContainer("arxiv-feed",
 # matching a regex pattern, and converting the repository data
 # to JSON format.
 composition = Compose([
-    CloneRepository("https://github.com/arXiv/arxiv-feed"),
+    CloneRepository(repo_path="/Users/elisey/AES/test_repo_folder/arxiv-feed", git_url="https://github.com/arXiv/arxiv-feed"),
     GraphBuilder(),
     RegExpFinder("^(.*test.*)$|^((?:.*[Tt]est).*)$"),
-    JsonConverter()
+    JsonConverter(json_path="/Users/elisey/AES/test_repo_folder/db/arxiv-feed/test.json")
 ])
 
 # Execute the sequence of operations on
@@ -85,8 +83,6 @@ The `ReContainer` (`Re` stands for `Repository`) is the main class for handling 
 
 ### Parameters of the ReContainer
 - **repo_name**: Name of the repository.
-- **repo_path**: Directory where the repository will be cloned.
-- **db_path**: Directory where the JSON graphs will be saved.
 
 Note that each individual `ReProcessor` is capable of adding new attributes to the container instance, so the above parameters are not the only ones. They are defined by the `ReProcessor` that has been applied to the `ReContainer`.
 
@@ -94,7 +90,7 @@ Note that each individual `ReProcessor` is capable of adding new attributes to t
 ### List of ReProcessors
 - **CloneRepository**: Clones a repository from a given Git URL.
   ```python
-  Compose(repo_container, [CloneRepository("https://github.com/arXiv/arxiv-feed")])
+  Compose(repo_container, [CloneRepository(repo_path="/Users/elisey/AES/test_repo_folder/arxiv-feed", git_url="https://github.com/arXiv/arxiv-feed")])
   ```
 
 - **GraphBuilder**: Builds a graph of the repository and saves it into the specified `db_path`. It also populates the repository container.
@@ -109,7 +105,7 @@ Note that each individual `ReProcessor` is capable of adding new attributes to t
 
 - **JsonConverter**: Converts fields of the repository container into a `json` file, placed according to the specified `db_path`.
   ```python
-  Compose(repo_container, [JsonConverter()])
+  Compose(repo_container, [JsonConverter(db_path="/Users/elisey/AES/test_repo_folder/db/data.json")])
   ```
 
 - **JsonDeconverter**: Converts `json` from the `repository_container.db_path` field and populates all attributes of the repository container.
@@ -123,6 +119,10 @@ Note that each individual `ReProcessor` is capable of adding new attributes to t
   ```
   This processor will update `repo_container` by adding a new attribute with the same name as the passed regular expression and will store all found    code components satisfying that regular expression.
 
+- **LocalLoader**: Loads local repository and checks if given path to the repo exists.
+  ```python
+    Compose(repo_container, [LocalLoader(repo_path="/home/example_path/example_repo")])
+    ```
 - **Compose**: Executes a sequence of other processors on the repository container.
   ```python
   Compose(repo_container, [Processors_list])
@@ -154,7 +154,7 @@ class ReProcessorA(ReProcessor):
         return {"attr_a": 10}
 
 # Create an example repository container with specific paths
-re_container_example = ReContainer("test_1", "/test_1", "/db")
+re_container_example = ReContainer()
 
 # Instantiate the custom ReProcessors
 a = ReProcessorA()

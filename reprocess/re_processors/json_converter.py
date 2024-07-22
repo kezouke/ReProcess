@@ -12,8 +12,10 @@ class JsonConverter(ReProcessor):
     It also handles saving this JSON object to a file within the repository's database path.
     """
 
-    def __init__(self, **kwargs):
-        pass
+    def __init__(self, json_path: str, **kwargs):
+        self.json_path = json_path
+        assert self.json_path.endswith(
+            '.json'), "Provided path is not valid, it should be a .json file"
 
     def class_to_dict(self, obj):
         """
@@ -71,18 +73,19 @@ class JsonConverter(ReProcessor):
             result_json[key] = addition_fields_for_json[key]
 
         # Define the path where the JSON will be saved
-        db_path = os.path.join(repository_container.db_path,
-                               repository_container.repo_name, "data.json")
-        directory = os.path.dirname(db_path)
+
+        directory = os.path.dirname(self.json_path)
 
         # Ensure the directory exists
         if not os.path.exists(directory):
             os.makedirs(directory)
 
         # Save the JSON structure to a file
-        with open(db_path, "w") as file:
+        with open(self.json_path, "w") as file:
             file.write(
                 json.dumps(result_json, indent=4, default=self.set_default))
-            print(f"The graph was successfully built and saved to {db_path}.")
+            print(
+                f"The graph was successfully built and saved to {self.json_path}."
+            )
 
-        return {"is_converted": True}
+        return {"is_converted": True, "json_path": self.json_path}
