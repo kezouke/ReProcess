@@ -70,7 +70,7 @@ composition = Compose([
     CloneRepository(repo_path="/Users/elisey/AES/test_repo_folder/arxiv-feed", git_url="https://github.com/arXiv/arxiv-feed"),
     GraphBuilder(),
     RegExpFinder("^(.*test.*)$|^((?:.*[Tt]est).*)$"),
-    JsonConverter(db_path="/Users/elisey/AES/test_repo_folder/db/arxiv-feed/test.json")
+    JsonConverter(json_path="/Users/elisey/AES/test_repo_folder/db/arxiv-feed/test.json")
 ])
 
 # Execute the sequence of operations on
@@ -154,7 +154,7 @@ class ReProcessorA(ReProcessor):
         return {"attr_a": 10}
 
 # Create an example repository container with specific paths
-re_container_example = ReContainer("test_1")
+re_container_example = ReContainer()
 
 # Instantiate the custom ReProcessors
 a = ReProcessorA()

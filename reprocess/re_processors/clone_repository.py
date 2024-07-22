@@ -6,7 +6,7 @@ from reprocess.re_container import ReContainer
 
 class CloneRepository(ReProcessor):
 
-    def __init__(self, repo_path, git_url: str = None, **kwargs):
+    def __init__(self, repo_path: str, git_url: str = None, **kwargs):
         self.repo_path = repo_path
         self.git_url = git_url
 
