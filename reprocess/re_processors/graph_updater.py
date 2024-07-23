@@ -31,11 +31,13 @@ class GraphUpdater(ReProcessor):
             list: A list of changed file paths.
         """
         try:
-            result = subprocess.run(
-                ['git', '-C', local_repo_path, 'diff', '--cached', '--name-status'],
-                capture_output=True,
-                text=True,
-                check=True)
+            result = subprocess.run([
+                'git', '-C', local_repo_path, 'diff', '--cached',
+                '--name-status'
+            ],
+                                    capture_output=True,
+                                    text=True,
+                                    check=True)
             print(result)
             return result.stdout.splitlines()
         except subprocess.CalledProcessError as e:
@@ -165,10 +167,9 @@ class GraphUpdater(ReProcessor):
         """
         print(updated_files)
         parsers_map = create_parsers_map(updated_files,
-                                                repository_container.repo_name)
+                                         repository_container.repo_name)
 
-        component_names, component_fillers = extract_components(
-            parsers_map)
+        component_names, component_fillers = extract_components(parsers_map)
         code_components = construct_code_components(
             list(component_fillers.values()))
         component_id_map = {
