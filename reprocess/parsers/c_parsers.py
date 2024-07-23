@@ -248,7 +248,7 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
 
 # # Test the parser with a sample C file
 # file_path = "/Users/elisey/AES/test_repo_folder/arxiv-feed/test.c"
-# parser = CFileParser(file_path)
+# parser = CFileParser(file_path, "aes")
 
 # print("Component Names:")
 # print(parser.extract_component_names())
@@ -266,3 +266,26 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
 # print(helper.extract_component_code())
 # print()
 # print(helper.extract_callable_objects())
+
+# Output:
+# Component Names:
+# ['MyStruct', 'MyStruct.field1', 'MyStruct.field2', 'myFunction', 'main', 'MyStruct']
+
+# Called Components:
+# ['anotherFunction', 'printf', 'field2', 'field1', 'myFunction']
+
+# Callable Components:
+# ['MyStruct', 'MyStruct.field1', 'MyStruct.field2', 'main', 'myFunction']
+
+# Imports:
+# ['stdio.h', 'myheader.h']
+# #include <stdio.h>
+# #include "myheader.h"
+
+# int main() {
+#     struct MyStruct ms;
+#     ms.field1 = 10;
+#     ms.field2 = 20.5;
+#     myFunction();
+#     return 0;
+# }
