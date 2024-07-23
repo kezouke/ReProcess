@@ -32,10 +32,11 @@ class GraphUpdater(ReProcessor):
         """
         try:
             result = subprocess.run(
-                ['git', '-C', local_repo_path, 'diff', '--name-status'],
+                ['git', '-C', local_repo_path, 'diff', '--cached', '--name-status'],
                 capture_output=True,
                 text=True,
                 check=True)
+            print(result)
             return result.stdout.splitlines()
         except subprocess.CalledProcessError as e:
             logging.error(f"Failed to get changed files: {e}")
@@ -162,18 +163,19 @@ class GraphUpdater(ReProcessor):
         Returns:
             tuple: Updated AST manager, component manager, file manager, package components, and external components dictionary.
         """
-        python_parsers_map = create_parsers_map(updated_files,
+        print(updated_files)
+        parsers_map = create_parsers_map(updated_files,
                                                 repository_container.repo_name)
 
         component_names, component_fillers = extract_components(
-            python_parsers_map)
+            parsers_map)
         code_components = construct_code_components(
             list(component_fillers.values()))
         component_id_map = {
             component.component_name: component.component_id
             for component in code_components
         }
-        id_files_map = map_files_to_ids(python_parsers_map)
+        id_files_map = map_files_to_ids(parsers_map)
         external_components_dict = link_components(code_components,
                                                    component_id_map,
                                                    component_names)
