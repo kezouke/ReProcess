@@ -196,8 +196,10 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
         if node.type == 'function_definition' or node.type == 'class_specifier':
             declarator = None
             if node.type == 'function_definition':
+                self.component_type = 'function'
                 declarator = node.child_by_field_name('declarator')
             elif node.type == 'class_specifier':
+                self.component_type = 'class'
                 declarator = node.child_by_field_name('name')
 
             if declarator and self._strip_parameters(
@@ -217,7 +219,6 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
             result = self._find_component_node(child, name_parts)
             if result:
                 return result
-
         return None
 
     def _extract_component(self, component_name):
@@ -228,12 +229,14 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
                    1] in self.class_methods[name_parts[0]]:
             # Handle class methods defined outside the class body
             component_node = self.class_methods[name_parts[0]][name_parts[1]]
+            self.component_type = 'method'
             return self._get_node_text(component_node)
 
         component_node = self._find_component_node(self.tree.root_node,
                                                    name_parts)
         if component_node:
             if component_node.type == 'class_specifier':
+                self.component_type = 'class'
                 # Include methods defined outside the class body
                 class_code = self._get_node_text(component_node)
                 class_name = name_parts[0]
@@ -242,6 +245,10 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
                         class_code += '\n' + self._get_node_text(method)
                 return class_code
             else:
+                if len(name_parts) > 1:
+                    self.component_type = 'method'
+                else:
+                    self.component_type = 'function'
                 return self._get_node_text(component_node)
         else:
             return None
@@ -263,6 +270,8 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
         imports_code = "".join(extract_imports_from_source())
 
         code = self._extract_component(self.component_name)
+        if self.component_type.count('.') > 0:
+            self.component_type = "method"
         return imports_code + "\n" + code
 
     def extract_callable_objects(self):
@@ -324,23 +333,23 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
         return list(filtered_called_components)
 
 
-# Usage
-file_path = "/Users/elisey/AES/test_repo_folder/arxiv-feed/test.cpp"
-parser = CppFileParser(file_path, "your_repo_name")
+# # Usage
+# file_path = "/Users/elisey/AES/test_repo_folder/arxiv-feed/test.cpp"
+# parser = CppFileParser(file_path, "your_repo_name")
 
-print("Component Names:")
-print(parser.extract_component_names())
+# print("Component Names:")
+# print(parser.extract_component_names())
 
-print("\nCalled Components:")
-print(parser.extract_called_components())
+# print("\nCalled Components:")
+# print(parser.extract_called_components())
 
-print("\nCallable Components:")
-print(parser.extract_callable_components())
+# print("\nCallable Components:")
+# print(parser.extract_callable_components())
 
-print("\nImports:")
-print(parser.extract_imports())
+# print("\nImports:")
+# print(parser.extract_imports())
 
-helper = CppComponentFillerHelper("globalFunction", file_path, parser)
-print()
-print(helper.extract_component_code())
-print(helper.extract_callable_objects())
+# helper = CppComponentFillerHelper("globalFunction", file_path, parser)
+# print()
+# print(helper.extract_component_code())
+# print(helper.extract_callable_objects())

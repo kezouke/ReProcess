@@ -38,7 +38,6 @@ class GraphUpdater(ReProcessor):
                                     capture_output=True,
                                     text=True,
                                     check=True)
-            print(result)
             return result.stdout.splitlines()
         except subprocess.CalledProcessError as e:
             logging.error(f"Failed to get changed files: {e}")
@@ -165,7 +164,6 @@ class GraphUpdater(ReProcessor):
         Returns:
             tuple: Updated AST manager, component manager, file manager, package components, and external components dictionary.
         """
-        print(updated_files)
         parsers_map = create_parsers_map(updated_files,
                                          repository_container.repo_name)
 

@@ -5,6 +5,7 @@ from reprocess.parsers.tree_sitter_parser import TreeSitterComponentFillerHelper
 from reprocess.file_analyzer import FileContainer
 from reprocess.parsers.python_parsers import PythonFileParser, PythonComponentFillerHelper
 from reprocess.parsers.c_parsers import CFileParser, CComponentFillerHelper
+from reprocess.parsers.cpp_parsers import CppFileParser, CppComponentFillerHelper
 from typing import List
 
 
@@ -17,6 +18,9 @@ def create_parsers_map(files, repo_name):
         elif file.endswith('.c'):
             parsers_map[file] = CFileParser(file, repo_name)
         # Add more conditions for other file types if needed
+        elif file.endswith('.cpp'):
+            parsers_map[file] = CppFileParser(file, repo_name)
+            print(parsers_map[file].extract_component_names())
     return parsers_map
 
 
@@ -34,14 +38,17 @@ def extract_components(parsers_map):
             elif file.endswith('.c'):
                 component_fillers[cmp] = CComponentFillerHelper(
                     cmp, file, parser)
+            elif file.endswith('.cpp'):
+                component_fillers[cmp] = CppComponentFillerHelper(
+                    cmp, file, parser)
             # Add more conditions for other file types if needed
     return component_names, component_fillers
 
 
-def map_files_to_ids(python_parsers_map):
+def map_files_to_ids(parsers_map):
     """Maps files to their respective IDs."""
     id_files_map = {}
-    for file in python_parsers_map.values():
+    for file in parsers_map.values():
         id_files_map[file.file_id] = FileContainer(
             file_id=file.file_id,
             file_path=file.file_path,

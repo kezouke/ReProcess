@@ -17,7 +17,8 @@ def find_code_files(directory: str) -> List[str]:
         # Iterate through each file in the current directory level
         for file in files:
             # Check if the file has a '.py' extension
-            if file.endswith(".py") or file.endswith(".c"):
+            if file.endswith(".py") or file.endswith(".c") or file.endswith(
+                    ".cpp"):
                 # Construct the full path to the file and add it to the list
                 code_files.append(os.path.join(root, file))
 
