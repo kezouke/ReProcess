@@ -7,14 +7,6 @@ class TreeSitterFileParser(ABC):
     def __init__(self, file_path: str, repo_name: str) -> None:
         self.file_path = file_path
         self.repo_name = repo_name
-        try:
-            import tree_sitter
-            import tree_sitter_languages
-        except ImportError:
-            raise ImportError(
-                "Could not import tree_sitter/tree_sitter_languages Python packages. "
-                "Please install them with "
-                "`pip install tree-sitter tree-sitter-languages`.")
 
     @abstractmethod
     def extract_component_names(self):
@@ -42,14 +34,6 @@ class TreeSitterComponentFillerHelper(ABC):
         self.file_parser = file_parser
         self.component_id = str(uuid.uuid4())
         self.file_id = self.file_parser.file_id
-        try:
-            import tree_sitter
-            import tree_sitter_languages
-        except ImportError:
-            raise ImportError(
-                "Could not import tree_sitter/tree_sitter_languages Python packages. "
-                "Please install them with "
-                "`pip install tree-sitter tree-sitter-languages`.")
 
     @abstractmethod
     def extract_component_code(self):
