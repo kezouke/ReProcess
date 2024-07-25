@@ -100,7 +100,6 @@ class GraphUpdater(ReProcessor):
             filter(
                 lambda file: file.file_id not in removed_file_ids and file.
                 file_id not in updated_files_ids, repository_container.files))
-
         return temporary_files, removed_file_ids, updated_files_ids
 
     def _filter_repository_components(self, repository_container,

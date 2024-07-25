@@ -8,6 +8,7 @@ class PythonFileParser(TreeSitterFileParser):
 
     def __init__(self, file_path: str, repo_name: str) -> None:
         self.file_path = file_path
+        self.repo_name = repo_name
         self.file_id = str(uuid.uuid4())
 
         cutted_path = self.file_path.split(repo_name)[-1]

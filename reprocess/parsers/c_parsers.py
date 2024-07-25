@@ -11,6 +11,8 @@ class CFileParser(TreeSitterFileParser):
         super().__init__(file_path, repo_name)
         self.file_id = str(uuid.uuid4())
 
+        cutted_path = self.file_path.split(repo_name)[-1]
+
         # Load the compiled language grammar
         C_LANGUAGE = Language(tsc.language())
         self.parser = Parser(C_LANGUAGE)
@@ -18,6 +20,8 @@ class CFileParser(TreeSitterFileParser):
         with open(self.file_path, 'r', encoding='utf-8') as file:
             self.source_code = file.read()
             self.tree = self.parser.parse(bytes(self.source_code, "utf8"))
+
+        self.file_path = cutted_path[1:]
 
     def extract_component_names(self):
         components = []

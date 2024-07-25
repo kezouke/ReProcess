@@ -20,7 +20,6 @@ def create_parsers_map(files, repo_name):
         # Add more conditions for other file types if needed
         elif file.endswith('.cpp'):
             parsers_map[file] = CppFileParser(file, repo_name)
-            print(parsers_map[file].extract_component_names())
     return parsers_map
 
 

@@ -12,6 +12,8 @@ class CppFileParser(TreeSitterFileParser):
         super().__init__(file_path, repo_name)
         self.file_id = str(uuid.uuid4())
 
+        cutted_path = self.file_path.split(repo_name)[-1]
+
         # Load the compiled language grammar for C++
         CPP_LANGUAGE = Language(tscpp.language())
         self.parser = Parser(CPP_LANGUAGE)
@@ -19,6 +21,8 @@ class CppFileParser(TreeSitterFileParser):
         with open(self.file_path, 'r', encoding='utf-8') as file:
             self.source_code = file.read()
             self.tree = self.parser.parse(bytes(self.source_code, "utf8"))
+
+        self.file_path = cutted_path[1:]
 
     def extract_component_names(self):
         components = []
