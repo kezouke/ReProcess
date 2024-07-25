@@ -1,5 +1,6 @@
 from reprocess.parsers.tree_sitter_parser import TreeSitterFileParser, TreeSitterComponentFillerHelper
 from tree_sitter import Language, Parser
+from reprocess.utils.import_path_extractor import get_import_statement_path
 import tree_sitter_java as tsjava
 import uuid
 
@@ -13,6 +14,7 @@ class JavaFileParser(TreeSitterFileParser):
 
         JAVA_LANGUAGE = Language(tsjava.language())
         self.parser = Parser(JAVA_LANGUAGE)
+        self.packages = get_import_statement_path(cutted_path)
 
         with open(self.file_path, 'r', encoding='utf-8') as file:
             self.source_code = file.read()
@@ -49,7 +51,25 @@ class JavaFileParser(TreeSitterFileParser):
 
     def extract_component_names(self):
         root_node = self.tree.root_node
-        return self._find_cmp_names(root_node)
+        components = self._find_cmp_names(root_node)
+        return [self.packages + "." + cmp_name for cmp_name in components]
+
+    def _extract_called_components(node):
+        components = []
+
+        if node.type == "method_invocation":
+            method_name_node = node.child_by_field_name("name")
+            object_node = node.child_by_field_name("object")
+
+            if method_name_node and object_node:
+                method_name = method_name_node.text.decode("utf8").strip()
+                object_name = object_node.text.decode("utf8").strip()
+                components.append(f"{object_name}.{method_name}")
+
+        for child in node.children:
+            components.extend(extract_called_components(child))
+
+        return components
 
     def extract_called_components(self):
         return super().extract_called_components()
@@ -57,8 +77,25 @@ class JavaFileParser(TreeSitterFileParser):
     def extract_callable_components(self):
         return super().extract_callable_components()
 
+    def _rec_import_finder(self, node):
+        imports = []
+        for child in node.children:
+            if child.type == "import_declaration":
+                scoped_identifier = None
+                for grandchild in child.children:
+                    if grandchild.type == "scoped_identifier":
+                        scoped_identifier = grandchild.text.decode(
+                            "utf8").strip()
+                        imports.append(scoped_identifier)
+                        break
+            elif child.type == "program":
+                imports.extend(self._rec_import_finder(child))
+
+        return imports
+
     def extract_imports(self):
-        return super().extract_imports()
+        root_node = self.tree.root_node
+        return self._rec_import_finder(root_node)
 
 
 class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
@@ -76,7 +113,10 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
 
 # Usage
 file_path = "/Users/elisey/AES/test_repo_folder/arxiv-feed/main.java"
-parser = JavaFileParser(file_path, "your_repo_name")
+parser = JavaFileParser(file_path, "arxiv-feed")
 
 print("Component Names:")
 print(parser.extract_component_names())
+
+print("\nImports:")
+print(parser.extract_imports())
