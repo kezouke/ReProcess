@@ -54,7 +54,7 @@ class JavaFileParser(TreeSitterFileParser):
         components = self._find_cmp_names(root_node)
         return [self.packages + "." + cmp_name for cmp_name in components]
 
-    def _extract_called_components(node):
+    def _extract_called_components(self, node):
         components = []
 
         if node.type == "method_invocation":
@@ -67,7 +67,7 @@ class JavaFileParser(TreeSitterFileParser):
                 components.append(f"{object_name}.{method_name}")
 
         for child in node.children:
-            components.extend(extract_called_components(child))
+            components.extend(self._extract_called_components(child))
 
         return components
 
