@@ -4,7 +4,7 @@ from reprocess.re_container import ReContainer
 # Initialize a ReContainer object with the name of the repository,
 # the path where the repository will be cloned,
 # and the path where the JSON graphs will be saved.
-repo_container = ReContainer("arxiv-feed", "/home/", "/home/db")
+repo_container = ReContainer("arxiv-feed", "/home/arxiv-feed", "/home/db")
 
 # Create a Compose object that specifies a sequence of operations
 # to be performed on the repository. This sequence includes cloning
@@ -14,7 +14,7 @@ repo_container = ReContainer("arxiv-feed", "/home/", "/home/db")
 composition = Compose([
     CloneRepository("https://github.com/arXiv/arxiv-feed"),
     GraphBuilder(),
-    # RegExpFinder("^(.*test.*)$|^((?:.*[Tt]est).*)$"),
+    RegExpFinder("^(.*test.*)$|^((?:.*[Tt]est).*)$"),
     JsonConverter()
 ])
 # Execute the sequence of operations on
