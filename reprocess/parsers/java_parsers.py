@@ -21,6 +21,9 @@ class JavaFileParser(TreeSitterFileParser):
             self.tree = self.parser.parse(bytes(self.source_code, "utf8"))
 
         self.file_path = cutted_path[1:]
+        self.variable_class_map = {}
+        self.imports_map = self._map_imported_classes()
+        self.local_component_names = self.extract_component_names()
 
     def _find_cmp_names(self, node, class_path=""):
         components = []
@@ -54,25 +57,70 @@ class JavaFileParser(TreeSitterFileParser):
         components = self._find_cmp_names(root_node)
         return [self.packages + "." + cmp_name for cmp_name in components]
 
+    def _map_imported_classes(self):
+        imports = self.extract_imports()
+        imports_map = {}
+        for imp in imports:
+            # Extract the short class name from the import statement
+            class_name = imp.split('.')[-1]
+            imports_map[class_name] = imp
+        return imports_map
+
     def _extract_called_components(self, node):
         components = []
 
-        if node.type == "method_invocation":
+        # Handle object creation expressions (e.g., new ClassName())
+        if node.type == "object_creation_expression":
+            class_name_node = node.child_by_field_name("type")
+            if class_name_node:
+                class_name = class_name_node.text.decode("utf8").strip()
+                parent = node.parent
+                if parent and parent.type == "variable_declarator":
+                    variable_name_node = parent.child_by_field_name("name")
+                    if variable_name_node:
+                        variable_name = variable_name_node.text.decode(
+                            "utf8").strip()
+                        # Map the variable name to the fully qualified class type
+                        full_class_name = self._get_fully_qualified_name(
+                            class_name)
+                        self.variable_class_map[
+                            variable_name] = full_class_name
+                        components.append(full_class_name)
+
+        # Handle method invocations
+        elif node.type == "method_invocation":
             method_name_node = node.child_by_field_name("name")
             object_node = node.child_by_field_name("object")
 
             if method_name_node and object_node:
                 method_name = method_name_node.text.decode("utf8").strip()
                 object_name = object_node.text.decode("utf8").strip()
-                components.append(f"{object_name}.{method_name}")
 
+                # Check if the object name is a variable mapped to a class
+                class_name = self.variable_class_map.get(
+                    object_name, object_name)
+                full_class_name = self._get_fully_qualified_name(class_name)
+                components.append(f"{full_class_name}.{method_name}")
+
+        # Recursively process children nodes
         for child in node.children:
             components.extend(self._extract_called_components(child))
 
         return components
 
+    def _get_fully_qualified_name(self, class_name):
+        # Check if the class is imported
+        if class_name in self.imports_map:
+            return self.imports_map[class_name]
+        # Check if the class is local
+        for component in self.local_component_names:
+            if component.endswith(f".{class_name}"):
+                return component
+        # Return the class name as is if not found in imports or local components
+        return class_name
+
     def extract_called_components(self):
-        return super().extract_called_components()
+        return list(set(self._extract_called_components(self.tree.root_node)))
 
     def extract_callable_components(self):
         return super().extract_callable_components()
@@ -112,7 +160,7 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
 
 
 # Usage
-file_path = "/Users/elisey/AES/test_repo_folder/arxiv-feed/main.java"
+file_path = "/home/arxiv-feed/feed/main.java"
 parser = JavaFileParser(file_path, "arxiv-feed")
 
 print("Component Names:")
@@ -120,3 +168,6 @@ print(parser.extract_component_names())
 
 print("\nImports:")
 print(parser.extract_imports())
+
+print()
+print(parser.extract_called_components())
