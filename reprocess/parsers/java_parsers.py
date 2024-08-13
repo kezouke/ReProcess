@@ -123,7 +123,7 @@ class JavaFileParser(TreeSitterFileParser):
         return list(set(self._extract_called_components(self.tree.root_node)))
 
     def extract_callable_components(self):
-        return super().extract_callable_components()
+        return self.local_component_names
 
     def _rec_import_finder(self, node):
         imports = []
@@ -169,5 +169,8 @@ print(parser.extract_component_names())
 print("\nImports:")
 print(parser.extract_imports())
 
-print()
+print("\nCalled components:")
 print(parser.extract_called_components())
+
+print("\nCallable components:")
+print(parser.extract_callable_components())
