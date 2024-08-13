@@ -38,6 +38,7 @@ class GraphUpdater(ReProcessor):
                                     capture_output=True,
                                     text=True,
                                     check=True)
+            print(result.stdout)
             return result.stdout.splitlines()
         except subprocess.CalledProcessError as e:
             logging.error(f"Failed to get changed files: {e}")
@@ -72,6 +73,8 @@ class GraphUpdater(ReProcessor):
         updated_files_relative_paths = [
             line[1] for line in status_file_name if not self.is_removed(line)
         ]
+        print(removed_files_relative_paths)
+        print(updated_files_relative_paths)
         return removed_files_relative_paths, updated_files_relative_paths
 
     def _filter_repository_files(self, repository_container,

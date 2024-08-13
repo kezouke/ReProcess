@@ -6,6 +6,7 @@ from reprocess.file_analyzer import FileContainer
 from reprocess.parsers.python_parsers import PythonFileParser, PythonComponentFillerHelper
 from reprocess.parsers.c_parsers import CFileParser, CComponentFillerHelper
 from reprocess.parsers.cpp_parsers import CppFileParser, CppComponentFillerHelper
+from reprocess.parsers.java_parsers import JavaFileParser, JavaComponentFillerHelper
 from typing import List
 
 
@@ -20,6 +21,8 @@ def create_parsers_map(files, repo_name):
         # Add more conditions for other file types if needed
         elif file.endswith('.cpp'):
             parsers_map[file] = CppFileParser(file, repo_name)
+        elif file.endswith('.java'):
+            parsers_map[file] = JavaFileParser(file, repo_name)
     return parsers_map
 
 
@@ -39,6 +42,9 @@ def extract_components(parsers_map):
                     cmp, file, parser)
             elif file.endswith('.cpp'):
                 component_fillers[cmp] = CppComponentFillerHelper(
+                    cmp, file, parser)
+            elif file.endswith('.java'):
+                component_fillers[cmp] = JavaComponentFillerHelper(
                     cmp, file, parser)
             # Add more conditions for other file types if needed
     return component_names, component_fillers

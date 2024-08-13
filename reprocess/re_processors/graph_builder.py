@@ -1,5 +1,5 @@
 from reprocess.re_processors.processor import ReProcessor
-from reprocess.utils.find_python_files import find_code_files
+from reprocess.utils.find_code_files import find_code_files
 from reprocess.re_container import ReContainer
 from reprocess.utils.graph_utils import construct_code_components, link_components, create_parsers_map, extract_components, map_files_to_ids
 
