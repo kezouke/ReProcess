@@ -151,9 +151,88 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
     def __init__(self, component_name: str, component_file_path: str,
                  file_parser: TreeSitterFileParser) -> None:
         super().__init__(component_name, component_file_path, file_parser)
+        self.imports = []
+        self.component_type = None
+        self.source_code = self.file_parser.source_code.splitlines()
 
     def extract_component_code(self):
-        return super().extract_component_code()
+        # Initialize imports and component type
+        self.component_type = None
+        self.imports = self._get_import_statements()
+
+        # Break down the component name to match nested structure
+        name_parts = self.component_name.split(self.file_parser.packages +
+                                               ".")[-1].split(".")
+
+        # Start searching from the root node
+        root_node = self.file_parser.tree.root_node
+
+        # Search for the component node
+        component_node = self._find_component_node(root_node, name_parts)
+
+        # If found, extract the code
+        if component_node:
+            # Extract the relevant imports based on component usage
+            used_imports = self._get_used_imports(component_node)
+            # Extract the code and prepend relevant import statements
+            component_code = self._extract_code_from_node(component_node)
+            return "\n".join(used_imports) + "\n\n" + component_code
+        else:
+            return None
+
+    def _get_import_statements(self):
+        imports = []
+        for child in self.file_parser.tree.root_node.children:
+            if child.type == "import_declaration":
+                import_statement = self._node_text(child)
+                imports.append(import_statement)
+        return imports
+
+    def _get_used_imports(self, component_node):
+        used_imports = set()
+        called_components = self.file_parser._extract_called_components(
+            component_node)
+        for component in called_components:
+            for imp in self.imports:
+                if imp.endswith(component.split(".")[-1] + ";"):
+                    used_imports.add(imp)
+        return sorted(used_imports)
+
+    def _find_component_node(self, node, name_parts):
+        if node.type in ["class_declaration", "method_declaration"]:
+            # Get the exact name of the class or method
+            node_name = self._node_text(node.child_by_field_name("name"))
+            if node_name == name_parts[0]:
+                # Set the component type if a match is found
+                self.component_type = "class" if node.type == "class_declaration" else "method"
+                if len(name_parts) == 1:
+                    return node
+                else:
+                    # Continue searching within the nested body
+                    body_node = node.child_by_field_name("body")
+                    if body_node:
+                        return self._find_component_node(
+                            body_node, name_parts[1:])
+
+        # Recursively search child nodes
+        for child in node.children:
+            result = self._find_component_node(child, name_parts)
+            if result:
+                return result
+
+        return None
+
+    def _extract_code_from_node(self, node):
+        # Extract code from the node, maintaining the original tabulation
+        start_line = node.start_point[0]
+        end_line = node.end_point[0]
+        code_lines = self.source_code[start_line:end_line + 1]
+
+        # Return the code with correct indentation
+        return "\n".join(code_lines)
+
+    def _node_text(self, node):
+        return node.text.decode('utf-8').strip()
 
     def extract_callable_objects(self):
         return super().extract_callable_objects()
@@ -174,3 +253,29 @@ print(parser.extract_called_components())
 
 print("\nCallable components:")
 print(parser.extract_callable_components())
+
+helper = JavaComponentFillerHelper("feed.main.java.Main.Logger", file_path,
+                                   parser)
+print("\nComponent Code:")
+print(helper.extract_component_code())
+'''
+Output:
+Component Names:
+['feed.main.java.Main', 'feed.main.java.Main.main', 'feed.main.java.Main.Logger', 'feed.main.java.Main.Logger.log']
+
+Imports:
+['utilities.MathUtils', 'services.GreetingService']
+
+Called components:
+['services.GreetingService', 'feed.main.java.Main.Logger.log', 'System.out.println', 'feed.main.java.Main.Logger', 'utilities.MathUtils', 'utilities.MathUtils.add', 'services.GreetingService.getGreeting']
+
+Callable components:
+['feed.main.java.Main', 'feed.main.java.Main.main', 'feed.main.java.Main.Logger', 'feed.main.java.Main.Logger.log']
+
+Component Code:
+import utilities.MathUtils;
+import services.GreetingService;
+        void log(String message) {
+            System.out.println("LOG: " + message);
+        }
+'''
