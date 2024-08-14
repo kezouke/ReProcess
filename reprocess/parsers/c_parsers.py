@@ -1,32 +1,45 @@
 from reprocess.parsers.tree_sitter_parser import TreeSitterFileParser, TreeSitterComponentFillerHelper
 from typing import List
-import uuid
 import tree_sitter_c as tsc
 from tree_sitter import Language, Parser
 
 
 class CFileParser(TreeSitterFileParser):
+    """
+    Concrete implementation of TreeSitterFileParser for parsing C files.
+    
+    Inherits from TreeSitterFileParser and overrides methods to parse C files specifically.
+    """
 
     def __init__(self, file_path: str, repo_name: str) -> None:
         super().__init__(file_path, repo_name)
-        self.file_id = str(uuid.uuid4())
 
-        cutted_path = self.file_path.split(repo_name)[-1]
-
-        # Load the compiled language grammar
+    def _initialize_parser(self):
+        """Initializes the Tree-sitter parser with the C language grammar."""
+        # Load the compiled language grammar for C
         C_LANGUAGE = Language(tsc.language())
         self.parser = Parser(C_LANGUAGE)
 
+        # Read the file content and parse it
         with open(self.file_path, 'r', encoding='utf-8') as file:
             self.source_code = file.read()
             self.tree = self.parser.parse(bytes(self.source_code, "utf8"))
 
+        # Adjust the file path relative to the repository
+        cutted_path = self.file_path.split(self.repo_name)[-1]
         self.file_path = cutted_path[1:]
 
     def extract_component_names(self):
+        """
+        Extracts names of components (functions and structs) defined in the C file.
+        
+        Returns:
+            List[str]: List of component names.
+        """
         components = []
 
         def visit_node(node):
+            """Visits a node in the AST and extracts component names."""
             if node.type == "function_definition":
                 func_node = node.child_by_field_name(
                     "declarator").child_by_field_name("declarator")
@@ -46,6 +59,7 @@ class CFileParser(TreeSitterFileParser):
                             components.append(f"{struct_name}.{field_name}")
 
         def traverse_tree(node):
+            """Recursively traverses the AST starting from the given node."""
             visit_node(node)
             for child in node.children:
                 traverse_tree(child)
@@ -57,9 +71,16 @@ class CFileParser(TreeSitterFileParser):
         return modules
 
     def extract_called_components(self) -> List[str]:
+        """
+        Extracts names of components called within the C file.
+        
+        Returns:
+            List[str]: List of names of called components.
+        """
         called_components = set()
 
         def visit_node(node):
+            """Visits a node in the AST and identifies called components."""
             if node.type == "call_expression":
                 func_node = node.child_by_field_name("function")
                 if func_node:
@@ -70,6 +91,7 @@ class CFileParser(TreeSitterFileParser):
                     called_components.add(field_node.text.decode('utf-8'))
 
         def traverse_tree(node):
+            """Recursively traverses the AST starting from the given node."""
             visit_node(node)
             for child in node.children:
                 traverse_tree(child)
@@ -79,6 +101,12 @@ class CFileParser(TreeSitterFileParser):
         return list(called_components)
 
     def extract_callable_components(self):
+        """
+        Extracts names of callable components defined in the C file.
+        
+        Returns:
+            List[str]: List of names of callable components.
+        """
         callable_components = set()
 
         def visit_node(node):
@@ -111,6 +139,12 @@ class CFileParser(TreeSitterFileParser):
         return list(callable_components)
 
     def extract_imports(self):
+        """
+        Extracts import statements from the C file.
+        
+        Returns:
+            List[str]: List of import statements found in the file.
+        """
         imports = []
 
         def visit_node(node):
@@ -131,23 +165,32 @@ class CFileParser(TreeSitterFileParser):
 
 
 class CComponentFillerHelper(TreeSitterComponentFillerHelper):
+    """
+    Concrete implementation of TreeSitterComponentFillerHelper for filling component details in C files.
+    
+    Inherits from TreeSitterComponentFillerHelper and overrides methods to fill component details specifically for C files.
+    """
 
     def __init__(self, component_name: str, component_file_path: str,
                  file_parser: 'TreeSitterFileParser') -> None:
-        super().__init__(component_name, component_file_path, file_parser)
-        self.parser = file_parser.parser
-        self.tree = file_parser.tree
+
         self.struct_variable_types = {
         }  # Dictionary to store variable to struct type mappings
-        self.current_scope = [
-        ]  # To track the current scope of variable declarations
-        self.component_code = self.extract_component_code()
+        self.current_scope = []
+        super().__init__(component_name, component_file_path, file_parser)
 
     def extract_component_code(self):
+        """
+        Extracts the code of the specified component from the C file.
+        
+        Returns:
+            str: The extracted code of the component.
+        """
 
         def extract_imports_from_source():
+            """Extracts import statements from the source code."""
             imports = []
-            for node in self.tree.root_node.children:
+            for node in self.file_parser.tree.root_node.children:
                 if node.type == "preproc_include":
                     include_node = node.child_by_field_name("path")
                     if include_node:
@@ -156,18 +199,24 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
                                                          end_byte])
             return imports
 
-        # Use this function to get imports directly
         imports_code = "".join(extract_imports_from_source())
 
         code = self._extract_component_code()
         return imports_code + "\n" + code
 
     def extract_callable_objects(self):
+        """
+        Extracts callable objects defined within the component.
+        
+        Returns:
+            List[str]: List of callable object names.
+        """
         code = self.extract_component_code()
-        tree = self.parser.parse(bytes(code, "utf8"))
+        tree = self.file_parser.parser.parse(bytes(code, "utf8"))
         called_components = set()
 
         def _extract_components(node, components, struct_vars):
+            """Recursively extracts callable objects from the AST."""
             if node.type == 'call_expression':
                 function_name = node.child_by_field_name(
                     'function').text.decode('utf-8')
@@ -194,9 +243,11 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
         return list(called_components)
 
     def _extract_component_code(self):
+
         component_name_splitted = self.component_name.split(".")
 
         def visit_node(node):
+            """Visits a node in the AST and checks if it matches the specified component."""
             if node.type == "function_definition" and node.child_by_field_name(
                     "declarator"):
                 self.component_type = "function"
@@ -222,7 +273,7 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
                 if result_node:
                     return result_node
 
-        root_node = self.tree.root_node
+        root_node = self.file_parser.tree.root_node
         found_node = traverse_tree(root_node)
         if found_node:
             extracted_code = self.file_parser.source_code[
@@ -238,6 +289,16 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
         return ""
 
     def _extract_field_code(self, struct_node, field_name):
+        """
+        Extracts the code of a specific field within a structure.
+        
+        Args:
+            struct_node (Node): The AST node representing the structure.
+            field_name (str): The name of the field to extract.
+        
+        Returns:
+            str: The extracted code of the field, or an empty string if not found.
+        """
         body = struct_node.child_by_field_name("body")
         if body:
             for struct_node in body.children:

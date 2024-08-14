@@ -1,30 +1,46 @@
 from reprocess.parsers.tree_sitter_parser import TreeSitterFileParser, TreeSitterComponentFillerHelper
 from typing import List
-import uuid
 import re
 import tree_sitter_cpp as tscpp
 from tree_sitter import Language, Parser
 
 
 class CppFileParser(TreeSitterFileParser):
+    """
+    Concrete implementation of TreeSitterFileParser for parsing C++ files.
+    
+    Inherits from TreeSitterFileParser and overrides methods to parse C++ files specifically.
+    """
 
-    def __init__(self, file_path: str, repo_name: str) -> None:
-        super().__init__(file_path, repo_name)
-        self.file_id = str(uuid.uuid4())
-
-        cutted_path = self.file_path.split(repo_name)[-1]
-
+    def _initialize_parser(self):
+        """
+        Initializes the Tree-sitter parser with the C++ language grammar.
+        
+        Reads the file content and parses it into an AST. Also adjusts the file path relative to the repository.
+        """
         # Load the compiled language grammar for C++
         CPP_LANGUAGE = Language(tscpp.language())
         self.parser = Parser(CPP_LANGUAGE)
 
+        # Read the source code and parse the tree
         with open(self.file_path, 'r', encoding='utf-8') as file:
             self.source_code = file.read()
             self.tree = self.parser.parse(bytes(self.source_code, "utf8"))
 
+        # Adjust file path relative to the repository
+        cutted_path = self.file_path.split(self.repo_name)[-1]
         self.file_path = cutted_path[1:]
 
+    def __init__(self, file_path: str, repo_name: str) -> None:
+        super().__init__(file_path, repo_name)
+
     def extract_component_names(self):
+        """
+        Extracts names of components (functions and classes) defined in the C++ file.
+        
+        Returns:
+            List[str]: List of component names.
+        """
         components = []
 
         def visit_node(node, class_name=None):
@@ -63,6 +79,12 @@ class CppFileParser(TreeSitterFileParser):
         return modules
 
     def extract_called_components(self) -> List[str]:
+        """
+        Extracts names of components called within the C++ file.
+        
+        Returns:
+            List[str]: List of names of called components.
+        """
         called_components = set()
         variable_to_class = {}
 
@@ -117,6 +139,12 @@ class CppFileParser(TreeSitterFileParser):
         return list(filtered_called_components)
 
     def extract_callable_components(self):
+        """
+        Extracts names of callable components defined within the C++ file.
+        
+        Returns:
+            List[str]: List of names of callable components.
+        """
         callable_components = set()
 
         def visit_node(node, class_name=None):
@@ -143,6 +171,12 @@ class CppFileParser(TreeSitterFileParser):
         return list(callable_components)
 
     def extract_imports(self):
+        """
+        Extracts import statements from the C++ file.
+        
+        Returns:
+            List[str]: List of import statements found in the file.
+        """
         imports = []
 
         def visit_node(node):
@@ -163,26 +197,34 @@ class CppFileParser(TreeSitterFileParser):
 
 
 class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
+    """
+    Helper class for filling components in C++ files using Tree-sitter.
+    
+    Extends TreeSitterComponentFillerHelper to provide functionality specific to C++.
+    """
 
     def __init__(self, component_name: str, component_file_path: str,
                  file_parser: 'TreeSitterFileParser') -> None:
-        super().__init__(component_name, component_file_path, file_parser)
-        self.parser = file_parser.parser
-        self.tree = file_parser.tree
-        self.code = file_parser.source_code
         self.class_methods = {}
-        self.component_code = self.extract_component_code()
+        super().__init__(component_name, component_file_path, file_parser)
+
+    def _initialize_component(self):
+        """Reads the source code and finds class methods defined outside class bodies."""
+        self.source_code = self._read_source_code()
+        self._find_class_methods()
+        return self.extract_component_code()
 
     def _get_node_text(self, node):
-        return self.code[node.start_byte:node.end_byte]
+        """Extracts the text content of a given AST node."""
+        return self.source_code[node.start_byte:node.end_byte]
 
     def _strip_parameters(self, name):
         # Strip off parameters from the function name
         return re.sub(r'\(.*\)', '', name)
 
     def _find_class_methods(self):
-        # Find all methods defined outside class bodies
-        for node in self.tree.root_node.children:
+        """Finds all methods defined outside class bodies and stores them."""
+        for node in self.file_parser.tree.root_node.children:
             if node.type == 'function_definition':
                 declarator = node.child_by_field_name('declarator')
                 if declarator:
@@ -197,6 +239,7 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
                         self.class_methods[class_name][method_name] = node
 
     def _find_component_node(self, node, name_parts):
+        """Recursively finds the AST node corresponding to the component."""
         if node.type == 'function_definition' or node.type == 'class_specifier':
             declarator = None
             if node.type == 'function_definition':
@@ -226,6 +269,7 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
         return None
 
     def _extract_component(self, component_name):
+        """Extracts the code of the specified component."""
         self._find_class_methods()
         name_parts = component_name.split('.')
         if len(name_parts
@@ -236,8 +280,8 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
             self.component_type = 'method'
             return self._get_node_text(component_node)
 
-        component_node = self._find_component_node(self.tree.root_node,
-                                                   name_parts)
+        component_node = self._find_component_node(
+            self.file_parser.tree.root_node, name_parts)
         if component_node:
             if component_node.type == 'class_specifier':
                 self.component_type = 'class'
@@ -258,10 +302,16 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
             return None
 
     def extract_component_code(self):
+        """
+        Extracts the code of the component along with any imports.
+        
+        Returns:
+            str: The extracted code of the component including imports.
+        """
 
         def extract_imports_from_source():
             imports = []
-            for node in self.tree.root_node.children:
+            for node in self.file_parser.tree.root_node.children:
                 if node.type == "preproc_include":
                     include_node = node.child_by_field_name("path")
                     if include_node:
@@ -279,11 +329,17 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
         return imports_code + "\n" + code
 
     def extract_callable_objects(self):
+        """
+        Extracts names of callable objects defined within the component code.
+        
+        Returns:
+            List[str]: List of names of callable objects.
+        """
         called_components = set()
         variable_to_class = {}
 
         code = self.component_code
-        tree = self.parser.parse(bytes(code, "utf8"))
+        tree = self.file_parser.parser.parse(bytes(code, "utf8"))
 
         def visit_node(node, class_scope=None):
             if node.type == "call_expression":
