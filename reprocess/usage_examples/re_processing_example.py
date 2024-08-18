@@ -4,9 +4,7 @@ from reprocess.re_container import ReContainer
 # Initialize a ReContainer object with the name of the repository,
 # the path where the repository will be cloned,
 # and the path where the JSON graphs will be saved.
-repo_container = ReContainer("arxiv-feed",
-                             "/Users/elisey/AES/test_repo_folder/arxiv-feed",
-                             "/Users/elisey/AES/test_repo_folder/db")
+repo_container = ReContainer("arxiv-feed", "/home/arxiv-feed", "/home/db")
 
 # Create a Compose object that specifies a sequence of operations
 # to be performed on the repository. This sequence includes cloning

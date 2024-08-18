@@ -1,7 +1,6 @@
 import ast
 from typing import List, Optional, Dict
 from dataclasses import dataclass
-from reprocess.utils.mappers.file_path_ast_mapper import FilePathAstMapError
 from reprocess.utils.import_path_extractor import get_import_statement_path
 
 
@@ -115,14 +114,10 @@ class FileFiller:
     def extract_imports(self):
         """
         Extracts and returns a list of imported modules or names from the file.
-        
-        Raises:
-            FilePathAstMapError: If file_path_ast_map is None.
-        
+                
         Returns:
             List[str]: List of imported modules or names.
         """
-        self._validate_ast_map()
 
         tree = self.file_path_ast_map[self.file_path]
         imports = []
@@ -161,14 +156,9 @@ class FileFiller:
         """
         Extracts and returns a list of components that are called within the file.
         
-        Raises:
-            FilePathAstMapError: If file_path_ast_map is None.
-        
         Returns:
             List[str]: List of called components.
         """
-        self._validate_ast_map()
-
         tree = self.file_path_ast_map[self.file_path]
 
         called_components = set()
@@ -186,14 +176,9 @@ class FileFiller:
         """
         Extracts and returns a list of components that can be called, including functions and classes.
         
-        Raises:
-            FilePathAstMapError: If file_path_ast_map is None.
-        
         Returns:
             List[str]: List of callable components.
         """
-        self._validate_ast_map()
-
         tree = self.file_path_ast_map[self.file_path]
 
         callable_components = set()
@@ -207,16 +192,6 @@ class FileFiller:
                 callable_components.add(node.name)
 
         return list(callable_components)
-
-    def _validate_ast_map(self):
-        """
-        Validates that the file_path_ast_map attribute is not None.
-        
-        Raises:
-            FilePathAstMapError: If file_path_ast_map is None.
-        """
-        if self.file_path_ast_map is None:
-            raise FilePathAstMapError("file_path_ast_map is None")
 
     def __str__(self) -> str:
         """Returns the file path as a string representation of the object."""
