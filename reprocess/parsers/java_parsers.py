@@ -284,7 +284,7 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
             List[str]: Sorted list of imports used by the component.
         """
         used_imports = set()
-        called_components = self.file_parser._extract_called_components(
+        called_components = self.file_parser._rec_called_components_finder(
             component_node)
         for component in called_components:
             for imp in self.imports:
@@ -365,5 +365,5 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
         """
         return list(
             set(
-                self.file_parser._extract_called_components(
+                self.file_parser._rec_called_components_finder(
                     self.component_node)))
