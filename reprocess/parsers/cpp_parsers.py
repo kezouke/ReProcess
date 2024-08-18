@@ -391,25 +391,3 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
                 filtered_called_components.add(called_component)
 
         return list(filtered_called_components)
-
-
-# # Usage
-# file_path = "/Users/elisey/AES/test_repo_folder/arxiv-feed/test.cpp"
-# parser = CppFileParser(file_path, "your_repo_name")
-
-# print("Component Names:")
-# print(parser.extract_component_names())
-
-# print("\nCalled Components:")
-# print(parser.extract_called_components())
-
-# print("\nCallable Components:")
-# print(parser.extract_callable_components())
-
-# print("\nImports:")
-# print(parser.extract_imports())
-
-# helper = CppComponentFillerHelper("globalFunction", file_path, parser)
-# print()
-# print(helper.extract_component_code())
-# print(helper.extract_callable_objects())
