@@ -158,7 +158,7 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
                  file_parser: TreeSitterFileParser) -> None:
         super().__init__(component_name, component_file_path, file_parser)
 
-    def _extract_component_code(self):
+    def _extract_code_without_imports(self):
         """
         Extracts the code of the specified Python component.
         
@@ -329,7 +329,7 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
         Returns:
             str: The extracted component code prefixed with necessary import statements.
         """
-        code = self._extract_component_code()
+        code = self._extract_code_without_imports()
         used_imports = self._collect_used_imports(code)
         import_statements_code = self._generate_import_statements(used_imports)
         return import_statements_code + "\n" + code

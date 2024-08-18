@@ -95,7 +95,7 @@ class JavaFileParser(TreeSitterFileParser):
         imports_map = {imp.split('.')[-1]: imp for imp in imports}
         return imports_map
 
-    def _extract_called_components(self, node):
+    def _rec_called_components_finder(self, node):
         """
         Recursively extracts names of components called within the Java file starting from the given node.
         
@@ -141,7 +141,7 @@ class JavaFileParser(TreeSitterFileParser):
 
         # Recursively process children nodes
         for child in node.children:
-            components.extend(self._extract_called_components(child))
+            components.extend(self._rec_called_components_finder(child))
 
         return components
 
@@ -172,7 +172,8 @@ class JavaFileParser(TreeSitterFileParser):
         Returns:
             List[str]: List of names of called components.
         """
-        return list(set(self._extract_called_components(self.tree.root_node)))
+        return list(
+            set(self._rec_called_components_finder(self.tree.root_node)))
 
     def extract_callable_components(self):
         """
@@ -255,7 +256,7 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
 
         if self.component_node:
             used_imports = self._get_used_imports(self.component_node)
-            component_code = self._extract_code_from_node(self.component_node)
+            component_code = self._node_to_code_string(self.component_node)
             return "\n".join(used_imports) + "\n\n" + component_code
         return ""
 
@@ -325,7 +326,7 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
 
         return None
 
-    def _extract_code_from_node(self, node):
+    def _node_to_code_string(self, node):
         """
         Extracts the source code corresponding to the given AST node.
         

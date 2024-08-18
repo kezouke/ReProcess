@@ -201,7 +201,7 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
 
         imports_code = "".join(extract_imports_from_source())
 
-        code = self._extract_component_code()
+        code = self._extract_code_without_imports()
         return imports_code + "\n" + code
 
     def extract_callable_objects(self):
@@ -242,7 +242,7 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
         _extract_components(root_node, called_components, struct_vars)
         return list(called_components)
 
-    def _extract_component_code(self):
+    def _extract_code_without_imports(self):
 
         component_name_splitted = self.component_name.split(".")
 

@@ -268,7 +268,7 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
                 return result
         return None
 
-    def _extract_component(self, component_name):
+    def _extract_code_without_imports(self, component_name):
         """Extracts the code of the specified component."""
         self._find_class_methods()
         name_parts = component_name.split('.')
@@ -323,7 +323,7 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
         # Use this function to get imports directly
         imports_code = "".join(extract_imports_from_source())
 
-        code = self._extract_component(self.component_name)
+        code = self._extract_code_without_imports(self.component_name)
         if self.component_type.count('.') > 0:
             self.component_type = "method"
         return imports_code + "\n" + code
