@@ -81,11 +81,98 @@ class GoFileParser(TreeSitterFileParser):
 
         return modules
 
+    def _rec_extract_called_nodes(self, node: Node, var_types: dict) -> set:
+        called_components = set()
+
+        # Traverse the AST
+        for child in node.children:
+            if child.type == 'call_expression':
+                # Extract the function being called
+                function_node = child.child_by_field_name('function')
+                if function_node:
+                    # Check if it's a selector_expression (e.g., obj.Method())
+                    if function_node.type == 'selector_expression':
+                        operand_node = function_node.child_by_field_name(
+                            'operand')
+                        field_node = function_node.child_by_field_name('field')
+                        if operand_node and field_node:
+                            operand_name = operand_node.text.decode('utf-8')
+                            field_name = field_node.text.decode('utf-8')
+                            # Determine the full method name based on variable types
+                            if operand_name in var_types:
+                                struct_name = var_types[operand_name]
+                                full_method_name = f"{struct_name}.{field_name}"
+                                called_components.add(full_method_name)
+                    else:
+                        # For non-selector expressions, treat it as a function call
+                        function_name = function_node.text.decode('utf-8')
+                        called_components.add(function_name)
+
+            elif child.type == 'short_var_declaration':
+                left_node = child.child_by_field_name('left')
+                right_node = child.child_by_field_name('right')
+                if left_node and right_node:
+                    # Map variable names to their types
+                    var_names = [
+                        var.text.decode('utf-8') for var in left_node.children
+                    ]
+                    # Check if right_node contains a composite_literal to get types
+                    if right_node.type == 'expression_list':
+                        for item in right_node.children:
+                            if item.type == 'composite_literal':
+                                type_node = item.child_by_field_name('type')
+                                if type_node:
+                                    struct_type = type_node.text.decode(
+                                        'utf-8')
+                                    for var_name in var_names:
+                                        var_types[var_name] = struct_type
+
+            # Recurse to handle nested structures
+            called_components.update(
+                self._rec_extract_called_nodes(child, var_types))
+
+        return called_components
+
     def extract_callable_components(self):
-        return super().extract_callable_components()
+        pass
 
     def extract_called_components(self):
-        return super().extract_called_components()
+        var_types = {}
+        return self._rec_extract_called_nodes(self.tree.root_node, var_types)
 
     def extract_imports(self):
-        return super().extract_imports()
+        imports = set()
+
+        def _extract_imports(node: Node):
+            # Iterate through each child of the current node
+            for child in node.children:
+
+                # If we encounter an import_declaration node
+                if child.type == 'import_declaration':
+
+                    for child2 in child.children:
+                        if child2.type == "import_spec_list":
+                            import_spec_list = child2
+                            break
+
+                    if import_spec_list:
+                        # Ensure import_spec_list has children
+                        for import_spec in import_spec_list.children:
+                            if import_spec.type == 'import_spec':
+                                # Extract path from import_spec
+                                path_node = import_spec.child_by_field_name(
+                                    'path')
+                                if path_node and path_node.type == 'interpreted_string_literal':
+                                    # Decode the path and clean it
+                                    path = path_node.text.decode(
+                                        'utf-8').strip('"')
+                                    imports.add(path)
+
+                # Recurse into child nodes to handle nested structures
+                _extract_imports(child)
+
+        # Start extraction from the root node
+        _extract_imports(self.tree.root_node)
+
+        # Convert set to list and return
+        return list(imports)
