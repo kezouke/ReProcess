@@ -10,8 +10,8 @@ class GoFileParser(TreeSitterFileParser):
         super().__init__(file_path, repo_name)
 
     def _initialize_parser(self):
-        """Initializes the Tree-sitter parser with the C language grammar."""
-        # Load the compiled language grammar for C
+        """Initializes the Tree-sitter parser with the Go language grammar."""
+        # Load the compiled language grammar for Go
         GO_LANGUAGE = Language(tsgo.language())
         self.parser = Parser(GO_LANGUAGE)
 
@@ -134,7 +134,39 @@ class GoFileParser(TreeSitterFileParser):
         return called_components
 
     def extract_callable_components(self):
-        pass
+        callable_components = set()
+
+        def _extract_callable_components(node: Node):
+            for child in node.children:
+                # Extract function declarations
+                if child.type == 'function_declaration':
+                    function_name_node = child.child_by_field_name('name')
+                    if function_name_node:
+                        function_name = function_name_node.text.decode('utf-8')
+                        callable_components.add(function_name)
+
+                # Extract method declarations
+                elif child.type == 'method_declaration':
+                    method_name_node = child.child_by_field_name('name')
+                    receiver_node = child.child_by_field_name('receiver')
+                    if method_name_node and receiver_node:
+                        # The receiver type is the struct name
+                        receiver_type_node = receiver_node.named_child(
+                            0).child_by_field_name('type')
+                        if receiver_type_node:
+                            struct_name = receiver_type_node.text.decode(
+                                'utf-8')
+                            method_name = method_name_node.text.decode('utf-8')
+                            full_method_name = f"{struct_name}.{method_name}"
+                            callable_components.add(full_method_name)
+
+                # Recurse to handle nested structures
+                _extract_callable_components(child)
+
+        # Start extraction from the root node
+        _extract_callable_components(self.tree.root_node)
+
+        return list(callable_components)
 
     def extract_called_components(self):
         var_types = {}
