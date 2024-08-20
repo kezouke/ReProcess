@@ -170,7 +170,7 @@ class GoFileParser(TreeSitterFileParser):
 
     def extract_called_components(self):
         var_types = {}
-        return self._rec_extract_called_nodes(self.tree.root_node, var_types)
+        return list(self._rec_extract_called_nodes(self.tree.root_node, var_types))
 
     def extract_imports(self):
         imports = set()
