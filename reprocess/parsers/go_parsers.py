@@ -34,9 +34,14 @@ class GoFileParser(TreeSitterFileParser):
         for child in node.children:
             # Check for a struct type declaration
             if child.type == 'type_declaration':
-                type_spec = child.child_by_field_name('name')
-                if type_spec and type_spec.type == 'type_identifier':
-                    struct_name = type_spec.text.decode('utf-8')
+                type_spec = None
+                for child2 in child.children:
+                    if child2.type == "type_spec":
+                        type_spec = child2
+                        break
+                if type_spec:
+                    # Extract the struct name from the type_spec
+                    struct_name = type_spec.children[0].text.decode('utf-8')
                     component_names.append(struct_name)
                     # Recurse to find methods associated with this struct
                     component_names.extend(
@@ -170,7 +175,8 @@ class GoFileParser(TreeSitterFileParser):
 
     def extract_called_components(self):
         var_types = {}
-        return list(self._rec_extract_called_nodes(self.tree.root_node, var_types))
+        return list(
+            self._rec_extract_called_nodes(self.tree.root_node, var_types))
 
     def extract_imports(self):
         imports = set()
