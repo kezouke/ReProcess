@@ -7,6 +7,7 @@ from reprocess.parsers.python_parsers import PythonFileParser, PythonComponentFi
 from reprocess.parsers.c_parsers import CFileParser, CComponentFillerHelper
 from reprocess.parsers.cpp_parsers import CppFileParser, CppComponentFillerHelper
 from reprocess.parsers.java_parsers import JavaFileParser, JavaComponentFillerHelper
+from reprocess.parsers.go_parsers import GoFileParser, GoComponentFillerHelper
 from typing import List
 
 
@@ -23,6 +24,8 @@ def create_parsers_map(files, repo_name):
             parsers_map[file] = CppFileParser(file, repo_name)
         elif file.endswith('.java'):
             parsers_map[file] = JavaFileParser(file, repo_name)
+        elif file.endswith('.go'):
+            parsers_map[file] = GoFileParser(file, repo_name)
     return parsers_map
 
 
@@ -45,6 +48,9 @@ def extract_components(parsers_map):
                     cmp, file, parser)
             elif file.endswith('.java'):
                 component_fillers[cmp] = JavaComponentFillerHelper(
+                    cmp, file, parser)
+            elif file.endswith('.go'):
+                component_fillers[cmp] = GoComponentFillerHelper(
                     cmp, file, parser)
             # Add more conditions for other file types if needed
     return component_names, component_fillers
