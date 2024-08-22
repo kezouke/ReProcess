@@ -22,7 +22,8 @@ class GoFileParser(TreeSitterFileParser):
 
         # Adjust the file path relative to the repository
         cutted_path = self.file_path.split(self.repo_name)[-1]
-        self.packages = get_import_statement_path(cutted_path)
+        self.packages = get_import_statement_path(
+            cutted_path.replace(".go", ""))
         self.file_path = cutted_path[1:]
 
     def _rec_component_name_extractor(self,
@@ -214,3 +215,167 @@ class GoFileParser(TreeSitterFileParser):
 
         # Convert set to list and return
         return list(imports)
+
+
+class GoComponentFillerHelper(TreeSitterComponentFillerHelper):
+
+    def __init__(self, component_name: str, component_file_path: str,
+                 file_parser: TreeSitterFileParser) -> None:
+        super().__init__(component_name, component_file_path, file_parser)
+
+    def extract_component_code(self):
+        # Determine the type of component from its name
+        component_name = self.component_name.replace(
+            f"{self.file_parser.packages}.", "")
+
+        def extract_code_from_node(node: Node, name: str) -> str:
+            """Extract code for a specific component based on its name."""
+            code = ""
+
+            for child in node.children:
+                # Check for a struct type declaration
+                if child.type == 'type_declaration':
+                    type_spec = None
+                    for child2 in child.children:
+                        if child2.type == "type_spec":
+                            type_spec = child2
+                            break
+                    if type_spec:
+                        # Extract the struct name from the type_spec
+                        struct_name = type_spec.children[0].text.decode(
+                            'utf-8')
+                        if struct_name == name:
+                            code = self.source_code[
+                                type_spec.start_byte:type_spec.end_byte]
+                            break
+
+                elif child.type == 'method_declaration':
+                    method_name_node = child.child_by_field_name('name')
+                    receiver_node = child.child_by_field_name('receiver')
+                    if method_name_node and receiver_node:
+                        method_name = method_name_node.text.decode('utf-8')
+                        receiver_type_node = receiver_node.named_child(
+                            0).child_by_field_name('type')
+                        if receiver_type_node and receiver_type_node.text.decode(
+                                'utf-8') == name.split('.')[0]:
+                            if method_name == name.split('.')[-1]:
+                                # Extract the code for the method
+                                code = self.source_code[child.start_byte:child.
+                                                        end_byte]
+                                break
+
+                elif child.type == 'function_declaration':
+                    function_name_node = child.child_by_field_name('name')
+                    if function_name_node and function_name_node.text.decode(
+                            'utf-8') == name:
+                        # Extract the code for the function
+                        code = self.source_code[child.start_byte:child.
+                                                end_byte]
+                        break
+
+                # Recurse into child nodes
+                code += extract_code_from_node(child, name)
+
+            return code
+
+        # Get the code for the component
+        component_code = extract_code_from_node(
+            self.file_parser.tree.root_node, component_name)
+
+        # Include import statements if the component is a function
+        if component_code:
+            import_code = self.file_parser.extract_imports()
+            imports = "\n".join([
+                f'import "{imp}"' for imp in import_code
+                if imp.split("/")[-1] in component_code
+            ])
+            component_code = f"{imports}\n\n{component_code}"
+
+        return component_code
+
+    def extract_callable_objects(self):
+        var_types = {}
+        called_components = set()
+        imports = self.file_parser.extract_imports()
+        package_name = self.file_parser.packages.replace("/", ".")
+
+        # Create a map of import aliases to their full paths
+        import_alias_map = {
+            imp.split("/")[-1]: imp.replace("/", ".")
+            for imp in imports
+        }
+
+        def resolve_full_name(name: str):
+            """Resolve the full name of a component using imports and the default package."""
+            # Check if the name matches any import alias
+            for alias, full_path in import_alias_map.items():
+                if name == alias or name.startswith(alias + "."):
+                    # If it's an alias match, replace the alias with the full path
+                    return name.replace(alias, full_path)
+
+            # Otherwise, assume it's from the same package
+            return f"{package_name}.{name}"
+
+        def traverse_node(node: Node, current_package: str):
+            for child in node.children:
+                if child.type == 'call_expression':
+                    function_node = child.child_by_field_name('function')
+                    if function_node:
+                        if function_node.type == 'selector_expression':
+                            # This is a method call on a struct
+                            operand_node = function_node.child_by_field_name(
+                                'operand')
+                            field_node = function_node.child_by_field_name(
+                                'field')
+                            if operand_node and field_node:
+                                operand_name = operand_node.text.decode(
+                                    'utf-8')
+                                field_name = field_node.text.decode('utf-8')
+                                struct_name = var_types.get(
+                                    operand_name, operand_name)
+                                full_method_name = f"{struct_name}.{field_name}"
+                                called_components.add(
+                                    resolve_full_name(full_method_name))
+                        else:
+                            # This is a function call
+                            function_name = function_node.text.decode('utf-8')
+                            called_components.add(
+                                resolve_full_name(function_name))
+
+                elif child.type == 'short_var_declaration':
+                    left_node = child.child_by_field_name('left')
+                    right_node = child.child_by_field_name('right')
+                    if left_node and right_node:
+                        var_names = [
+                            var.text.decode('utf-8')
+                            for var in left_node.children
+                        ]
+                        if right_node.type == 'expression_list':
+                            for item in right_node.children:
+                                if item.type == 'composite_literal':
+                                    type_node = item.child_by_field_name(
+                                        'type')
+                                    if type_node:
+                                        struct_type = type_node.text.decode(
+                                            'utf-8')
+                                        for var_name in var_names:
+                                            var_types[var_name] = struct_type
+
+                elif child.type == 'parameter_list':
+                    # Capture function parameters and their types
+                    for param in child.named_children:
+                        param_name_node = param.child_by_field_name('name')
+                        param_type_node = param.child_by_field_name('type')
+                        if param_name_node and param_type_node:
+                            var_name = param_name_node.text.decode('utf-8')
+                            var_type = param_type_node.text.decode('utf-8')
+                            var_types[var_name] = var_type
+
+                traverse_node(child, current_package)
+
+        # Start traversal from the root node
+        component_code_tree = self.file_parser.parser.parse(
+            bytes(self.component_code, "utf8"))
+        traverse_node(component_code_tree.root_node, package_name)
+
+        return list(called_components)
