@@ -10,7 +10,21 @@ class JavaScriptFileParser(TreeSitterFileParser):
         super().__init__(file_path, repo_name)
 
     def _initialize_parser(self):
-        return super()._initialize_parser()
+        cutted_path = self.file_path.split(self.repo_name)[-1]
+
+        JS_LANGUAGE = Language(tsjs.language())
+        self.parser = Parser(JS_LANGUAGE)
+
+        self.packages = get_import_statement_path(cutted_path)
+
+        with open(self.file_path, 'r', encoding='utf-8') as file:
+            self.source_code = file.read()
+            self.tree = self.parser.parse(bytes(self.source_code, "utf8"))
+
+        cutted_path = self.file_path.split(self.repo_name)[-1]
+        self.packages = get_import_statement_path(
+            cutted_path.replace(".go", ""))
+        self.file_path = cutted_path[1:]
 
     def extract_component_names(self):
         return super().extract_component_names()
