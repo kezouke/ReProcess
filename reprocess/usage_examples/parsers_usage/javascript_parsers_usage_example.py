@@ -9,8 +9,8 @@ print(parser.extract_component_names())
 print("\nCalled Components:")
 print(parser.extract_called_components())
 
-# print("\nImports:")
-# print(parser.extract_imports())
+print("\nImports:")
+print(parser.extract_imports())
 
 # print("\nCallable Components:")
 # print(parser.extract_callable_components())

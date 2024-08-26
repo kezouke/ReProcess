@@ -2,6 +2,7 @@ from reprocess.parsers.tree_sitter_parser import TreeSitterFileParser, TreeSitte
 from tree_sitter import Language, Parser
 from reprocess.utils.import_path_extractor import get_import_statement_path
 import tree_sitter_javascript as tsjs
+import os
 
 
 class JavaScriptFileParser(TreeSitterFileParser):
@@ -25,6 +26,7 @@ class JavaScriptFileParser(TreeSitterFileParser):
         self.packages = get_import_statement_path(
             cutted_path.replace(".js", ""))
         self.file_path = cutted_path[1:]
+        print(self.file_path)
 
     def extract_component_names(self):
         """
@@ -97,8 +99,10 @@ class JavaScriptFileParser(TreeSitterFileParser):
 
         # Start traversing from the root node
         traverse(self.tree.root_node)
-
-        return components
+        return [
+            f"{self.packages}.{component}".replace("-", "_")
+            for component in components
+        ]
 
     def extract_called_components(self):
         """
@@ -166,14 +170,76 @@ class JavaScriptFileParser(TreeSitterFileParser):
 
         # Start traversing from the root node
         traverse(self.tree.root_node)
-
-        return list(called_components)
+        return list(called_components) + list(variable_types.values())
 
     def extract_callable_components(self):
-        return super().extract_callable_components()
+        return self.extract_component_names()
 
     def extract_imports(self):
-        return super().extract_imports()
+        """
+        Extracts all imported components from the parsed AST code and converts relative import paths
+        to module paths based on the file's relative path.
+        """
+        imports = set()
+        base_directory = os.path.dirname(self.file_path)
+
+        def combine_paths(base_path: str, relative_path: str) -> str:
+            # Extract the directory part of the base path
+            base_dir = os.path.dirname(base_path)
+
+            # Join the base directory with the relative path to get the full path
+            if os.path.isabs(relative_path):
+                full_path = relative_path
+            else:
+                full_path = os.path.normpath(
+                    os.path.join(base_dir, relative_path))
+
+            # Replace directory separators with dots
+            return full_path.replace(os.sep, '.')
+
+        # Helper function to traverse nodes
+        def traverse(node):
+            if node.type == "import_statement":
+                # Extract the source module (e.g., './utils')
+                source_node = node.child_by_field_name("source")
+                if source_node:
+                    source_module = self.source_code[source_node.
+                                                     start_byte:source_node.
+                                                     end_byte].strip(" '\"")
+                    source_module = combine_paths(self.file_path,
+                                                  source_module)
+
+                    # Extract the import clause which contains imported names
+                    import_clause_node = None
+                    for child in node.children:
+                        if child.type == "import_clause":
+                            import_clause_node = child
+
+                    if import_clause_node:
+                        named_imports_node = None
+                        for child in import_clause_node.children:
+                            if child.type == "named_imports":
+                                named_imports_node = child
+
+                        if named_imports_node:
+                            for import_specifier_node in named_imports_node.children:
+                                import_name_node = import_specifier_node.child_by_field_name(
+                                    "name")
+                                if import_name_node:
+                                    import_name = self.source_code[
+                                        import_name_node.
+                                        start_byte:import_name_node.end_byte]
+                                    imports.add(
+                                        f"{source_module}.{import_name}")
+
+            # Recursively traverse children
+            for child in node.children:
+                traverse(child)
+
+        # Start traversing from the root node
+        traverse(self.tree.root_node)
+
+        return list(imports)
 
 
 class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
