@@ -101,7 +101,73 @@ class JavaScriptFileParser(TreeSitterFileParser):
         return components
 
     def extract_called_components(self):
-        return super().extract_called_components()
+        """
+        Extracts all components (functions and methods) being called in the parsed AST code.
+        """
+        called_components = set()
+        variable_types = {
+        }  # Dictionary to track variable names and their types
+
+        # Helper function to traverse nodes
+        def traverse(node):
+            # Check for variable declarations
+            if node.type == "variable_declarator":
+                variable_name_node = node.child_by_field_name("name")
+                value_node = node.child_by_field_name("value")
+
+                if value_node and value_node.type == "new_expression":
+                    constructor_node = value_node.child_by_field_name(
+                        "constructor")
+                    if constructor_node:
+                        variable_name = self.source_code[
+                            variable_name_node.start_byte:variable_name_node.
+                            end_byte]
+                        constructor_name = self.source_code[
+                            constructor_node.start_byte:constructor_node.
+                            end_byte]
+                        variable_types[variable_name] = constructor_name
+
+            # Check for function or method calls
+            elif node.type == "call_expression":
+                function_node = node.child_by_field_name("function")
+                if function_node:
+                    if function_node.type == "identifier":
+                        # Simple function call like `createAndShowCar()`
+                        function_name = self.source_code[
+                            function_node.start_byte:function_node.end_byte]
+                        called_components.add(function_name)
+                    elif function_node.type == "member_expression":
+                        # Method call like `car.displayDetails()` or `console.log()`
+                        object_node = function_node.child_by_field_name(
+                            "object")
+                        property_node = function_node.child_by_field_name(
+                            "property")
+                        if object_node and property_node:
+                            object_name = self.source_code[
+                                object_node.start_byte:object_node.end_byte]
+                            property_name = self.source_code[
+                                property_node.start_byte:property_node.
+                                end_byte]
+
+                            # Check if the object name is in the variable_types dictionary
+                            if object_name in variable_types:
+                                # Use class type if available
+                                class_type = variable_types[object_name]
+                                called_components.add(
+                                    f"{class_type}.{property_name}")
+                            else:
+                                # If object_name is not a tracked instance, add it directly
+                                called_components.add(
+                                    f"{object_name}.{property_name}")
+
+            # Recursively traverse children
+            for child in node.children:
+                traverse(child)
+
+        # Start traversing from the root node
+        traverse(self.tree.root_node)
+
+        return list(called_components)
 
     def extract_callable_components(self):
         return super().extract_callable_components()

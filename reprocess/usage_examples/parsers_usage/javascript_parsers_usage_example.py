@@ -6,8 +6,8 @@ parser = JavaScriptFileParser(file_path, "arxiv-feed")
 print("Component Names:")
 print(parser.extract_component_names())
 
-# print("\nCalled Components:")
-# print(parser.extract_called_components())
+print("\nCalled Components:")
+print(parser.extract_called_components())
 
 # print("\nImports:")
 # print(parser.extract_imports())
