@@ -28,8 +28,8 @@ class JavaScriptFileParser(TreeSitterFileParser):
 
     def extract_component_names(self):
         """
-        Extracts component names such as classes, functions, and methods
-        from the JavaScript code.
+        Extracts component names such as classes, functions, and methods,
+        including handling nested classes.
         """
         components = []
 
@@ -41,8 +41,9 @@ class JavaScriptFileParser(TreeSitterFileParser):
                 if class_name_node:
                     class_name = self.source_code[
                         class_name_node.start_byte:class_name_node.end_byte]
-                    components.append(class_name)
-                    # Traverse class body to find methods
+                    full_class_name = f"{prefix}{class_name}" if prefix else class_name
+                    components.append(full_class_name)
+                    # Traverse class body to find methods and nested classes
                     class_body_node = node.child_by_field_name("body")
                     if class_body_node:
                         for child in class_body_node.children:
@@ -54,9 +55,34 @@ class JavaScriptFileParser(TreeSitterFileParser):
                                         method_name_node.
                                         start_byte:method_name_node.end_byte]
                                     components.append(
-                                        f"{class_name}.{method_name}")
+                                        f"{full_class_name}.{method_name}")
+                            elif child.type == "field_definition":
+                                value_node = child.child_by_field_name("value")
+                                if value_node and value_node.type == "class":
+                                    # Handle static nested class
+                                    nested_class_node = value_node
+                                    nested_class_name_node = child.child_by_field_name(
+                                        "property")
+                                    if nested_class_name_node:
+                                        nested_class_name = self.source_code[
+                                            nested_class_name_node.start_byte:
+                                            nested_class_name_node.end_byte]
+                                        nested_class_full_name = f"{full_class_name}.{nested_class_name}"
+                                        components.append(
+                                            nested_class_full_name)
+                                        # Recursively traverse the nested class
+                                        traverse(nested_class_node,
+                                                 f"{nested_class_full_name}.")
 
-            # Check for function declarations
+            # Handle method definitions in nested classes
+            elif node.type == "method_definition" and prefix != "":
+                method_name_node = node.child_by_field_name("name")
+                if method_name_node:
+                    method_name = self.source_code[
+                        method_name_node.start_byte:method_name_node.end_byte]
+                    components.append(f"{prefix}{method_name}")
+
+            # Handle function declarations
             elif node.type == "function_declaration":
                 function_name_node = node.child_by_field_name("name")
                 if function_name_node:
@@ -67,7 +93,7 @@ class JavaScriptFileParser(TreeSitterFileParser):
 
             # Recursively traverse children
             for child in node.children:
-                traverse(child)
+                traverse(child, prefix)
 
         # Start traversing from the root node
         traverse(self.tree.root_node)
