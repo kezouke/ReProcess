@@ -3,6 +3,7 @@ from reprocess.utils.import_path_extractor import get_import_statement_path
 import tree_sitter_typescript as tstypescript
 from tree_sitter import Language, Parser
 
+
 class TypeScriptFileParser(TreeSitterFileParser):
     """
     Concrete implementation of TreeSitterFileParser for parsing TypeScript files.
@@ -29,16 +30,13 @@ class TypeScriptFileParser(TreeSitterFileParser):
         with open(self.file_path, 'r', encoding='utf-8') as file:
             self.source_code = file.read()
             self.tree = self.parser.parse(bytes(self.source_code, "utf8"))
-        
-        
 
         # Adjust the file path relative to the repository
         self.file_path = cutted_path[1:]
         self.variable_class_map = {}
         self.imports_map = self._map_imported_classes()
         self.local_component_names = self.extract_component_names()
-    
-    
+
     def _find_cmp_names(self, node, class_path=""):
         """
         Recursively finds component names within the AST starting from the given node.
@@ -61,18 +59,18 @@ class TypeScriptFileParser(TreeSitterFileParser):
             for child in class_body.children:
                 components.extend(self._find_cmp_names(child, full_class_name))
         if node.type == 'function_declaration':
-            
+
             function_name = self._node_text(node.child_by_field_name('name'))
             full_function_name = f"{class_path}.{function_name}" if class_path else function_name
             components.append(full_function_name)
-        
+
         # Recursively traverse other child nodes if not already handled
         for child in node.children:
-            if node.type not in ['class_declaration','function_declaration']:
+            if node.type not in ['class_declaration', 'function_declaration']:
                 components.extend(self._find_cmp_names(child, class_path))
 
         return components
-    
+
     def extract_component_names(self):
         """
         Extracts names of components (classes and methods) defined in the TypeScript file.
@@ -83,7 +81,7 @@ class TypeScriptFileParser(TreeSitterFileParser):
         root_node = self.tree.root_node
         components = self._find_cmp_names(root_node)
         return [self.packages + "." + cmp_name for cmp_name in components]
-    
+
     def _map_imported_classes(self):
         """
         Maps imported classes to their fully qualified names based on import statements.
@@ -94,7 +92,7 @@ class TypeScriptFileParser(TreeSitterFileParser):
         imports = self.extract_imports()
         imports_map = {imp.split('.')[-1]: imp for imp in imports}
         return imports_map
-    
+
     def _rec_called_components_finder(self, node):
         """
         Recursively extracts names of components called within the TypeScript file starting from the given node.
@@ -111,7 +109,8 @@ class TypeScriptFileParser(TreeSitterFileParser):
             # The expression_statement typically wraps a call_expression or other expressions
             expression_node = node.child_by_field_name("expression")
             if expression_node:
-                components.extend(self._rec_called_components_finder(expression_node))
+                components.extend(
+                    self._rec_called_components_finder(expression_node))
 
         # Process `call_expression` nodes
         elif node.type == "call_expression":
@@ -120,19 +119,23 @@ class TypeScriptFileParser(TreeSitterFileParser):
                 # Handle member expressions (e.g., object.method())
                 if function_node.type == "member_expression":
                     object_node = function_node.child_by_field_name("object")
-                    property_node = function_node.child_by_field_name("property")
+                    property_node = function_node.child_by_field_name(
+                        "property")
                     if object_node and property_node:
                         object_name = self._node_text(object_node)
                         method_name = self._node_text(property_node)
 
                         # Check if object_name is mapped to a class
-                        class_name = self.variable_class_map.get(object_name, object_name)
-                        full_class_name = self._get_fully_qualified_name(class_name)
+                        class_name = self.variable_class_map.get(
+                            object_name, object_name)
+                        full_class_name = self._get_fully_qualified_name(
+                            class_name)
                         components.append(f"{full_class_name}.{method_name}")
                 else:
                     # Handle simple function calls
                     function_name = self._node_text(function_node)
-                    full_function_name = self._get_fully_qualified_name(function_name)
+                    full_function_name = self._get_fully_qualified_name(
+                        function_name)
                     components.append(full_function_name)
 
         # Process `new_expression` nodes (e.g., instantiation of a class)
@@ -145,8 +148,10 @@ class TypeScriptFileParser(TreeSitterFileParser):
                     variable_name_node = parent.child_by_field_name("name")
                     if variable_name_node:
                         variable_name = self._node_text(variable_name_node)
-                        full_class_name = self._get_fully_qualified_name(class_name)
-                        self.variable_class_map[variable_name] = full_class_name
+                        full_class_name = self._get_fully_qualified_name(
+                            class_name)
+                        self.variable_class_map[
+                            variable_name] = full_class_name
                         components.append(full_class_name)
 
         # Process `member_expression` nodes directly if needed
@@ -158,7 +163,8 @@ class TypeScriptFileParser(TreeSitterFileParser):
                 method_name = self._node_text(property_node)
 
                 # Handle object.method usage
-                class_name = self.variable_class_map.get(object_name, object_name)
+                class_name = self.variable_class_map.get(
+                    object_name, object_name)
                 full_class_name = self._get_fully_qualified_name(class_name)
                 components.append(f"{full_class_name}.{method_name}")
 
@@ -166,7 +172,7 @@ class TypeScriptFileParser(TreeSitterFileParser):
         for child in node.children:
             components.extend(self._rec_called_components_finder(child))
         return components
-    
+
     def _get_fully_qualified_name(self, class_name):
         """
         Retrieves the fully qualified name of a given class.
@@ -183,7 +189,7 @@ class TypeScriptFileParser(TreeSitterFileParser):
             if component.endswith(f".{class_name}"):
                 return component
         return class_name
-    
+
     def extract_called_components(self):
         """
         Extracts names of components called within the TypeScript file.
@@ -191,7 +197,8 @@ class TypeScriptFileParser(TreeSitterFileParser):
         Returns:
             List[str]: List of names of called components.
         """
-        return list(set(self._rec_called_components_finder(self.tree.root_node)))
+        return list(
+            set(self._rec_called_components_finder(self.tree.root_node)))
 
     def extract_callable_components(self):
         """
@@ -201,7 +208,7 @@ class TypeScriptFileParser(TreeSitterFileParser):
             List[str]: List of names of callable components.
         """
         return self.local_component_names
-    
+
     def _rec_import_finder(self, node):
         """
         Recursively finds import statements within the AST starting from the given node.
@@ -223,7 +230,7 @@ class TypeScriptFileParser(TreeSitterFileParser):
                 imports.extend(self._rec_import_finder(child))
 
         return imports
-    
+
     def extract_imports(self):
         """
         Extracts import statements from the TypeScript file.
@@ -233,7 +240,7 @@ class TypeScriptFileParser(TreeSitterFileParser):
         """
         root_node = self.tree.root_node
         return self._rec_import_finder(root_node)
-    
+
     def _node_text(self, node):
         """
         Extracts the text content of a given AST node.
@@ -245,7 +252,7 @@ class TypeScriptFileParser(TreeSitterFileParser):
             str: The text content of the node.
         """
         return node.text.decode('utf-8').strip()
-    
+
 
 class TypeScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
     """
@@ -271,7 +278,7 @@ class TypeScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
 
         self.component_node = self._find_component_node(
             self.file_parser.tree.root_node, component_name_splitted)
-        
+
         if self.component_node:
             used_imports = self._get_used_imports(self.component_node)
             component_code = self._node_to_code_string(self.component_node)
@@ -364,7 +371,7 @@ class TypeScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
             str: The text content of the node.
         """
         return node.text.decode('utf-8').strip()
-    
+
     def extract_callable_objects(self):
         """
         Extracts names of callable objects defined within the component code.
