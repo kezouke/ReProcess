@@ -26,7 +26,6 @@ class JavaScriptFileParser(TreeSitterFileParser):
         self.packages = get_import_statement_path(
             cutted_path.replace(".js", ""))
         self.file_path = cutted_path[1:]
-        print(self.file_path)
 
     def extract_component_names(self):
         """
@@ -107,10 +106,23 @@ class JavaScriptFileParser(TreeSitterFileParser):
     def extract_called_components(self):
         """
         Extracts all components (functions and methods) being called in the parsed AST code.
+        Now includes distinguishing between imported components and local components.
         """
         called_components = set()
         variable_types = {
         }  # Dictionary to track variable names and their types
+
+        # Step 1: Store imported components in a dictionary for quick lookup
+        import_map = {}
+        imports = self.extract_imports()
+        for imp in imports:
+            # Example of `imp`: 'feed.utils.someUtilityFunction'
+            module_path, component_name = imp.rsplit('.', 1)
+            import_map[
+                component_name] = imp  # Map the imported component to its full path
+
+        # Step 2: Store local components
+        local_components = self.extract_component_names()
 
         # Helper function to traverse nodes
         def traverse(node):
@@ -139,7 +151,18 @@ class JavaScriptFileParser(TreeSitterFileParser):
                         # Simple function call like `createAndShowCar()`
                         function_name = self.source_code[
                             function_node.start_byte:function_node.end_byte]
-                        called_components.add(function_name)
+
+                        # Check if function_name matches an import or a local component
+                        if function_name in import_map:
+                            called_components.add(import_map[function_name])
+                        else:
+                            # Prepend the package path if it is a local component
+                            if f"{self.packages}.{function_name}" in local_components:
+                                called_components.add(
+                                    f"{self.packages}.{function_name}")
+                            else:
+                                called_components.add(function_name)
+
                     elif function_node.type == "member_expression":
                         # Method call like `car.displayDetails()` or `console.log()`
                         object_node = function_node.child_by_field_name(
@@ -157,12 +180,22 @@ class JavaScriptFileParser(TreeSitterFileParser):
                             if object_name in variable_types:
                                 # Use class type if available
                                 class_type = variable_types[object_name]
-                                called_components.add(
-                                    f"{class_type}.{property_name}")
+                                full_component = f"{class_type}.{property_name}"
+                                if class_type in import_map:
+                                    called_components.add(
+                                        f"{import_map[class_type]}.{property_name}"
+                                    )
+                                else:
+                                    called_components.add(
+                                        f"{self.packages}.{full_component}")
                             else:
                                 # If object_name is not a tracked instance, add it directly
-                                called_components.add(
-                                    f"{object_name}.{property_name}")
+                                if f"{object_name}.{property_name}" in import_map:
+                                    called_components.add(import_map[
+                                        f"{object_name}.{property_name}"])
+                                else:
+                                    called_components.add(
+                                        f"{object_name}.{property_name}")
 
             # Recursively traverse children
             for child in node.children:
@@ -170,6 +203,14 @@ class JavaScriptFileParser(TreeSitterFileParser):
 
         # Start traversing from the root node
         traverse(self.tree.root_node)
+
+        for varibale in variable_types:
+            if f"{self.packages}.{variable_types[varibale]}" in local_components:
+                variable_types[
+                    varibale] = f"{self.packages}.{variable_types[varibale]}"
+            elif variable_types[varibale] in import_map:
+                variable_types[varibale] = import_map[variable_types[varibale]]
+
         return list(called_components) + list(variable_types.values())
 
     def extract_callable_components(self):
