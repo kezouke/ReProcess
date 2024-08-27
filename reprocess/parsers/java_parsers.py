@@ -253,12 +253,13 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
 
         self.component_node = self._find_component_node(
             self.file_parser.tree.root_node, component_name_splitted)
-
         if self.component_node:
             used_imports = self._get_used_imports(self.component_node)
+
             component_code = self._node_to_code_string(self.component_node)
             return "\n".join(used_imports) + "\n\n" + component_code
-        return ""
+        else:
+            raise Exception("Component was not found")
 
     def _get_import_statements(self):
         """
@@ -339,7 +340,8 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
         # Extract code from the node, maintaining the original tabulation
         start_line = node.start_point[0]
         end_line = node.end_point[0]
-        code_lines = self.source_code[start_line:end_line + 1]
+        lines = self.source_code.splitlines()
+        code_lines = lines[start_line:end_line + 1]
 
         # Return the code with correct indentation
         return "\n".join(code_lines)
