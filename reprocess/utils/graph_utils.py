@@ -49,7 +49,8 @@ def extract_components(parsers_map):
                 component_fillers[cmp] = JavaComponentFillerHelper(
                     cmp, file, parser)
             elif file.endswith('.ts'):
-                component_fillers[cmp] = JavaComponentFillerHelper(cmp, file, parser)
+                component_fillers[cmp] = JavaComponentFillerHelper(
+                    cmp, file, parser)
             # Add more conditions for other file types if needed
     return component_names, component_fillers
 
