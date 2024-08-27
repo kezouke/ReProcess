@@ -23,6 +23,8 @@ def create_parsers_map(files, repo_name):
             parsers_map[file] = CppFileParser(file, repo_name)
         elif file.endswith('.java'):
             parsers_map[file] = JavaFileParser(file, repo_name)
+        elif file.endswith('.ts'):
+            parsers_map[file] = JavaFileParser(file, repo_name)
     return parsers_map
 
 
@@ -46,6 +48,8 @@ def extract_components(parsers_map):
             elif file.endswith('.java'):
                 component_fillers[cmp] = JavaComponentFillerHelper(
                     cmp, file, parser)
+            elif file.endswith('.ts'):
+                component_fillers[cmp] = JavaComponentFillerHelper(cmp, file, parser)
             # Add more conditions for other file types if needed
     return component_names, component_fillers
 
