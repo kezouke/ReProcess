@@ -158,6 +158,9 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
                  file_parser: TreeSitterFileParser) -> None:
         super().__init__(component_name, component_file_path, file_parser)
 
+        
+
+
     def _extract_code_without_imports(self):
         """
         Extracts the code of the specified Python component.
@@ -167,9 +170,18 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
         Returns:
             str: The extracted source code of the component, or an empty string if not found.
         """
-        component_name_splitted = self.component_name.split(
-            self.file_parser.packages)[-1].split(".")[1:]
+        #Empty separator handling
+        if self.component_name.startswith('.'):
+            if self.component_name.count('.') == 1:
+                component_name_splitted = [self.component_name.replace(".", "", 1)]
+            else:
+                self.component_name = self.component_name.replace(".", "", 1)
+                component_name_splitted = self.component_name.split(".")[1:]
+        else:
+            component_name_splitted = self.component_name.split(
+                self.file_parser.packages)[-1].split(".")[1:]
 
+        
         for node in self.file_parser.tree.body:
             if isinstance(node, ast.FunctionDef
                           ) and node.name == component_name_splitted[0]:

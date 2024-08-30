@@ -307,8 +307,13 @@ class TypeScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
         """
         used_imports = []
         # Logic to find and return used imports can be added here
-
-        return used_imports
+        called_components = self.file_parser._rec_called_components_finder(
+            component_node)
+        for component in called_components:
+            for imp in self.imports:
+                if imp.endswith(component.split(".")[-1] + ";"):
+                    used_imports.add(imp)
+        return sorted(used_imports)
 
     def _find_component_node(self, node, name_parts):
         """
