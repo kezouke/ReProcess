@@ -15,7 +15,7 @@ print(parser.extract_called_components())
 print("\nCallable components:")
 print(parser.extract_callable_components())
 
-helper = TypeScriptComponentFillerHelper("home.example.ts.Greeter", file_path,
+helper = TypeScriptComponentFillerHelper("home.example.ts.Book", file_path,
                                          parser)
 print("\nComponent Code:")
 print(helper.extract_component_code())
