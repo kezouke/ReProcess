@@ -222,7 +222,6 @@ class JavaScriptFileParser(TreeSitterFileParser):
         to module paths based on the file's relative path.
         """
         imports = set()
-        base_directory = os.path.dirname(self.file_path)
 
         def combine_paths(base_path: str, relative_path: str) -> str:
             # Extract the directory part of the base path
