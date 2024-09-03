@@ -287,6 +287,7 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
     def __init__(self, component_name: str, component_file_path: str,
                  file_parser: TreeSitterFileParser) -> None:
         super().__init__(component_name, component_file_path, file_parser)
+        self.component_node = None
 
     def extract_component_code(self):
         """
@@ -389,6 +390,7 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
 
         # Find the component node in the AST
         component_node = find_component_node(root_node, component_name_parts)
+        self.component_node = component_node
 
         if component_node:
             # If the component is found, extract the source code for the component
@@ -419,4 +421,111 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
         return imports_code + '\n\n' + component_code
 
     def extract_callable_objects(self):
-        pass
+        if not self.component_node:
+            return []
+
+        called_components = set()
+        variable_types = {}
+
+        # Step 1: Store imported components in a dictionary for quick lookup
+        import_map = {}
+        imports = self.file_parser.extract_imports()
+        for imp in imports:
+            module_path, component_name = imp.rsplit('.', 1)
+            import_map[
+                component_name] = imp  # Map the imported component to its full path
+
+        # Step 2: Store local components
+        local_components = self.file_parser.extract_component_names()
+
+        # Helper function to traverse nodes
+        def traverse(node):
+            # Check for variable declarations
+            if node.type == "variable_declarator":
+                variable_name_node = node.child_by_field_name("name")
+                value_node = node.child_by_field_name("value")
+
+                if value_node and value_node.type == "new_expression":
+                    constructor_node = value_node.child_by_field_name(
+                        "constructor")
+                    if constructor_node:
+                        variable_name = self.file_parser.source_code[
+                            variable_name_node.start_byte:variable_name_node.
+                            end_byte]
+                        constructor_name = self.file_parser.source_code[
+                            constructor_node.start_byte:constructor_node.
+                            end_byte]
+                        variable_types[variable_name] = constructor_name
+
+            # Check for function or method calls
+            elif node.type == "call_expression":
+                function_node = node.child_by_field_name("function")
+                if function_node:
+                    if function_node.type == "identifier":
+                        # Simple function call like `createAndShowCar()`
+                        function_name = self.file_parser.source_code[
+                            function_node.start_byte:function_node.end_byte]
+
+                        # Check if function_name matches an import or a local component
+                        if function_name in import_map:
+                            called_components.add(import_map[function_name])
+                        else:
+                            # Prepend the package path if it is a local component
+                            if f"{self.file_parser.packages}.{function_name}" in local_components:
+                                called_components.add(
+                                    f"{self.file_parser.packages}.{function_name}"
+                                )
+                            else:
+                                called_components.add(function_name)
+
+                    elif function_node.type == "member_expression":
+                        # Method call like `car.displayDetails()` or `console.log()`
+                        object_node = function_node.child_by_field_name(
+                            "object")
+                        property_node = function_node.child_by_field_name(
+                            "property")
+                        if object_node and property_node:
+                            object_name = self.file_parser.source_code[
+                                object_node.start_byte:object_node.end_byte]
+                            property_name = self.file_parser.source_code[
+                                property_node.start_byte:property_node.
+                                end_byte]
+
+                            # Check if the object name is in the variable_types dictionary
+                            if object_name in variable_types:
+                                # Use class type if available
+                                class_type = variable_types[object_name]
+                                full_component = f"{class_type}.{property_name}"
+                                if class_type in import_map:
+                                    called_components.add(
+                                        f"{import_map[class_type]}.{property_name}"
+                                    )
+                                else:
+                                    called_components.add(
+                                        f"{self.file_parser.packages}.{full_component}"
+                                    )
+                            else:
+                                # If object_name is not a tracked instance, add it directly
+                                if f"{object_name}.{property_name}" in import_map:
+                                    called_components.add(import_map[
+                                        f"{object_name}.{property_name}"])
+                                else:
+                                    called_components.add(
+                                        f"{object_name}.{property_name}")
+
+            # Recursively traverse children
+            for child in node.children:
+                traverse(child)
+
+        # Start traversing from the component node
+        traverse(self.component_node)
+
+        # Convert variable types to their fully qualified names
+        for variable in variable_types:
+            if f"{self.file_parser.packages}.{variable_types[variable]}" in local_components:
+                variable_types[
+                    variable] = f"{self.file_parser.packages}.{variable_types[variable]}"
+            elif variable_types[variable] in import_map:
+                variable_types[variable] = import_map[variable_types[variable]]
+
+        return list(called_components) + list(variable_types.values())
