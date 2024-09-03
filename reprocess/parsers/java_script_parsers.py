@@ -322,6 +322,7 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
                 if class_name_node and decode_node_text(
                         class_name_node) == component_name_parts[0]:
                     if len(component_name_parts) == 1:
+                        self.component_type = "class"
                         return node  # Found the target class
                     # Look for nested classes or methods within this class
                     body_node = node.child_by_field_name('body')
@@ -340,12 +341,14 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
                     if decode_node_text(
                             property_node) == component_name_parts[0]:
                         if len(component_name_parts) == 1:
+                            self.component_type = "class"
                             return value_node  # Found the nested class
                         return find_component_node(value_node,
                                                    component_name_parts[1:])
 
             elif node.type == 'class':  # Handle nested class bodies
                 if len(component_name_parts) == 0:
+                    self.component_type = "class"
                     return node
                 body_node = node.child_by_field_name('body')
                 if body_node:
@@ -361,6 +364,7 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
                 if method_name_node and decode_node_text(
                         method_name_node) == component_name_parts[0]:
                     if len(component_name_parts) == 1:
+                        self.component_type = "method"
                         return node  # Found the target method
 
             elif node.type == 'function_declaration':
@@ -368,6 +372,7 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
                 function_name_node = node.child_by_field_name('name')
                 if function_name_node and decode_node_text(
                         function_name_node) == component_name_parts[0]:
+                    self.component_type = "function"
                     return node  # Found the target function
 
             # Traverse child nodes
