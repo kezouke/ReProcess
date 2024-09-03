@@ -289,7 +289,134 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
         super().__init__(component_name, component_file_path, file_parser)
 
     def extract_component_code(self):
-        return super().extract_component_code()
+        """
+        Extracts the source code of the specified component, including relevant import statements.
+        """
+        # Get the root node of the AST
+        root_node = self.file_parser.tree.root_node
+        component_code = ''
+        import_statements = []
+
+        # Extract import statements first
+        import_statements = self.file_parser.extract_imports()
+        # Temporary storage for imports to be filtered
+        imports_code = {
+            imp.split(".")[-1]:
+            f'import {{ {imp.split(".")[-1]} }} from "{imp.rsplit(".", 1)[0].replace(".", "/")}";'
+            for imp in import_statements
+        }
+
+        # Function to decode the text of a node
+        def decode_node_text(node):
+            return node.text.decode('utf-8') if node else None
+
+        # Helper function to find the node of the component
+        def find_component_node(node, component_name_parts):
+            if not component_name_parts:
+                return None
+
+            # Check if this node represents the target component
+            if node.type == 'class_declaration':
+                class_name_node = node.child_by_field_name('name')
+                if class_name_node and decode_node_text(
+                        class_name_node) == component_name_parts[0]:
+                    if len(component_name_parts) == 1:
+                        return node  # Found the target class
+                    # Look for nested classes or methods within this class
+                    body_node = node.child_by_field_name('body')
+                    if body_node:
+                        for child in body_node.children:
+                            result = find_component_node(
+                                child, component_name_parts[1:])
+                            if result:
+                                return result
+
+            elif node.type == 'field_definition':
+                # Handle field that might be a nested class
+                property_node = node.child_by_field_name('property')
+                value_node = node.child_by_field_name('value')
+                if property_node and value_node and value_node.type == 'class':
+                    if decode_node_text(
+                            property_node) == component_name_parts[0]:
+                        if len(component_name_parts) == 1:
+                            return value_node  # Found the nested class
+                        return find_component_node(value_node,
+                                                   component_name_parts[1:])
+
+            elif node.type == 'class':  # Handle nested class bodies
+                if len(component_name_parts) == 0:
+                    return node
+                body_node = node.child_by_field_name('body')
+                if body_node:
+                    for child in body_node.children:
+                        result = find_component_node(child,
+                                                     component_name_parts)
+                        if result:
+                            return result
+
+            elif node.type == 'method_definition':
+                # Check if this method is the one we're looking for
+                method_name_node = node.child_by_field_name('name')
+                if method_name_node and decode_node_text(
+                        method_name_node) == component_name_parts[0]:
+                    if len(component_name_parts) == 1:
+                        return node  # Found the target method
+
+            elif node.type == 'function_declaration':
+                # Check for function declarations
+                function_name_node = node.child_by_field_name('name')
+                if function_name_node and decode_node_text(
+                        function_name_node) == component_name_parts[0]:
+                    return node  # Found the target function
+
+            # Traverse child nodes
+            for child in node.children:
+                result = find_component_node(child, component_name_parts)
+                if result:
+                    return result
+            return None
+
+        # Helper function to collect all identifiers used in the component node
+        def collect_identifiers(node, identifiers):
+            if node.type == 'identifier':
+                identifiers.add(decode_node_text(node))
+            for child in node.children:
+                collect_identifiers(child, identifiers)
+
+        # Remove package prefix from component name and split it into parts
+        component_name_parts = self.component_name.replace(
+            f"{self.file_parser.packages}.", "").split('.')
+
+        # Find the component node in the AST
+        component_node = find_component_node(root_node, component_name_parts)
+
+        if component_node:
+            # If the component is found, extract the source code for the component
+            component_code = self.file_parser.source_code[
+                component_node.start_byte:component_node.end_byte]
+
+            # Handle extraction of class declaration if missing class name
+            if component_node.type == 'class' and component_node.parent.type == 'field_definition':
+                # Check if this is a class nested inside a field definition
+                class_name = decode_node_text(
+                    component_node.parent.child_by_field_name('property'))
+                if class_name:
+                    class_declaration = f"class {class_name} " + component_code[
+                        len('class '):]
+                    component_code = class_declaration
+
+            # Collect all identifiers used in the component code
+            used_identifiers = set()
+            collect_identifiers(component_node, used_identifiers)
+
+            # Filter imports to only include those that are used
+            used_imports = [
+                imports_code[imp] for imp in imports_code
+                if imp in used_identifiers
+            ]
+            imports_code = '\n'.join(used_imports)
+
+        return imports_code + '\n\n' + component_code
 
     def extract_callable_objects(self):
-        return super().extract_callable_objects()
+        pass
