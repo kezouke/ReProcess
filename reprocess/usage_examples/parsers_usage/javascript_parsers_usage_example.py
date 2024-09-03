@@ -15,8 +15,8 @@ print(parser.extract_imports())
 print("\nCallable Components:")
 print(parser.extract_callable_components())
 
-helper = JavaScriptComponentFillerHelper(
-    "feed.test.AnotherClassExtended.InnerClass", file_path, parser)
+helper = JavaScriptComponentFillerHelper("feed.test.createAndLogProperties",
+                                         file_path, parser)
 print("\nComponent Code:")
 print(helper.extract_component_code())
 
