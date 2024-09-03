@@ -287,7 +287,6 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
     def __init__(self, component_name: str, component_file_path: str,
                  file_parser: TreeSitterFileParser) -> None:
         super().__init__(component_name, component_file_path, file_parser)
-        self.component_node = None
 
     def extract_component_code(self):
         """
@@ -427,6 +426,7 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
 
     def extract_callable_objects(self):
         if not self.component_node:
+            print(self.component_name)
             return []
 
         called_components = set()
