@@ -245,6 +245,7 @@ class GoComponentFillerHelper(TreeSitterComponentFillerHelper):
                         struct_name = type_spec.children[0].text.decode(
                             'utf-8')
                         if struct_name == name:
+                            self.component_type = "struct"
                             code = self.source_code[
                                 type_spec.start_byte:type_spec.end_byte]
                             break
@@ -259,6 +260,7 @@ class GoComponentFillerHelper(TreeSitterComponentFillerHelper):
                         if receiver_type_node and receiver_type_node.text.decode(
                                 'utf-8') == name.split('.')[0]:
                             if method_name == name.split('.')[-1]:
+                                self.component_type = "method"
                                 # Extract the code for the method
                                 code = self.source_code[child.start_byte:child.
                                                         end_byte]
@@ -269,6 +271,7 @@ class GoComponentFillerHelper(TreeSitterComponentFillerHelper):
                     if function_name_node and function_name_node.text.decode(
                             'utf-8') == name:
                         # Extract the code for the function
+                        self.component_type = "function"
                         code = self.source_code[child.start_byte:child.
                                                 end_byte]
                         break
