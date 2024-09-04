@@ -58,15 +58,21 @@ class TypeScriptFileParser(TreeSitterFileParser):
             class_body = node.child_by_field_name('body')
             for child in class_body.children:
                 components.extend(self._find_cmp_names(child, full_class_name))
-        if node.type == 'function_declaration':
+        elif node.type == 'function_declaration':
 
             function_name = self._node_text(node.child_by_field_name('name'))
             full_function_name = f"{class_path}.{function_name}" if class_path else function_name
             components.append(full_function_name)
-
+        elif node.type == 'method_definition':
+            function_name = self._node_text(node.child_by_field_name('name'))
+            full_function_name = f"{class_path}.{function_name}" if class_path else function_name
+            components.append(full_function_name)
         # Recursively traverse other child nodes if not already handled
         for child in node.children:
-            if node.type not in ['class_declaration', 'function_declaration']:
+            if node.type not in [
+                    'class_declaration', 'function_declaration',
+                    'method_definition'
+            ]:
                 components.extend(self._find_cmp_names(child, class_path))
 
         return components
@@ -153,20 +159,6 @@ class TypeScriptFileParser(TreeSitterFileParser):
                         self.variable_class_map[
                             variable_name] = full_class_name
                         components.append(full_class_name)
-
-        # Process `member_expression` nodes directly if needed
-        elif node.type == "member_expression":
-            object_node = node.child_by_field_name("object")
-            property_node = node.child_by_field_name("property")
-            if object_node and property_node:
-                object_name = self._node_text(object_node)
-                method_name = self._node_text(property_node)
-
-                # Handle object.method usage
-                class_name = self.variable_class_map.get(
-                    object_name, object_name)
-                full_class_name = self._get_fully_qualified_name(class_name)
-                components.append(f"{full_class_name}.{method_name}")
 
         # Recursively process all children nodes
         for child in node.children:
@@ -384,7 +376,4 @@ class TypeScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
         Returns:
             List[str]: List of names of callable objects.
         """
-        return list(
-            set(
-                self.file_parser._rec_called_components_finder(
-                    self.component_node)))
+        return list(set(self.file_parser._find_cmp_names(self.component_node)))
