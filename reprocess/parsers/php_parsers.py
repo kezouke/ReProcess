@@ -79,7 +79,98 @@ class PhpFileParser(TreeSitterFileParser):
         pass
 
     def extract_called_components(self):
-        pass
+        """Extracts all components inside the PHP file that are being called."""
+        class_stack = []  # Stack to maintain class hierarchy
+        variable_types = {}  # Dictionary to map variable names to their types
+        called_components = []
+
+        def resolve_variable_type(var_name):
+            """Resolves the type of the variable by checking the variable_types dict."""
+            return variable_types.get(var_name, var_name)
+
+        def traverse(node, current_class=None):
+            nonlocal class_stack, variable_types, called_components
+
+            # Handle class declaration
+            if node.type == 'class_declaration':
+                class_name = node.child_by_field_name('name').text.decode(
+                    'utf-8')
+                class_stack.append(class_name)
+                current_class = class_name
+
+            # Handle method or function declaration
+            if node.type == 'method_declaration' or node.type == 'function_definition':
+                method_name = node.child_by_field_name('name').text.decode(
+                    'utf-8')
+                if current_class:
+                    full_method_name = f"{current_class}.{method_name}"
+                else:
+                    full_method_name = method_name
+                called_components.append(full_method_name)
+
+                # Process parameters and map variable names to their types
+                parameters = node.child_by_field_name('parameters')
+                if parameters:
+                    for param in parameters.named_children:
+                        param_name_node = param.child_by_field_name('name')
+                        param_type_node = param.child_by_field_name('type')
+                        if param_name_node and param_type_node:
+                            param_name = param_name_node.text.decode('utf-8')
+                            param_type = param_type_node.text.decode('utf-8')
+                            variable_types[param_name] = param_type
+
+            # Handle variable assignment (e.g., $this->logger = $logger;)
+            if node.type == 'assignment_expression':
+                left = node.child_by_field_name('left')
+                right = node.child_by_field_name('right')
+
+                # Check if left side is a member access (e.g., $this->logger)
+                if left and left.type == 'member_access_expression':
+                    left_var = left.child_by_field_name('name').text.decode(
+                        'utf-8')
+                    if right and right.type == 'variable_name':
+                        right_var = right.text.decode('utf-8')
+                        variable_types[
+                            f"$this->{left_var}"] = resolve_variable_type(
+                                right_var)
+
+            # Handle method call expressions (e.g., $this->logger->log())
+            if node.type == 'member_call_expression':
+                object_node = node.child_by_field_name('object')
+                method_node = node.child_by_field_name('name')
+                if object_node and method_node:
+                    object_name = object_node.text.decode('utf-8')
+                    method_name = method_node.text.decode('utf-8')
+                    resolved_object = resolve_variable_type(object_name)
+                    full_call = f"{resolved_object}.{method_name}"
+                    called_components.append(full_call)
+
+            # Handle object creation (e.g., $logger = new Logger();)
+            if node.type == 'object_creation_expression':
+                c = None
+                for c in node.children:
+                    if c.type == "name":
+                        class_name_node = c
+                variable_node = node.prev_named_sibling  # The variable being assigned
+                if class_name_node and variable_node and variable_node.type == 'variable_name':
+                    var_name = variable_node.text.decode('utf-8')
+                    class_name = class_name_node.text.decode('utf-8')
+                    called_components.append(f"{class_name}.__construct")
+                    variable_types[var_name] = class_name
+
+            # Traverse children
+            for child in node.named_children:
+                traverse(child, current_class)
+
+            # Handle leaving a class scope
+            if node.type == 'class_declaration':
+                class_stack.pop()
+
+        # Start traversal from the root node
+        root_node = self.tree.root_node
+        traverse(root_node)
+
+        return list(set(called_components))
 
     def extract_imports(self):
         pass
