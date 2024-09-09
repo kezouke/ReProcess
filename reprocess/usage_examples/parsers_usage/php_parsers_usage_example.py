@@ -12,8 +12,8 @@ print(parser.extract_called_components())
 # print("\nImports:")
 # print(parser.extract_imports())
 
-# print("\nCallable Components:")
-# print(parser.extract_callable_components())
+print("\nCallable Components:")
+print(parser.extract_callable_components())
 
 # helper = JavaScriptComponentFillerHelper("feed.test.createAndLogProperties",
 #                                          file_path, parser)

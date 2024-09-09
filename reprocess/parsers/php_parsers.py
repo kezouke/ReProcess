@@ -76,7 +76,10 @@ class PhpFileParser(TreeSitterFileParser):
         return component_names
 
     def extract_callable_components(self):
-        pass
+        component_names = self.extract_component_names()
+        return [
+            cmp.replace(f"{self.packages}.", "") for cmp in component_names
+        ]
 
     def extract_called_components(self):
         """Extracts all components inside the PHP file that are being called."""
