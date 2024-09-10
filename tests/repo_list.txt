@@ -1,0 +1,4 @@
+https://github.com/arXiv/arxiv-feed.git
+https://github.com/vllm-project/vllm.git
+https://github.com/outlines-dev/outlines.git
+https://github.com/guidance-ai/guidance.git
