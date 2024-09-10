@@ -339,7 +339,8 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
         # Extract code from the node, maintaining the original tabulation
         start_line = node.start_point[0]
         end_line = node.end_point[0]
-        code_lines = self.source_code[start_line:end_line + 1]
+        lines = self.source_code.splitlines()
+        code_lines = lines[start_line:end_line + 1]
 
         # Return the code with correct indentation
         return "\n".join(code_lines)
