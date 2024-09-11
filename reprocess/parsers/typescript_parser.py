@@ -20,8 +20,7 @@ class TypeScriptFileParser(TreeSitterFileParser):
         
         Reads the file content and parses it into an AST. Also adjusts the file path relative to the repository.
         """
-        cutted_path = self.file_path.split(self.repo_name)[-1]
-
+        cutted_path = self.file_path.split(self.repo_name)[-1].rsplit('.ts', 1)[0]
         TYPESCRIPT_LANGUAGE = Language(tstypescript.language_typescript())
         self.parser = Parser(TYPESCRIPT_LANGUAGE)
 
@@ -115,6 +114,8 @@ class TypeScriptFileParser(TreeSitterFileParser):
             # The expression_statement typically wraps a call_expression or other expressions
             expression_node = node.child_by_field_name("expression")
             if expression_node:
+                if expression_node.startswith('this.'):
+                            expression_node = expression_node[5:]
                 components.extend(
                     self._rec_called_components_finder(expression_node))
 
@@ -136,12 +137,16 @@ class TypeScriptFileParser(TreeSitterFileParser):
                             object_name, object_name)
                         full_class_name = self._get_fully_qualified_name(
                             class_name)
+                        if full_class_name.startswith('this.'):
+                            full_class_name = full_class_name[5:]
                         components.append(f"{full_class_name}.{method_name}")
                 else:
                     # Handle simple function calls
                     function_name = self._node_text(function_node)
                     full_function_name = self._get_fully_qualified_name(
                         function_name)
+                    if full_function_name.startswith('this.'):
+                            full_function_name = full_function_name[5:]
                     components.append(full_function_name)
 
         # Process `new_expression` nodes (e.g., instantiation of a class)
@@ -158,6 +163,8 @@ class TypeScriptFileParser(TreeSitterFileParser):
                             class_name)
                         self.variable_class_map[
                             variable_name] = full_class_name
+                        if full_class_name.startswith('this.'):
+                            full_class_name = full_class_name[5:]
                         components.append(full_class_name)
 
         # Recursively process all children nodes
@@ -203,26 +210,25 @@ class TypeScriptFileParser(TreeSitterFileParser):
 
     def _rec_import_finder(self, node):
         """
-        Recursively finds import statements within the AST starting from the given node.
+        Recursively finds import statement sources within the AST starting from the given node.
         
         Args:
             node: The current AST node being processed.
             
         Returns:
-            List[str]: List of import statements found.
+            List[str]: List of import sources found.
         """
-        imports = []
+        sources = []
         for child in node.children:
             if child.type == "import_statement":
-                for grandchild in child.children:
-                    if grandchild.type == "import_clause":
-                        imports.append(self._node_text(grandchild))
-                        break
+                source_node = next((gc for gc in child.children if gc.type == "string"), None)
+                if source_node:
+                    sources.append(self._node_text(source_node).strip('"\''))
             elif child.type == "program":
-                imports.extend(self._rec_import_finder(child))
+                sources.extend(self._rec_import_finder(child))
 
-        return imports
-
+        return sources
+    
     def extract_imports(self):
         """
         Extracts import statements from the TypeScript file.
