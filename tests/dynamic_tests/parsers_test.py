@@ -186,3 +186,8 @@ def test_component_linking(processed_repo):
                     f"Linked component {random_linked_cmp.component_name} not found in component_code of {component.component_name}"
 
     print("_" * 20)
+
+
+"""
+TODO: NEW TESTS WHEN IMPORTS AND CODE COMPONENT WILL BE SEPARATED
+"""
