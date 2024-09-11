@@ -62,27 +62,27 @@ def test_java_file_parser(java_code_file):
     parser = JavaFileParser(file_path, temp_dir_name)
 
     cmp_names = parser.extract_component_names()
-    assert set(cmp_names) == set(['GeneratedCode.java.SampleClass', 
-                                  'GeneratedCode.java.SampleClass.greet', 
-                                  'GeneratedCode.java.SampleClass.sampleMethod', 
-                                  'GeneratedCode.java.SampleClass.anotherMethod', 
+    assert set(cmp_names) == set(['GeneratedCode.java.SampleClass',
+                                  'GeneratedCode.java.SampleClass.greet',
+                                  'GeneratedCode.java.SampleClass.sampleMethod',
+                                  'GeneratedCode.java.SampleClass.anotherMethod',
                                   'GeneratedCode.java.SampleClass.main']), \
             f"Wrong component names extraction!"
 
     called_components = parser.extract_called_components()
 
     # TODO: where is sampleMethod below?
-    assert set(called_components) == set(['GeneratedCode.java.SampleClass.anotherMethod', 
-                                          'GeneratedCode.java.SampleClass', 
-                                          'System.out.println', 
+    assert set(called_components) == set(['GeneratedCode.java.SampleClass.anotherMethod',
+                                          'GeneratedCode.java.SampleClass',
+                                          'System.out.println',
                                           'GeneratedCode.java.SampleClass.greet']), \
             f"Wrong called components extraction!"
 
     callable_components = parser.extract_callable_components()
-    assert set(callable_components) == set(['GeneratedCode.java.SampleClass', 
-                                            'GeneratedCode.java.SampleClass.greet', 
-                                            'GeneratedCode.java.SampleClass.sampleMethod', 
-                                            'GeneratedCode.java.SampleClass.anotherMethod', 
+    assert set(callable_components) == set(['GeneratedCode.java.SampleClass',
+                                            'GeneratedCode.java.SampleClass.greet',
+                                            'GeneratedCode.java.SampleClass.sampleMethod',
+                                            'GeneratedCode.java.SampleClass.anotherMethod',
                                             'GeneratedCode.java.SampleClass.main']), \
             f"Wrong callable components extraction!"
 
@@ -91,7 +91,8 @@ def test_java_component_filler_helper(java_code_file):
     file_path, temp_dir_name = java_code_file
     parser = JavaFileParser(file_path, temp_dir_name)
 
-    helper = JavaComponentFillerHelper("GeneratedCode.java.SampleClass.sampleMethod", file_path, parser)
+    helper = JavaComponentFillerHelper(
+        "GeneratedCode.java.SampleClass.sampleMethod", file_path, parser)
 
     code = helper.extract_component_code()
     assert "void sampleMethod(int x, int y)" in code
