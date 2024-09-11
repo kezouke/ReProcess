@@ -81,3 +81,24 @@ def test_file_parser(python_code_file):
     imports = parser.extract_imports()
     assert set(imports) == set(['random']), \
            f"Wrong imports extraction!"
+    
+
+def test_filler_helper(python_code_file):
+    file_path, temp_dir_name = python_code_file
+    parser = PythonFileParser(file_path, temp_dir_name)
+
+    helper = PythonComponentFillerHelper(
+        "sample_function",
+        file_path,
+        parser
+    )
+
+    code = helper.extract_component_code()
+    assert "def" in code
+    assert helper.component_type == "function"
+    assert "sample_function(x, y)" in code
+    assert "import random" in code 
+    assert "return x + y" in code  
+
+    to_link = helper.extract_callable_objects()
+    assert set(to_link) == set(['generated_code.sample_function', 'random'])

@@ -1,6 +1,6 @@
 from reprocess.parsers.java_script_parsers import JavaScriptFileParser, JavaScriptComponentFillerHelper
 
-file_path = "/home/arxiv-feed/feed/test.js"
+file_path = "/home/arxiv-feed/feed/prompt-display.js"
 parser = JavaScriptFileParser(file_path, "arxiv-feed")
 
 print("Component Names:")
@@ -15,8 +15,8 @@ print(parser.extract_imports())
 print("\nCallable Components:")
 print(parser.extract_callable_components())
 
-helper = JavaScriptComponentFillerHelper("feed.test.createAndLogProperties",
-                                         file_path, parser)
+helper = JavaScriptComponentFillerHelper(
+    "feed.prompt_display.PromptDisplay.eventOccurred", file_path, parser)
 print("\nComponent Code:")
 print(helper.extract_component_code())
 
