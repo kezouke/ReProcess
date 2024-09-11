@@ -20,7 +20,8 @@ class TypeScriptFileParser(TreeSitterFileParser):
         
         Reads the file content and parses it into an AST. Also adjusts the file path relative to the repository.
         """
-        cutted_path = self.file_path.split(self.repo_name)[-1].rsplit('.ts', 1)[0]
+        cutted_path = self.file_path.split(self.repo_name)[-1].rsplit(
+            '.ts', 1)[0]
         TYPESCRIPT_LANGUAGE = Language(tstypescript.language_typescript())
         self.parser = Parser(TYPESCRIPT_LANGUAGE)
 
@@ -115,7 +116,7 @@ class TypeScriptFileParser(TreeSitterFileParser):
             expression_node = node.child_by_field_name("expression")
             if expression_node:
                 if expression_node.startswith('this.'):
-                            expression_node = expression_node[5:]
+                    expression_node = expression_node[5:]
                 components.extend(
                     self._rec_called_components_finder(expression_node))
 
@@ -146,7 +147,7 @@ class TypeScriptFileParser(TreeSitterFileParser):
                     full_function_name = self._get_fully_qualified_name(
                         function_name)
                     if full_function_name.startswith('this.'):
-                            full_function_name = full_function_name[5:]
+                        full_function_name = full_function_name[5:]
                     components.append(full_function_name)
 
         # Process `new_expression` nodes (e.g., instantiation of a class)
@@ -221,14 +222,15 @@ class TypeScriptFileParser(TreeSitterFileParser):
         sources = []
         for child in node.children:
             if child.type == "import_statement":
-                source_node = next((gc for gc in child.children if gc.type == "string"), None)
+                source_node = next(
+                    (gc for gc in child.children if gc.type == "string"), None)
                 if source_node:
                     sources.append(self._node_text(source_node).strip('"\''))
             elif child.type == "program":
                 sources.extend(self._rec_import_finder(child))
 
         return sources
-    
+
     def extract_imports(self):
         """
         Extracts import statements from the TypeScript file.

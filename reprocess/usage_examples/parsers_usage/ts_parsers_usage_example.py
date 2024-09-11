@@ -15,8 +15,8 @@ print(parser.extract_called_components())
 print("\nCallable components:")
 print(parser.extract_callable_components())
 
-helper = TypeScriptComponentFillerHelper("home.arxiv-feed.feed.test.logMessage", file_path,
-                                         parser)
+helper = TypeScriptComponentFillerHelper(
+    "home.arxiv-feed.feed.test.logMessage", file_path, parser)
 print("\nComponent Code:")
 print(helper.extract_component_code())
 
