@@ -4,8 +4,6 @@ import pytest
 import os
 from reprocess.re_processors import JsonConverter, GraphBuilder, CloneRepository, Compose
 from reprocess.re_container import ReContainer
-from reprocess.utils.import_path_extractor import get_import_statement_path
-
 
 # Utility to extract repository name from a git URL
 def extract_repo_name(repo_url):
