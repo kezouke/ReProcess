@@ -49,31 +49,36 @@ class TypeScriptFileParser(TreeSitterFileParser):
             List[str]: List of component names found.
         """
         components = []
-        if node.type == 'class_declaration':
-            class_name = self._node_text(node.child_by_field_name('name'))
-            full_class_name = f"{class_path}.{class_name}" if class_path else class_name
-            components.append(full_class_name)
+        # print(node)
+        if node is not None:
+            if node.type == 'class_declaration':
+                class_name = self._node_text(node.child_by_field_name('name'))
+                full_class_name = f"{class_path}.{class_name}" if class_path else class_name
+                components.append(full_class_name)
 
-            # Recursively extract nested classes and methods
-            class_body = node.child_by_field_name('body')
-            for child in class_body.children:
-                components.extend(self._find_cmp_names(child, full_class_name))
-        elif node.type == 'function_declaration':
+                # Recursively extract nested classes and methods
+                class_body = node.child_by_field_name('body')
+                for child in class_body.children:
+                    components.extend(
+                        self._find_cmp_names(child, full_class_name))
+            elif node.type == 'function_declaration':
 
-            function_name = self._node_text(node.child_by_field_name('name'))
-            full_function_name = f"{class_path}.{function_name}" if class_path else function_name
-            components.append(full_function_name)
-        elif node.type == 'method_definition':
-            function_name = self._node_text(node.child_by_field_name('name'))
-            full_function_name = f"{class_path}.{function_name}" if class_path else function_name
-            components.append(full_function_name)
-        # Recursively traverse other child nodes if not already handled
-        for child in node.children:
-            if node.type not in [
-                    'class_declaration', 'function_declaration',
-                    'method_definition'
-            ]:
-                components.extend(self._find_cmp_names(child, class_path))
+                function_name = self._node_text(
+                    node.child_by_field_name('name'))
+                full_function_name = f"{class_path}.{function_name}" if class_path else function_name
+                components.append(full_function_name)
+            elif node.type == 'method_definition':
+                function_name = self._node_text(
+                    node.child_by_field_name('name'))
+                full_function_name = f"{class_path}.{function_name}" if class_path else function_name
+                components.append(full_function_name)
+            # Recursively traverse other child nodes if not already handled
+            for child in node.children:
+                if node.type not in [
+                        'class_declaration', 'function_declaration',
+                        'method_definition'
+                ]:
+                    components.extend(self._find_cmp_names(child, class_path))
 
         return components
 
@@ -272,13 +277,13 @@ class TypeScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
         Returns:
             str: The extracted code of the component including necessary imports.
         """
+
         component_name_splitted = self.component_name.split(
             self.file_parser.packages)[-1].split(".")[1:]
         self.imports = self._get_import_statements()
 
         self.component_node = self._find_component_node(
             self.file_parser.tree.root_node, component_name_splitted)
-
         if self.component_node:
             used_imports = self._get_used_imports(self.component_node)
             component_code = self._node_to_code_string(self.component_node)
@@ -326,7 +331,10 @@ class TypeScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
         Returns:
             node: The AST node corresponding to the component name.
         """
-        if node.type in ["class_declaration", "function_declaration"]:
+        if node.type in [
+                "class_declaration", "function_declaration",
+                "method_definition"
+        ]:
             # Get the exact name of the class or method
             node_name = self._node_text(node.child_by_field_name("name"))
             if node_name == name_parts[0]:
