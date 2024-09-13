@@ -53,19 +53,19 @@ def test_c_file_parser(c_code_file):
     assert set(cmp_names) == set(['sampleFunction',
                                   'anotherFunction',
                                   'main']), \
-            f"Wrong component names extraction!"
+            "Wrong component names extraction!"
 
     called_components = parser.extract_called_components()
     assert set(called_components) == set(['printf',
                                           'sampleFunction',
                                           'anotherFunction']), \
-            f"Wrong called components extraction!"
+            "Wrong called components extraction!"
 
     callable_components = parser.extract_callable_components()
     assert set(callable_components) == set(['sampleFunction',
                                             'anotherFunction',
                                             'main']), \
-            f"Wrong callable components extraction!"
+            "Wrong callable components extraction!"
 
 
 def test_c_component_filler_helper(c_code_file):

@@ -67,7 +67,7 @@ def test_java_file_parser(java_code_file):
                                   'GeneratedCode.java.SampleClass.sampleMethod',
                                   'GeneratedCode.java.SampleClass.anotherMethod',
                                   'GeneratedCode.java.SampleClass.main']), \
-            f"Wrong component names extraction!"
+            "Wrong component names extraction!"
 
     called_components = parser.extract_called_components()
 
@@ -76,7 +76,7 @@ def test_java_file_parser(java_code_file):
                                           'GeneratedCode.java.SampleClass',
                                           'System.out.println',
                                           'GeneratedCode.java.SampleClass.greet']), \
-            f"Wrong called components extraction!"
+            "Wrong called components extraction!"
 
     callable_components = parser.extract_callable_components()
     assert set(callable_components) == set(['GeneratedCode.java.SampleClass',
@@ -84,7 +84,7 @@ def test_java_file_parser(java_code_file):
                                             'GeneratedCode.java.SampleClass.sampleMethod',
                                             'GeneratedCode.java.SampleClass.anotherMethod',
                                             'GeneratedCode.java.SampleClass.main']), \
-            f"Wrong callable components extraction!"
+            "Wrong callable components extraction!"
 
 
 def test_java_component_filler_helper(java_code_file):

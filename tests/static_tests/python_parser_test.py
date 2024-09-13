@@ -60,7 +60,7 @@ def test_file_parser(python_code_file):
                          'generated_code.SampleClass.greet',
                          'generated_code.sample_function',
                          'generated_code.another_function']), \
-            f"Wrong component names extraction!"
+            "Wrong component names extraction!"
 
     called_components = parser.extract_called_components()
     assert set(called_components) == set(['another_function',
@@ -69,17 +69,17 @@ def test_file_parser(python_code_file):
                                  'greet',
                                  'SampleClass',
                                  'sample_function']), \
-            f"Wrong called components extraction!"
+            "Wrong called components extraction!"
 
     callable_components = parser.extract_callable_components()
     assert set(callable_components) == set(['SampleClass',
                                             'another_function',
                                             'sample_function']), \
-            f"Wrong callable components extraction!"
+            "Wrong callable components extraction!"
 
     imports = parser.extract_imports()
     assert set(imports) == set(['random']), \
-           f"Wrong imports extraction!"
+           "Wrong imports extraction!"
 
 
 def test_filler_helper(python_code_file):
