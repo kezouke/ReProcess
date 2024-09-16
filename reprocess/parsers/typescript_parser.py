@@ -1,14 +1,14 @@
 from reprocess.parsers.tree_sitter_parser import TreeSitterFileParser, TreeSitterComponentFillerHelper
-from tree_sitter import Language, Parser
 from reprocess.utils.import_path_extractor import get_import_statement_path
-import tree_sitter_java as tsjava
+import tree_sitter_typescript as tstypescript
+from tree_sitter import Language, Parser
 
 
-class JavaFileParser(TreeSitterFileParser):
+class TypeScriptFileParser(TreeSitterFileParser):
     """
-    Concrete implementation of TreeSitterFileParser for parsing Java files.
+    Concrete implementation of TreeSitterFileParser for parsing TypeScript files.
     
-    Inherits from TreeSitterFileParser and overrides methods to parse Java files specifically.
+    Inherits from TreeSitterFileParser and overrides methods to parse TypeScript files specifically.
     """
 
     def __init__(self, file_path: str, repo_name: str) -> None:
@@ -20,17 +20,18 @@ class JavaFileParser(TreeSitterFileParser):
         
         Reads the file content and parses it into an AST. Also adjusts the file path relative to the repository.
         """
-        cutted_path = self.file_path.split(self.repo_name)[-1]
-
-        JAVA_LANGUAGE = Language(tsjava.language())
-        self.parser = Parser(JAVA_LANGUAGE)
+        cutted_path = self.file_path.split(self.repo_name)[-1].rsplit(
+            '.ts', 1)[0]
+        TYPESCRIPT_LANGUAGE = Language(tstypescript.language_typescript())
+        self.parser = Parser(TYPESCRIPT_LANGUAGE)
 
         self.packages = get_import_statement_path(cutted_path)
-
+        # Read the file content and parse it
         with open(self.file_path, 'r', encoding='utf-8') as file:
             self.source_code = file.read()
             self.tree = self.parser.parse(bytes(self.source_code, "utf8"))
 
+        # Adjust the file path relative to the repository
         self.file_path = cutted_path[1:]
         self.variable_class_map = {}
         self.imports_map = self._map_imported_classes()
@@ -48,34 +49,42 @@ class JavaFileParser(TreeSitterFileParser):
             List[str]: List of component names found.
         """
         components = []
+        # print(node)
+        if node is not None:
+            if node.type == 'class_declaration':
+                class_name = self._node_text(node.child_by_field_name('name'))
+                full_class_name = f"{class_path}.{class_name}" if class_path else class_name
+                components.append(full_class_name)
 
-        # If the node is a class declaration, extract the class name
-        if node.type == 'class_declaration':
-            class_name = self._node_text(node.child_by_field_name('name'))
-            full_class_name = f"{class_path}.{class_name}" if class_path else class_name
-            components.append(full_class_name)
+                # Recursively extract nested classes and methods
+                class_body = node.child_by_field_name('body')
+                for child in class_body.children:
+                    components.extend(
+                        self._find_cmp_names(child, full_class_name))
+            elif node.type == 'function_declaration':
 
-            # Recursively extract nested classes and methods
-            class_body = node.child_by_field_name('body')
-            for child in class_body.children:
-                components.extend(self._find_cmp_names(child, full_class_name))
-
-        # If the node is a method declaration, extract the method name
-        elif node.type == 'method_declaration':
-            method_name = self._node_text(node.child_by_field_name('name'))
-            full_method_name = f"{class_path}.{method_name}" if class_path else method_name
-            components.append(full_method_name)
-
-        # Recursively process children nodes, but only if we're not already inside a class or method
-        for child in node.children:
-            if node.type not in ['class_declaration', 'method_declaration']:
-                components.extend(self._find_cmp_names(child, class_path))
+                function_name = self._node_text(
+                    node.child_by_field_name('name'))
+                full_function_name = f"{class_path}.{function_name}" if class_path else function_name
+                components.append(full_function_name)
+            elif node.type == 'method_definition':
+                function_name = self._node_text(
+                    node.child_by_field_name('name'))
+                full_function_name = f"{class_path}.{function_name}" if class_path else function_name
+                components.append(full_function_name)
+            # Recursively traverse other child nodes if not already handled
+            for child in node.children:
+                if node.type not in [
+                        'class_declaration', 'function_declaration',
+                        'method_definition'
+                ]:
+                    components.extend(self._find_cmp_names(child, class_path))
 
         return components
 
     def extract_component_names(self):
         """
-        Extracts names of components (classes and methods) defined in the Java file.
+        Extracts names of components (classes and methods) defined in the TypeScript file.
         
         Returns:
             List[str]: List of component names.
@@ -97,7 +106,7 @@ class JavaFileParser(TreeSitterFileParser):
 
     def _rec_called_components_finder(self, node):
         """
-        Recursively extracts names of components called within the Java file starting from the given node.
+        Recursively extracts names of components called within the TypeScript file starting from the given node.
         
         Args:
             node: The current AST node being processed.
@@ -106,43 +115,67 @@ class JavaFileParser(TreeSitterFileParser):
             List[str]: List of names of called components.
         """
         components = []
+        # Process `expression_statement` nodes
+        if node.type == "expression_statement":
+            # The expression_statement typically wraps a call_expression or other expressions
+            expression_node = node.child_by_field_name("expression")
+            if expression_node:
+                if expression_node.startswith('this.'):
+                    expression_node = expression_node[5:]
+                components.extend(
+                    self._rec_called_components_finder(expression_node))
 
-        # Handle object creation expressions (e.g., new ClassName())
-        if node.type == "object_creation_expression":
-            class_name_node = node.child_by_field_name("type")
-            if class_name_node:
-                class_name = self._node_text(class_name_node)
+        # Process `call_expression` nodes
+        elif node.type == "call_expression":
+            function_node = node.child_by_field_name("function")
+            if function_node:
+                # Handle member expressions (e.g., object.method())
+                if function_node.type == "member_expression":
+                    object_node = function_node.child_by_field_name("object")
+                    property_node = function_node.child_by_field_name(
+                        "property")
+                    if object_node and property_node:
+                        object_name = self._node_text(object_node)
+                        method_name = self._node_text(property_node)
+
+                        # Check if object_name is mapped to a class
+                        class_name = self.variable_class_map.get(
+                            object_name, object_name)
+                        full_class_name = self._get_fully_qualified_name(
+                            class_name)
+                        if full_class_name.startswith('this.'):
+                            full_class_name = full_class_name[5:]
+                        components.append(f"{full_class_name}.{method_name}")
+                else:
+                    # Handle simple function calls
+                    function_name = self._node_text(function_node)
+                    full_function_name = self._get_fully_qualified_name(
+                        function_name)
+                    if full_function_name.startswith('this.'):
+                        full_function_name = full_function_name[5:]
+                    components.append(full_function_name)
+
+        # Process `new_expression` nodes (e.g., instantiation of a class)
+        elif node.type == "new_expression":
+            constructor_node = node.child_by_field_name("constructor")
+            if constructor_node:
+                class_name = self._node_text(constructor_node)
                 parent = node.parent
                 if parent and parent.type == "variable_declarator":
                     variable_name_node = parent.child_by_field_name("name")
                     if variable_name_node:
                         variable_name = self._node_text(variable_name_node)
-                        # Map the variable name to the fully qualified class type
                         full_class_name = self._get_fully_qualified_name(
                             class_name)
                         self.variable_class_map[
                             variable_name] = full_class_name
+                        if full_class_name.startswith('this.'):
+                            full_class_name = full_class_name[5:]
                         components.append(full_class_name)
 
-        # Handle method invocations
-        elif node.type == "method_invocation":
-            method_name_node = node.child_by_field_name("name")
-            object_node = node.child_by_field_name("object")
-
-            if method_name_node and object_node:
-                method_name = self._node_text(method_name_node)
-                object_name = self._node_text(object_node)
-
-                # Check if the object name is a variable mapped to a class
-                class_name = self.variable_class_map.get(
-                    object_name, object_name)
-                full_class_name = self._get_fully_qualified_name(class_name)
-                components.append(f"{full_class_name}.{method_name}")
-
-        # Recursively process children nodes
+        # Recursively process all children nodes
         for child in node.children:
             components.extend(self._rec_called_components_finder(child))
-
         return components
 
     def _get_fully_qualified_name(self, class_name):
@@ -155,19 +188,16 @@ class JavaFileParser(TreeSitterFileParser):
         Returns:
             str: The fully qualified name of the class.
         """
-        # Check if the class is imported
         if class_name in self.imports_map:
             return self.imports_map[class_name]
-        # Check if the class is local
         for component in self.local_component_names:
             if component.endswith(f".{class_name}"):
                 return component
-        # Return the class name as is if not found in imports or local components
         return class_name
 
     def extract_called_components(self):
         """
-        Extracts names of components called within the Java file.
+        Extracts names of components called within the TypeScript file.
         
         Returns:
             List[str]: List of names of called components.
@@ -177,7 +207,7 @@ class JavaFileParser(TreeSitterFileParser):
 
     def extract_callable_components(self):
         """
-        Extracts names of callable components defined within the Java file.
+        Extracts names of callable components defined within the TypeScript file.
         
         Returns:
             List[str]: List of names of callable components.
@@ -186,29 +216,29 @@ class JavaFileParser(TreeSitterFileParser):
 
     def _rec_import_finder(self, node):
         """
-        Recursively finds import statements within the AST starting from the given node.
+        Recursively finds import statement sources within the AST starting from the given node.
         
         Args:
             node: The current AST node being processed.
             
         Returns:
-            List[str]: List of import statements found.
+            List[str]: List of import sources found.
         """
-        imports = []
+        sources = []
         for child in node.children:
-            if child.type == "import_declaration":
-                for grandchild in child.children:
-                    if grandchild.type == "scoped_identifier":
-                        imports.append(self._node_text(grandchild))
-                        break
+            if child.type == "import_statement":
+                source_node = next(
+                    (gc for gc in child.children if gc.type == "string"), None)
+                if source_node:
+                    sources.append(self._node_text(source_node).strip('"\''))
             elif child.type == "program":
-                imports.extend(self._rec_import_finder(child))
+                sources.extend(self._rec_import_finder(child))
 
-        return imports
+        return sources
 
     def extract_imports(self):
         """
-        Extracts import statements from the Java file.
+        Extracts import statements from the TypeScript file.
         
         Returns:
             List[str]: List of import statements found in the file.
@@ -229,11 +259,11 @@ class JavaFileParser(TreeSitterFileParser):
         return node.text.decode('utf-8').strip()
 
 
-class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
+class TypeScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
     """
-    Helper class for extracting Java component code using Tree-sitter.
+    Helper class for extracting TypeScript component code using Tree-sitter.
     
-    Extends TreeSitterComponentFillerHelper to provide functionality specific to Java.
+    Extends TreeSitterComponentFillerHelper to provide functionality specific to TypeScript.
     """
 
     def __init__(self, component_name: str, component_file_path: str,
@@ -242,11 +272,12 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
 
     def extract_component_code(self):
         """
-        Extracts the code of the specified Java component along with its required imports.
+        Extracts the code of the specified TypeScript component along with its required imports.
         
         Returns:
             str: The extracted code of the component including necessary imports.
         """
+
         component_name_splitted = self.component_name.split(
             self.file_parser.packages)[-1].split(".")[1:]
         self.imports = self._get_import_statements()
@@ -255,15 +286,13 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
             self.file_parser.tree.root_node, component_name_splitted)
         if self.component_node:
             used_imports = self._get_used_imports(self.component_node)
-
             component_code = self._node_to_code_string(self.component_node)
             return "\n".join(used_imports) + "\n\n" + component_code
-        else:
-            raise Exception("Component was not found")
+        return ""
 
     def _get_import_statements(self):
         """
-        Extracts all import statements from the Java file.
+        Extracts all import statements from the TypeScript file.
         
         Returns:
             List[str]: List of import statements found in the file.
@@ -271,7 +300,7 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
         return [
             self._node_text(child)
             for child in self.file_parser.tree.root_node.children
-            if child.type == "import_declaration"
+            if child.type == "import_statement"
         ]
 
     def _get_used_imports(self, component_node):
@@ -280,11 +309,9 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
         
         Args:
             component_node: The AST node representing the component.
-            
-        Returns:
-            List[str]: Sorted list of imports used by the component.
         """
-        used_imports = set()
+        used_imports = []
+        # Logic to find and return used imports can be added here
         called_components = self.file_parser._rec_called_components_finder(
             component_node)
         for component in called_components:
@@ -295,21 +322,24 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
 
     def _find_component_node(self, node, name_parts):
         """
-        Recursively finds the AST node corresponding to the specified component.
+        Recursively finds the node corresponding to the component name in the AST.
         
         Args:
             node: The current AST node being processed.
-            name_parts: List of component names to match against.
+            component_name_parts: List of parts of the component name.
             
         Returns:
-            Optional[ts.Node]: The AST node representing the component, or None if not found.
+            node: The AST node corresponding to the component name.
         """
-        if node.type in ["class_declaration", "method_declaration"]:
+        if node.type in [
+                "class_declaration", "function_declaration",
+                "method_definition"
+        ]:
             # Get the exact name of the class or method
             node_name = self._node_text(node.child_by_field_name("name"))
             if node_name == name_parts[0]:
                 # Set the component type if a match is found
-                self.component_type = "class" if node.type == "class_declaration" else "method"
+                self.component_type = "class" if node.type == "class_declaration" else "function"
                 if len(name_parts) == 1:
                     return node
                 else:
@@ -325,19 +355,16 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
             if result:
                 return result
 
-        return None
-
     def _node_to_code_string(self, node):
         """
-        Extracts the source code corresponding to the given AST node.
+        Converts an AST node to a string of source code.
         
         Args:
-            node: The AST node whose source code is to be extracted.
+            node: The AST node to be converted.
             
         Returns:
-            str: The extracted source code with original indentation preserved.
+            str: The string of source code representing the node.
         """
-        # Extract code from the node, maintaining the original tabulation
         start_line = node.start_point[0]
         end_line = node.end_point[0]
         lines = self.source_code.splitlines()
@@ -365,7 +392,4 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
         Returns:
             List[str]: List of names of callable objects.
         """
-        return list(
-            set(
-                self.file_parser._rec_called_components_finder(
-                    self.component_node)))
+        return list(set(self.file_parser._find_cmp_names(self.component_node)))
