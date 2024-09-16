@@ -95,3 +95,8 @@ class TreeSitterComponentFillerHelper(ABC):
     def extract_callable_objects(self):
         """Extracts callable objects defined within the component."""
         raise NotImplementedError()
+
+    @abstractmethod
+    def extract_signature(self):
+        """Extracts signature of the component."""
+        raise NotImplementedError()
