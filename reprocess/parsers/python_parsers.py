@@ -1,6 +1,7 @@
 from reprocess.parsers.tree_sitter_parser import TreeSitterFileParser, TreeSitterComponentFillerHelper
 from reprocess.utils.import_path_extractor import get_import_statement_path
 import ast
+from typing import List, Tuple
 
 
 class PythonFileParser(TreeSitterFileParser):
@@ -371,3 +372,22 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
                 resulted_array.append(f"{self.file_parser.packages}.{cmp}")
         resulted_array += imports
         return resulted_array
+
+    def extract_signature(self):
+        tree = ast.parse(self.component_code)
+        source_lines = self.component_code.splitlines()
+        simplified_lines = source_lines[:]
+
+        indices_to_del: List[Tuple[int, int]] = []
+        for node in ast.iter_child_nodes(tree):
+            if isinstance(
+                    node,
+                (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                start, end = node.lineno - 1, node.end_lineno
+                assert isinstance(end, int)
+                indices_to_del.append((start + 1, end))
+
+        for start, end in reversed(indices_to_del):
+            del simplified_lines[start + 0:end]
+
+        return "\n".join(simplified_lines)
