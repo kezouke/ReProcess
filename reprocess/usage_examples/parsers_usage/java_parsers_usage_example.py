@@ -15,7 +15,7 @@ print(parser.extract_called_components())
 print("\nCallable components:")
 print(parser.extract_callable_components())
 
-helper = JavaComponentFillerHelper("feed.main.java.Main.Logger", file_path,
+helper = JavaComponentFillerHelper("feed.main.java.Main", file_path,
                                    parser)
 print("\nComponent Code:")
 print(helper.extract_component_code())
@@ -25,3 +25,6 @@ print(helper.component_type)
 
 print("\nCallabale components")
 print(helper.extract_callable_objects())
+
+print("\nSignature components")
+print(helper.extract_signature())
