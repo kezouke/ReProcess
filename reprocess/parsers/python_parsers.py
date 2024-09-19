@@ -23,6 +23,7 @@ class PythonFileParser(TreeSitterFileParser):
         self.packages = get_import_statement_path(cutted_path)
         self.tree = self._parse_source_code()
         self.file_path = cutted_path[1:]
+        self.package_components_names = self.extract_component_names()
 
     def _parse_source_code(self):
         """
@@ -120,6 +121,7 @@ class PythonFileParser(TreeSitterFileParser):
             if node.names[0].name == '*':
                 module = get_wildcard_module(node)
                 for cmp in self.package_components_names:
+
                     if cmp.startswith(module):
                         imports.append(cmp.split(".")[-1])
             else:
@@ -177,8 +179,7 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
                 self.component_name = self.component_name.replace(".", "", 1)
                 component_name_splitted = self.component_name.split(".")[1:]
         else:
-            component_name_splitted = self.component_name.split(
-                self.file_parser.packages)[-1].split(".")[1:]
+            component_name_splitted = self.component_name.split(".")[1:]
 
         for node in self.file_parser.tree.body:
             if isinstance(node, ast.FunctionDef
@@ -325,7 +326,7 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
             List[ast.alias]: A list of explicit imports replacing the wildcard import.
         """
         new_imports = []
-        for cmp in self.package_components_names:
+        for cmp in self.component_name:
             if cmp.startswith(module):
                 cmp_name = cmp.split(".")[-1]
                 if cmp_name in used_imports:
@@ -351,6 +352,7 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
         Returns:
             List[str]: A list of import statements.
         """
+
         tree = ast.parse(self.component_code)
         imports = []
 

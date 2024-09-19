@@ -1,7 +1,7 @@
 from reprocess.parsers.cpp_parsers import CppFileParser, CppComponentFillerHelper
 
-file_path = "/home/arxiv-feed/test.c"
-parser = CppFileParser(file_path, "your_repo_name")
+file_path = "/home/guidance/guidance/_cpp/byte_trie.cpp"
+parser = CppFileParser(file_path, "guidance")
 
 print("Component Names:")
 print(parser.extract_component_names())
@@ -15,7 +15,7 @@ print(parser.extract_callable_components())
 print("\nImports:")
 print(parser.extract_imports())
 
-helper = CppComponentFillerHelper("globalFunction", file_path, parser)
+helper = CppComponentFillerHelper("ByteTrie.keys", file_path, parser)
 print()
-print(helper.extract_component_code())
-print(helper.extract_callable_objects())
+print(f'code:{helper.extract_component_code()}')
+print(f'callable:{helper.extract_callable_objects()}')
