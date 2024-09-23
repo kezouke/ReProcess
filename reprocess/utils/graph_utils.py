@@ -8,7 +8,6 @@ from reprocess.parsers.c_parsers import CFileParser, CComponentFillerHelper
 from reprocess.parsers.cpp_parsers import CppFileParser, CppComponentFillerHelper
 from reprocess.parsers.java_parsers import JavaFileParser, JavaComponentFillerHelper
 from typing import List
-import os
 
 
 def create_parsers_map(files, repo_name):
