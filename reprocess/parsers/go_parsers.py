@@ -3,6 +3,14 @@ from tree_sitter import Language, Parser, Node
 from reprocess.utils.import_path_extractor import get_import_statement_path
 import tree_sitter_go as tsgo
 
+CHUNK_QUERY = """
+    [
+        (function_declaration) @function
+        (type_declaration) @type
+        (method_declaration) @method
+    ]
+""".strip()
+
 
 class GoFileParser(TreeSitterFileParser):
 
@@ -382,3 +390,33 @@ class GoComponentFillerHelper(TreeSitterComponentFillerHelper):
         traverse_node(component_code_tree.root_node, package_name)
 
         return list(called_components)
+
+    def extract_signature(self):
+        GO_LANGUAGE = Language(tsgo.language())
+        parser = Parser(GO_LANGUAGE)
+        query = GO_LANGUAGE.query(CHUNK_QUERY)
+        tree = parser.parse(bytes(self.component_code, encoding="UTF-8"))
+
+        processed_lines = set()
+        source_lines = self.component_code.splitlines()
+        simplified_lines = source_lines[:]
+
+        captured = query.captures(tree.root_node)
+
+        for name in captured:
+            for node in captured[name]:
+                start_line = node.start_point[0]
+                end_line = node.end_point[0]
+
+                lines = list(range(start_line, end_line + 1))
+                if any(line in processed_lines for line in lines):
+                    continue
+
+                simplified_lines[start_line] = source_lines[start_line]
+
+                for line_num in range(start_line + 1, end_line + 1):
+                    simplified_lines[line_num] = None  # type: ignore
+
+                processed_lines.update(lines)
+
+        return "\n".join(line for line in simplified_lines if line is not None)

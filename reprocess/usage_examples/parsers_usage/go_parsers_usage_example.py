@@ -15,9 +15,13 @@ print(parser.extract_imports())
 print("\nCallable Components:")
 print(parser.extract_callable_components())
 
-helper = GoComponentFillerHelper("feed.test.main", file_path, parser)
+helper = GoComponentFillerHelper("feed.test.Rectangle.Perimeter", file_path,
+                                 parser)
 print("\nComponent Code:")
 print(helper.extract_component_code())
 
 print("\nCallabale components")
 print(helper.extract_callable_objects())
+
+print("\nSignature components")
+print(helper.extract_signature())
