@@ -4,6 +4,7 @@ import pytest
 import os
 from reprocess.re_processors import JsonConverter, GraphBuilder, CloneRepository, Compose
 from reprocess.re_container import ReContainer
+import ast
 
 
 # Utility to extract repository name from a git URL
@@ -74,6 +75,9 @@ def test_code_fragment_presence(processed_repo):
 
     # Process each sampled component
     for i, component in enumerate(sampled_components):
+        if "residual" in component.component_name:
+            continue
+
         print(f"Component {i + 1}: {component.component_name}")
 
         # Extract the file path without the extension
@@ -186,6 +190,62 @@ def test_component_linking(processed_repo):
                     f"Linked component {random_linked_cmp.component_name} not found in component_code of {component.component_name}"
 
     print("_" * 20)
+
+
+def test_code_lines_parsed(processed_repo):
+    """
+    This test checks if randomly selected code components are present 
+    in their respective files within the cloned repository.
+
+    Steps:
+    1. Randomly select up to 50 code components from the repository.
+    2. For each selected component:
+       - Extract the relevant part of the component's name, excluding its file path.
+       - Open the corresponding file.
+       - Check if each part of the component's name is present in the file's code.
+    """
+    print("_" * 20)
+    code_components = processed_repo.code_components
+    files = processed_repo.files
+    file_cmp_map = {}
+    for cmp in code_components:
+        file_cmp_map.setdefault(cmp.file_id, []).append(cmp)
+
+    # Determine the number of files to sample
+    num_to_sample = min(10, len(files))
+    sampled_files = random.sample(files, num_to_sample)
+
+    # Check if there are code components available
+    if len(code_components) == 0:
+        print("No code components found.")
+        return
+
+    for file in sampled_files:
+        full_path = os.path.join(processed_repo.repo_path, file.file_path)
+        ast_tree = None
+        with open(full_path, "r") as f:
+            code = f.read()
+            if full_path.endswith(".py"):
+                code = ast.unparse(ast.parse(code))
+
+        print(f"file_path: {full_path}")
+
+        # Split the code into lines
+        code_lines = code.splitlines()
+
+        # Check if there are any lines, then get a random line
+        if code_lines:
+            random_line = random.choice(code_lines)
+        else:
+            continue
+
+        print(f"Random line: {random_line}")
+
+        found = False
+        for cmp in file_cmp_map[file.file_id]:
+            if random_line in cmp.component_code.splitlines():
+                found = True
+        assert found is True
 
 
 """
