@@ -281,7 +281,6 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
         """Extracts the code of the specified component."""
         self._find_class_methods()
         name_parts = component_name.split('.')
-
         if len(name_parts
                ) > 1 and name_parts[0] in self.class_methods and name_parts[
                    1] in self.class_methods[name_parts[0]]:
@@ -311,7 +310,7 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
                 return self._get_node_text(component_node)
         else:
 
-            return None
+            return ""
 
     def extract_component_code(self):
         """
@@ -337,6 +336,9 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
         code = self._extract_code_without_imports(self.component_name)
         if self.component_type.count('.') > 0:
             self.component_type = "method"
+        # print(f'imports_code:{imports_code}')
+        # print(f'code:{code}')
+        # print(self.component_file_path)
         return imports_code + "\n" + code
 
     def extract_callable_objects(self):
