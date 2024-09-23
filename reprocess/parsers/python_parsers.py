@@ -23,6 +23,10 @@ class PythonFileParser(TreeSitterFileParser):
         cutted_path = self.file_path.split(self.repo_name)[-1]
         self.packages = get_import_statement_path(cutted_path)
         self.tree = self._parse_source_code()
+
+        with open(self.file_path, 'w') as file:
+            file.write(ast.unparse(self.tree))
+
         self.file_path = cutted_path[1:]
 
     def _parse_source_code(self):

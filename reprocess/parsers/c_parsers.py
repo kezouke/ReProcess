@@ -25,6 +25,14 @@ class CFileParser(TreeSitterFileParser):
             self.source_code = file.read()
             self.tree = self.parser.parse(bytes(self.source_code, "utf8"))
 
+        with open(self.file_path, "w") as file:
+            node = self.tree.root_node
+            start_line = node.start_point[0]
+            end_line = node.end_point[0]
+            lines = self.source_code.splitlines()
+            code_lines = lines[start_line:end_line + 1]
+            file.write("\n".join(code_lines))
+
         # Adjust the file path relative to the repository
         cutted_path = self.file_path.split(self.repo_name)[-1]
         self.file_path = cutted_path[1:]
