@@ -244,6 +244,7 @@ def test_code_lines_parsed(processed_repo):
         for cmp in file_cmp_map[file.file_id]:
             if random_line in cmp.component_code.splitlines():
                 found = True
+                break
         assert found is True
 
 
