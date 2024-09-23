@@ -71,9 +71,9 @@ def test_java_file_parser(java_code_file):
 
     called_components = parser.extract_called_components()
 
-    # TODO: where is sampleMethod below?
     assert set(called_components) == set(['GeneratedCode.java.SampleClass.anotherMethod',
                                           'GeneratedCode.java.SampleClass',
+                                          'GeneratedCode.java.SampleClass.sampleMethod'
                                           'System.out.println',
                                           'GeneratedCode.java.SampleClass.greet']), \
             "Wrong called components extraction!"
