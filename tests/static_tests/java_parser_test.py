@@ -2,7 +2,7 @@ import pytest
 import tempfile
 import os
 
-from reprocess.parsers.java_parsers import JavaFileParser, JavaComponentFillerHelper
+from reprocess.parsers import JavaFileParser, JavaComponentFillerHelper
 
 
 @pytest.fixture(scope='session')

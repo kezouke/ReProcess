@@ -1,7 +1,7 @@
 import pytest
 import tempfile
 import os
-from reprocess.parsers.c_parsers import CFileParser, CComponentFillerHelper
+from reprocess.parsers import CFileParser, CComponentFillerHelper
 
 
 @pytest.fixture(scope='session')

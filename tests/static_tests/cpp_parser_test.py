@@ -1,7 +1,7 @@
 import pytest
 import tempfile
 import os
-from reprocess.parsers.cpp_parsers import CppFileParser, CppComponentFillerHelper
+from reprocess.parsers import CppFileParser, CppComponentFillerHelper
 
 
 @pytest.fixture(scope='session')
