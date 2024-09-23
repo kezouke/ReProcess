@@ -1,6 +1,5 @@
 from reprocess.parsers.cpp_parsers import CppFileParser, CppComponentFillerHelper
 
-
 file_path = "/home/arxiv-feed/feed/test.cpp"
 parser = CppFileParser(file_path, "your_repo_name")
 
@@ -15,7 +14,6 @@ print(parser.extract_callable_components())
 
 print("\nImports:")
 print(parser.extract_imports())
-
 
 helper = CppComponentFillerHelper("MyClass.anotherMethod", file_path, parser)
 print()

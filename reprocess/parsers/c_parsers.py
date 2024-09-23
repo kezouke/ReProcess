@@ -331,7 +331,6 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
                             struct_node.start_byte:struct_node.end_byte]
         return ""
 
-
     def extract_signature(self):
         C_LANGUAGE = Language(tsc.language())
         parser = Parser(C_LANGUAGE)
