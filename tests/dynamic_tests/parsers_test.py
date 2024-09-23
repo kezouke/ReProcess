@@ -222,7 +222,6 @@ def test_code_lines_parsed(processed_repo):
 
     for file in sampled_files:
         full_path = os.path.join(processed_repo.repo_path, file.file_path)
-        ast_tree = None
         with open(full_path, "r") as f:
             code = f.read()
             if full_path.endswith(".py"):
