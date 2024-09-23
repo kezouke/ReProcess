@@ -60,6 +60,7 @@ def extract_components(parsers_map):
                     cmp, file, parser)
             elif file.endswith('.js'):
                 component_fillers[cmp] = JavaScriptComponentFillerHelper(
+                    cmp, file, parser)
             elif file.endswith('.ts'):
                 component_fillers[cmp] = TypeScriptComponentFillerHelper(
                     cmp, file, parser)
