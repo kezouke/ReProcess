@@ -16,6 +16,7 @@ CHUNK_QUERY = """
     ]
 """.strip()
 
+
 class CppFileParser(TreeSitterFileParser):
     """
     Concrete implementation of TreeSitterFileParser for parsing C++ files.
@@ -410,7 +411,7 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
                 filtered_called_components.add(called_component)
 
         return list(filtered_called_components)
-    
+
     def extract_signature(self):
         CPP_LANGUAGE = Language(tscpp.language())
         parser = Parser(CPP_LANGUAGE)
