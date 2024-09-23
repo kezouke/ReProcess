@@ -8,6 +8,7 @@ from reprocess.parsers.c_parsers import CFileParser, CComponentFillerHelper
 from reprocess.parsers.cpp_parsers import CppFileParser, CppComponentFillerHelper
 from reprocess.parsers.java_parsers import JavaFileParser, JavaComponentFillerHelper
 from typing import List
+import os
 
 
 def create_parsers_map(files, repo_name):
@@ -62,6 +63,58 @@ def map_files_to_ids(parsers_map):
             callable_components=file.extract_callable_components(),
         )
     return id_files_map
+
+
+def get_residual_cmp(files, file_cmp_map, repo_path):
+
+    def normalize_code(code):
+        code = code.replace("'", "").replace('"', "")
+        code = code.replace('\\', '')
+        code = code.replace(' ', '')
+
+        # Strip leading and trailing whitespace from each line and remove empty lines
+        code = "\n".join(line.strip() for line in code.splitlines()
+                         if line.strip())
+
+        # Normalize indentation (optional): Convert tabs to spaces and trim excess indentations
+        # code = re.sub(r'^[ \t]+', '', code, flags=re.MULTILINE)
+
+        return code
+
+    residuals = []
+    for file in files:
+        with open(os.path.join(repo_path, file.file_path), "r") as f:
+            # Read the file and split it into lines
+            file_lines = f.read().splitlines()
+
+        # Create a set to store all lines of component code for easy look-up
+        if file.file_id in file_cmp_map:
+            all_cmp_lines = []
+            for cmp in file_cmp_map[file.file_id]:
+                component_code = cmp.component_code
+                normalized_component_code = normalize_code(component_code)
+                all_cmp_lines.extend(normalized_component_code.splitlines())
+
+            file_lines = [
+                line for line in file_lines
+                if normalize_code(line) not in all_cmp_lines
+            ]
+
+        cleaned_code = "\n".join([line for line in file_lines if line.strip()])
+
+        residual_name = f"file_{file.file_id}_residual"
+        residual_id = hashlib.sha256(
+            (residual_name + cleaned_code).encode('utf-8')).hexdigest()
+        residual_cmp = CodeComponentContainer(component_id=residual_id,
+                                              component_name=residual_name,
+                                              component_code=cleaned_code,
+                                              linked_component_ids=[],
+                                              external_component_ids=[],
+                                              file_id=file.file_id,
+                                              called_objects=[],
+                                              component_type="residual")
+        residuals.append(residual_cmp)
+    return residuals
 
 
 def construct_code_components(
