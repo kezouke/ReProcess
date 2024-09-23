@@ -9,6 +9,7 @@ from reprocess.parsers.cpp_parsers import CppFileParser, CppComponentFillerHelpe
 from reprocess.parsers.java_parsers import JavaFileParser, JavaComponentFillerHelper
 from reprocess.parsers.go_parsers import GoFileParser, GoComponentFillerHelper
 from reprocess.parsers.java_script_parsers import JavaScriptFileParser, JavaScriptComponentFillerHelper
+from reprocess.parsers.typescript_parser import TypeScriptFileParser, TypeScriptComponentFillerHelper
 from typing import List
 
 
@@ -29,6 +30,8 @@ def create_parsers_map(files, repo_name):
             parsers_map[file] = GoFileParser(file, repo_name)
         elif file.endswith('.js'):
             parsers_map[file] = JavaScriptFileParser(file, repo_name)
+        elif file.endswith('.ts'):
+            parsers_map[file] = TypeScriptFileParser(file, repo_name)
     return parsers_map
 
 
@@ -57,6 +60,8 @@ def extract_components(parsers_map):
                     cmp, file, parser)
             elif file.endswith('.js'):
                 component_fillers[cmp] = JavaScriptComponentFillerHelper(
+            elif file.endswith('.ts'):
+                component_fillers[cmp] = TypeScriptComponentFillerHelper(
                     cmp, file, parser)
             # Add more conditions for other file types if needed
     return component_names, component_fillers
