@@ -16,9 +16,12 @@ print("\nCallable Components:")
 print(parser.extract_callable_components())
 
 helper = JavaScriptComponentFillerHelper(
-    "feed.prompt_display.PromptDisplay.eventOccurred", file_path, parser)
+    "feed.prompt_display.PromptDisplay.constructor", file_path, parser)
 print("\nComponent Code:")
 print(helper.extract_component_code())
 
 print("\nCallabale components")
 print(helper.extract_callable_objects())
+
+print("\nSignature components")
+print(helper.extract_signature())

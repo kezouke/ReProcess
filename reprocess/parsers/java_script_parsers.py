@@ -4,6 +4,15 @@ from reprocess.utils.import_path_extractor import get_import_statement_path
 import tree_sitter_javascript as tsjs
 import os
 
+CHUNK_QUERY = """
+    [
+        (class_declaration) @class
+        (function_declaration) @function
+        (method_definition) @method
+        (field_definition) @field
+    ]
+""".strip()
+
 
 class JavaScriptFileParser(TreeSitterFileParser):
 
@@ -421,8 +430,9 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
                 if imp in used_identifiers
             ]
             imports_code = '\n'.join(used_imports)
+            return imports_code + '\n\n' + component_code
 
-        return imports_code + '\n\n' + component_code
+        return component_code
 
     def extract_callable_objects(self):
         if not self.component_node:
@@ -534,3 +544,33 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
                 variable_types[variable] = import_map[variable_types[variable]]
 
         return list(called_components) + list(variable_types.values())
+
+    def extract_signature(self):
+        JS_LANGUAGE = Language(tsjs.language())
+        parser = Parser(JS_LANGUAGE)
+        query = JS_LANGUAGE.query(CHUNK_QUERY)
+        tree = parser.parse(bytes(self.component_code, encoding="UTF-8"))
+
+        processed_lines = set()
+        source_lines = self.component_code.splitlines()
+        simplified_lines = source_lines[:]
+
+        captured = query.captures(tree.root_node)
+
+        for name in captured:
+            for node in captured[name]:
+                start_line = node.start_point[0]
+                end_line = node.end_point[0]
+
+                lines = list(range(start_line, end_line + 1))
+                if any(line in processed_lines for line in lines):
+                    continue
+
+                simplified_lines[start_line] = source_lines[start_line]
+
+                for line_num in range(start_line + 1, end_line + 1):
+                    simplified_lines[line_num] = None  # type: ignore
+
+                processed_lines.update(lines)
+
+        return "\n".join(line for line in simplified_lines if line is not None)
