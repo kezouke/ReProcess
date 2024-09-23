@@ -1,7 +1,7 @@
-from reprocess.parsers.java_parsers import JavaFileParser, JavaComponentFillerHelper
+from reprocess.parsers.python_parsers import PythonFileParser, PythonComponentFillerHelper
 
-file_path = "/home/arxiv-feed/feed/main.java"
-parser = JavaFileParser(file_path, "arxiv-feed")
+file_path = "/home/arxiv-feed/feed/database.py"
+parser = PythonFileParser(file_path, "arxiv-feed")
 
 print("Component Names:")
 print(parser.extract_component_names())
@@ -15,7 +15,8 @@ print(parser.extract_called_components())
 print("\nCallable components:")
 print(parser.extract_callable_components())
 
-helper = JavaComponentFillerHelper("feed.main.java.Main", file_path, parser)
+helper = PythonComponentFillerHelper("feed.database.get_announce_papers",
+                                     file_path, parser)
 print("\nComponent Code:")
 print(helper.extract_component_code())
 
@@ -25,5 +26,5 @@ print(helper.component_type)
 print("\nCallabale components")
 print(helper.extract_callable_objects())
 
-print("\nSignature components")
+print("\nSignature:")
 print(helper.extract_signature())

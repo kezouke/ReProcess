@@ -19,6 +19,13 @@ class TreeSitterFileParser(ABC):
         self.file_id = str(uuid.uuid4())
         self._initialize_parser()
 
+        node = self.tree.root_node
+        start_line = node.start_point[0]
+        end_line = node.end_point[0]
+        lines = self.source_code.splitlines()
+        code_lines = lines[start_line:end_line + 1]
+        self.code_formatted = "\n".join(code_lines)
+
     @abstractmethod
     def _initialize_parser(self):
         """Initialize the parser with language-specific details."""
@@ -94,4 +101,9 @@ class TreeSitterComponentFillerHelper(ABC):
     @abstractmethod
     def extract_callable_objects(self):
         """Extracts callable objects defined within the component."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def extract_signature(self):
+        """Extracts signature of the component."""
         raise NotImplementedError()

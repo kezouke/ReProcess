@@ -1,6 +1,8 @@
 from reprocess.parsers.tree_sitter_parser import TreeSitterFileParser, TreeSitterComponentFillerHelper
 from reprocess.utils.import_path_extractor import get_import_statement_path
 import ast
+import uuid
+from typing import List, Tuple
 
 
 class PythonFileParser(TreeSitterFileParser):
@@ -11,7 +13,11 @@ class PythonFileParser(TreeSitterFileParser):
     """
 
     def __init__(self, file_path: str, repo_name: str) -> None:
-        super().__init__(file_path, repo_name)
+        self.file_path = file_path
+        self.repo_name = repo_name
+        self.file_id = str(uuid.uuid4())
+        self._initialize_parser()
+        self.code_formatted = ast.unparse(self.tree)
 
     def _initialize_parser(self):
         """
@@ -381,3 +387,22 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
                 resulted_array.append(f"{self.file_parser.packages}.{cmp}")
         resulted_array += imports
         return resulted_array
+
+    def extract_signature(self):
+        tree = ast.parse(self.component_code)
+        source_lines = self.component_code.splitlines()
+        simplified_lines = source_lines[:]
+
+        indices_to_del: List[Tuple[int, int]] = []
+        for node in ast.iter_child_nodes(tree):
+            if isinstance(
+                    node,
+                (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                start, end = node.lineno - 1, node.end_lineno
+                assert isinstance(end, int)
+                indices_to_del.append((start + 1, end))
+
+        for start, end in reversed(indices_to_del):
+            del simplified_lines[start + 0:end]
+
+        return "\n".join(simplified_lines)

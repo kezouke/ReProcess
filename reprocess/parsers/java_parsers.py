@@ -3,6 +3,15 @@ from tree_sitter import Language, Parser
 from reprocess.utils.import_path_extractor import get_import_statement_path
 import tree_sitter_java as tsjava
 
+CHUNK_QUERY = """
+    [
+        (class_declaration) @class
+        (interface_declaration) @interface
+        (enum_declaration) @enum
+        (method_declaration) @method
+    ]
+""".strip()
+
 
 class JavaFileParser(TreeSitterFileParser):
     """
@@ -24,6 +33,7 @@ class JavaFileParser(TreeSitterFileParser):
 
         JAVA_LANGUAGE = Language(tsjava.language())
         self.parser = Parser(JAVA_LANGUAGE)
+        self.language = JAVA_LANGUAGE
 
         self.packages = get_import_statement_path(cutted_path)
 
@@ -368,3 +378,33 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
             set(
                 self.file_parser._rec_called_components_finder(
                     self.component_node)))
+
+    def extract_signature(self):
+        JAVA_LANGUAGE = Language(tsjava.language())
+        parser = Parser(JAVA_LANGUAGE)
+        query = JAVA_LANGUAGE.query(CHUNK_QUERY)
+        tree = parser.parse(bytes(self.component_code, encoding="UTF-8"))
+
+        processed_lines = set()
+        source_lines = self.component_code.splitlines()
+        simplified_lines = source_lines[:]
+
+        captured = query.captures(tree.root_node)
+
+        for name in captured:
+            for node in captured[name]:
+                start_line = node.start_point[0]
+                end_line = node.end_point[0]
+
+                lines = list(range(start_line, end_line + 1))
+                if any(line in processed_lines for line in lines):
+                    continue
+
+                simplified_lines[start_line] = source_lines[start_line]
+
+                for line_num in range(start_line + 1, end_line + 1):
+                    simplified_lines[line_num] = None  # type: ignore
+
+                processed_lines.update(lines)
+
+        return "\n".join(line for line in simplified_lines if line is not None)

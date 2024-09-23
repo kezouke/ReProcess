@@ -4,6 +4,18 @@ import re
 import tree_sitter_cpp as tscpp
 from tree_sitter import Language, Parser
 
+CHUNK_QUERY = """
+    [
+        (class_specifier
+            body: (field_declaration_list)) @class
+        (struct_specifier
+            body: (field_declaration_list)) @struct
+        (union_specifier
+            body: (field_declaration_list)) @union 
+        (function_definition) @function
+    ]
+""".strip()
+
 
 class CppFileParser(TreeSitterFileParser):
     """
@@ -391,3 +403,33 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
                 filtered_called_components.add(called_component)
 
         return list(filtered_called_components)
+
+    def extract_signature(self):
+        CPP_LANGUAGE = Language(tscpp.language())
+        parser = Parser(CPP_LANGUAGE)
+        query = CPP_LANGUAGE.query(CHUNK_QUERY)
+        tree = parser.parse(bytes(self.component_code, encoding="UTF-8"))
+
+        processed_lines = set()
+        source_lines = self.component_code.splitlines()
+        simplified_lines = source_lines[:]
+
+        captured = query.captures(tree.root_node)
+
+        for name in captured:
+            for node in captured[name]:
+                start_line = node.start_point[0]
+                end_line = node.end_point[0]
+
+                lines = list(range(start_line, end_line + 1))
+                if any(line in processed_lines for line in lines):
+                    continue
+
+                simplified_lines[start_line] = source_lines[start_line]
+
+                for line_num in range(start_line + 1, end_line + 1):
+                    simplified_lines[line_num] = None  # type: ignore
+
+                processed_lines.update(lines)
+
+        return "\n".join(line for line in simplified_lines if line is not None)
