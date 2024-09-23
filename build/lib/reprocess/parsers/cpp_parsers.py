@@ -232,13 +232,7 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
 
     def _strip_parameters(self, name):
         # Strip off parameters from the function name
-        for keyword in ['const', 'noexcept', 'final', 'override']:
-            if keyword in name.split(" "):
-                name = name.replace(keyword, "").strip()
-        if name.startswith("*"):
-            name = name.replace("*", "")
-        name = re.sub(r'\(.*\)', '', name)
-        return name
+        return re.sub(r'\(.*\)', '', name)
 
     def _find_class_methods(self):
         """Finds all methods defined outside class bodies and stores them."""
@@ -252,7 +246,6 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
                         class_name = '::'.join(qualified_name[:-1])
                         method_name = self._strip_parameters(
                             qualified_name[-1])
-
                         if class_name not in self.class_methods:
                             self.class_methods[class_name] = {}
                         self.class_methods[class_name][method_name] = node
@@ -264,14 +257,12 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
             if node.type == 'function_definition':
                 self.component_type = 'function'
                 declarator = node.child_by_field_name('declarator')
-
             elif node.type == 'class_specifier':
                 self.component_type = 'class'
                 declarator = node.child_by_field_name('name')
 
             if declarator and self._strip_parameters(
-                    declarator.text.decode('utf8')) == self._strip_parameters(
-                        name_parts[0]):
+                    declarator.text.decode('utf8')) == name_parts[0]:
                 if len(name_parts) == 1:
                     return node
                 if node.type == 'class_specifier':
@@ -303,7 +294,6 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
 
         component_node = self._find_component_node(
             self.file_parser.tree.root_node, name_parts)
-
         if component_node:
             if component_node.type == 'class_specifier':
                 self.component_type = 'class'
@@ -321,8 +311,7 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
                     self.component_type = 'function'
                 return self._get_node_text(component_node)
         else:
-
-            return ""
+            return None
 
     def extract_component_code(self):
         """
@@ -345,12 +334,10 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
 
         # Use this function to get imports directly
         imports_code = "".join(extract_imports_from_source())
+
         code = self._extract_code_without_imports(self.component_name)
         if self.component_type.count('.') > 0:
             self.component_type = "method"
-        # print(f'imports_code:{imports_code}')
-        # print(f'code:{code}')
-        # print(self.component_file_path)
         return imports_code + "\n" + code
 
     def extract_callable_objects(self):
