@@ -1,6 +1,7 @@
 from reprocess.parsers.tree_sitter_parser import TreeSitterFileParser, TreeSitterComponentFillerHelper
 from reprocess.utils.import_path_extractor import get_import_statement_path
 import ast
+import uuid
 from typing import List, Tuple
 
 
@@ -12,7 +13,11 @@ class PythonFileParser(TreeSitterFileParser):
     """
 
     def __init__(self, file_path: str, repo_name: str) -> None:
-        super().__init__(file_path, repo_name)
+        self.file_path = file_path
+        self.repo_name = repo_name
+        self.file_id = str(uuid.uuid4())
+        self._initialize_parser()
+        self.code_formatted = ast.unparse(self.tree)
 
     def _initialize_parser(self):
         """
@@ -23,10 +28,6 @@ class PythonFileParser(TreeSitterFileParser):
         cutted_path = self.file_path.split(self.repo_name)[-1]
         self.packages = get_import_statement_path(cutted_path)
         self.tree = self._parse_source_code()
-
-        with open(self.file_path, 'w') as file:
-            file.write(ast.unparse(self.tree))
-
         self.file_path = cutted_path[1:]
 
     def _parse_source_code(self):

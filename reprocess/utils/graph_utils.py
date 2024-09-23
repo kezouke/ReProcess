@@ -61,7 +61,7 @@ def map_files_to_ids(parsers_map):
             imports=file.extract_imports(),
             called_components=file.extract_called_components(),
             callable_components=file.extract_callable_components(),
-        )
+            code_formatted=file.code_formatted)
     return id_files_map
 
 
@@ -83,9 +83,8 @@ def get_residual_cmp(files, file_cmp_map, repo_path):
 
     residuals = []
     for file in files:
-        with open(os.path.join(repo_path, file.file_path), "r") as f:
-            # Read the file and split it into lines
-            file_lines = f.read().splitlines()
+        code = file.code_formatted
+        file_lines = code.splitlines()
 
         # Create a set to store all lines of component code for easy look-up
         if file.file_id in file_cmp_map:
