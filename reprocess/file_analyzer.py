@@ -18,8 +18,8 @@ class FileContainer:
     """
 
     def __init__(self, file_id: str, file_path: str, imports: List[str],
-                 called_components: List[str],
-                 callable_components: List[str]) -> None:
+                 called_components: List[str], callable_components: List[str],
+                 code_formatted: str) -> None:
         """
         Initializes a new instance of the FileContainer class.
         
@@ -35,6 +35,7 @@ class FileContainer:
         self.imports = imports
         self.called_components = called_components
         self.callable_components = callable_components
+        self.code_formatted = code_formatted
 
     def __str__(self) -> str:
         """Returns the file path as a string representation of the object."""
