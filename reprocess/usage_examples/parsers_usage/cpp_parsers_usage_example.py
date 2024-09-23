@@ -1,6 +1,6 @@
 from reprocess.parsers.cpp_parsers import CppFileParser, CppComponentFillerHelper
 
-file_path = "/home/arxiv-feed/test.c"
+file_path = "/home/arxiv-feed/feed/test.cpp"
 parser = CppFileParser(file_path, "your_repo_name")
 
 print("Component Names:")
@@ -15,7 +15,10 @@ print(parser.extract_callable_components())
 print("\nImports:")
 print(parser.extract_imports())
 
-helper = CppComponentFillerHelper("globalFunction", file_path, parser)
+helper = CppComponentFillerHelper("MyClass.anotherMethod", file_path, parser)
 print()
 print(helper.extract_component_code())
 print(helper.extract_callable_objects())
+
+print("\nSignature components")
+print(helper.extract_signature())

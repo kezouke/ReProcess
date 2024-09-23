@@ -1,7 +1,7 @@
 from reprocess.re_processors.processor import ReProcessor
 from reprocess.utils.find_code_files import find_code_files
 from reprocess.re_container import ReContainer
-from reprocess.utils.graph_utils import construct_code_components, link_components, create_parsers_map, extract_components, map_files_to_ids
+from reprocess.utils.graph_utils import construct_code_components, link_components, create_parsers_map, extract_components, map_files_to_ids, get_residual_cmp
 
 
 class GraphBuilder(ReProcessor):
@@ -39,6 +39,7 @@ class GraphBuilder(ReProcessor):
         component_names, component_fillers = extract_components(parsers_map)
         code_components = construct_code_components(
             list(component_fillers.values()))
+
         component_id_map = {
             component.component_name: component.component_id
             for component in code_components
@@ -49,8 +50,15 @@ class GraphBuilder(ReProcessor):
                                                    component_id_map,
                                                    component_names)
 
+        file_cmp_map = {}
+        files = list(id_files_map.values())
+        for cmp in code_components:
+            file_cmp_map.setdefault(cmp.file_id, []).append(cmp)
+        residual_components = get_residual_cmp(files, file_cmp_map,
+                                               repository_container.repo_path)
+
         return {
-            "code_components": code_components,
-            "files": list(id_files_map.values()),
+            "code_components": code_components + residual_components,
+            "files": files,
             "external_components": external_components_dict
         }
