@@ -175,12 +175,11 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
             str: The extracted source code of the component, or an empty string if not found.
         """
         #Empty separator handling
-        cmp_name = self.component_name.split(f"{self.file_parser.packages}.")[-1]
+        cmp_name = self.component_name.split(
+            f"{self.file_parser.packages}.")[-1]
         if cmp_name.startswith('.'):
             if cmp_name.count('.') == 1:
-                component_name_splitted = [
-                    cmp_name.replace(".", "", 1)
-                ]
+                component_name_splitted = [cmp_name.replace(".", "", 1)]
             else:
                 cmp_name = cmp_name.replace(".", "", 1)
                 component_name_splitted = cmp_name.split(".")
@@ -206,7 +205,6 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
                         ) and class_node.name == component_name_splitted[1]:
                             self.component_type = "method"
                             return ast.unparse(class_node)
-        print("here")
         return ""
 
     def _collect_used_imports(self, code):
