@@ -370,7 +370,7 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
             if node.type == "call_expression":
                 func_node = node.child_by_field_name("function")
                 if func_node:
-                    func_name = func_node.text.decode('utf-8')
+                    func_name = func_node.text.decode('utf-8').replace('::','.')
                     if class_scope and func_name in class_scope:
                         func_name = f"{class_scope}.{func_name}"
                     called_components.add(func_name)
