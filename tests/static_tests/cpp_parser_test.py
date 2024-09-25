@@ -105,8 +105,7 @@ def test_cpp_component_filler_helper(cpp_code_file):
     assert 'std::cout << sc.greet() << std::endl;' in code
 
     to_link = helper.extract_callable_objects()
-    assert set(to_link) == set(['SampleClass.anotherMethod', 
-                                'std.endl', 
-                                'SampleClass.greet', 
-                                'std.cout', 
-                                'SampleClass.sampleMethod'])
+    assert set(to_link) == set([
+        'SampleClass.anotherMethod', 'std.endl', 'SampleClass.greet',
+        'std.cout', 'SampleClass.sampleMethod'
+    ])
