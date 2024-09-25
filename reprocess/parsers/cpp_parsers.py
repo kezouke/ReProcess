@@ -105,50 +105,59 @@ class CppFileParser(TreeSitterFileParser):
                 func_node = node.child_by_field_name("function")
                 if func_node:
                     func_name = func_node.text.decode('utf-8')
-                    if class_scope and func_name in class_scope:
+                    # If it's a method call inside a class scope
+                    if class_scope:
                         func_name = f"{class_scope}.{func_name}"
+                    print(f'class_scope: {class_scope} ')
+                    print(f'func_name: {func_name}')
                     called_components.add(func_name)
             elif node.type == "field_expression":
-                var_node = node.child(0)
-                if var_node and var_node.text.decode(
-                        'utf-8') in variable_to_class:
+                var_node = node.child(0)  # This is the variable (e.g., 'sc')
+                if var_node:
                     var_name = var_node.text.decode('utf-8')
-                    field_node = node.child_by_field_name("field")
-                    if field_node:
-                        func_name = f"{variable_to_class[var_name]}.{field_node.text.decode('utf-8')}"
-                        called_components.add(func_name)
+                    # Check if the variable is mapped to a class
+                    if var_name in variable_to_class:
+                        class_name = variable_to_class[var_name]
+                        
+                        field_node = node.child_by_field_name("field")  # The field being accessed (e.g., 'greet')
+                        if field_node:
+                            func_name = f"{class_name}.{field_node.text.decode('utf-8')}"
+                            print(f'Mapped field call: {func_name}')
+                            called_components.add(func_name)
+                    else:
+                        # Skip adding the variable form if not mapped to a class
+                        print(f'Skipping unmapped variable: {var_name}')
             elif node.type == "declaration":
-                type_node = node.child(0)
-                var_node = node.child(1)
+                type_node = node.child(0)  # The type (e.g., 'SampleClass')
+                var_node = node.child(1)  # The variable (e.g., 'sc')
                 if type_node and var_node:
-                    var_name = var_node.text.decode('utf-8')
+                    var_name = var_node.text.decode('utf-8').split('(')[0]  # Capture only the variable name, ignoring args
                     type_name = type_node.text.decode('utf-8')
+                    # Map variable to the class name
                     if type_name in class_names:
                         variable_to_class[var_name] = type_name
+                        print(f'Mapped {var_name} to {type_name}')
 
         def traverse_tree(node, class_scope=None):
             visit_node(node, class_scope)
             for child in node.children:
                 traverse_tree(child, class_scope)
 
+        # Extract class names from components that do not have a dot in them
         class_names = [
             component for component in self.extract_component_names()
             if '.' not in component
         ]
+        print(f'class_names: {class_names}')
+        
+        # Traverse the tree and extract called components
         traverse_tree(self.tree.root_node)
+        print(f'called_components: {called_components}')
 
-        # Filter out variable-based calls
-        filtered_called_components = set()
-        for called_component in called_components:
-            parts = called_component.split('.')
-            if len(parts) > 1 and parts[0] in variable_to_class:
-                class_name = variable_to_class[parts[0]]
-                method_name = parts[1]
-                filtered_called_components.add(f"{class_name}.{method_name}")
-            else:
-                filtered_called_components.add(called_component)
+        # Return the list of unique called components, ensuring no duplicates
+        return list(called_components)
 
-        return list(filtered_called_components)
+
 
     def extract_callable_components(self):
         """
@@ -348,9 +357,6 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
         code = self._extract_code_without_imports(self.component_name)
         if self.component_type.count('.') > 0:
             self.component_type = "method"
-        # print(f'imports_code:{imports_code}')
-        # print(f'code:{code}')
-        # print(self.component_file_path)
         return imports_code + "\n" + code
 
     def extract_callable_objects(self):
@@ -370,7 +376,8 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
             if node.type == "call_expression":
                 func_node = node.child_by_field_name("function")
                 if func_node:
-                    func_name = func_node.text.decode('utf-8').replace('::','.')
+                    func_name = func_node.text.decode('utf-8').replace(
+                        '::', '.')
                     if class_scope and func_name in class_scope:
                         func_name = f"{class_scope}.{func_name}"
                     called_components.add(func_name)
