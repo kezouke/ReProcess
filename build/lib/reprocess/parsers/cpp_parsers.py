@@ -185,30 +185,7 @@ class CppFileParser(TreeSitterFileParser):
         Returns:
             List[str]: List of names of callable components.
         """
-        callable_components = set()
-
-        def visit_node(node, class_name=None):
-            if node.type == "function_definition":
-                func_node = node.child_by_field_name(
-                    "declarator").child_by_field_name("declarator")
-                if func_node:
-                    func_name = func_node.text.decode('utf-8').replace(
-                        "::", ".")
-                    callable_components.add(func_name)
-            elif node.type == "class_specifier":
-                class_name_node = node.child_by_field_name("name")
-                if class_name_node:
-                    class_name = class_name_node.text.decode('utf-8')
-                    callable_components.add(class_name)
-
-        def traverse_tree(node):
-            visit_node(node)
-            for child in node.children:
-                traverse_tree(child)
-
-        traverse_tree(self.tree.root_node)
-
-        return list(callable_components)
+        return self.extract_component_names()
 
     def extract_imports(self):
         """
@@ -391,57 +368,82 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
         code = self.component_code
         tree = self.file_parser.parser.parse(bytes(code, "utf8"))
 
-        def visit_node(node, class_scope=None):
+        def visit_node(node):
+            # Handle method/function calls
             if node.type == "call_expression":
                 func_node = node.child_by_field_name("function")
                 if func_node:
-                    func_name = func_node.text.decode('utf-8').replace(
-                        '::', '.')
-                    if class_scope and func_name in class_scope:
-                        func_name = f"{class_scope}.{func_name}"
-                    called_components.add(func_name)
-            elif node.type == "field_expression":
-                var_node = node.child(0)
-                if var_node and var_node.text.decode(
-                        'utf-8') in variable_to_class:
-                    var_name = var_node.text.decode('utf-8')
-                    field_node = node.child_by_field_name("field")
-                    if field_node:
-                        func_name = f"{variable_to_class[var_name]}.{field_node.text.decode('utf-8')}"
+                    func_name = func_node.text.decode('utf-8')
+
+                    # Replace '::' with '.' to standardize the format
+                    func_name = func_name.replace("::", ".")
+
+                    # Check for fully qualified calls (e.g., SampleClass.sampleMethod)
+                    if "." in func_name and func_name.split(
+                            ".")[0] not in variable_to_class:
+                        # print(func_name)
                         called_components.add(func_name)
-            elif node.type == "declaration":
-                type_node = node.child(0)
-                var_node = node.child(1)
-                if type_node and var_node:
+                    else:
+                        # Resolve instance method calls
+                        instance_name = func_name.split(".")[0]
+                        if instance_name in variable_to_class:
+                            class_name = variable_to_class[instance_name]
+                            full_func_name = f"{class_name}.{func_name.split('.')[1]}"
+                            called_components.add(full_func_name)
+
+            # Handle field expressions like obj.method()
+            elif node.type == "field_expression":
+                var_node = node.child(0)  # This is the variable (e.g., 'sc')
+                if var_node:
                     var_name = var_node.text.decode('utf-8')
+                    # Check if the variable is mapped to a class
+                    if var_name in variable_to_class:
+                        class_name = variable_to_class[var_name]
+                        field_node = node.child_by_field_name(
+                            "field"
+                        )  # The field being accessed (e.g., 'greet')
+                        if field_node:
+                            func_name = f"{class_name}.{field_node.text.decode('utf-8')}"
+                            called_components.add(func_name)
+
+            # Handle qualified identifiers like std::cout
+            elif node.type == "qualified_identifier":
+                scope_node = node.child_by_field_name("scope")
+                name_node = node.child_by_field_name("name")
+                if scope_node and name_node:
+                    qualified_name = f"{scope_node.text.decode('utf-8')}::{name_node.text.decode('utf-8')}"
+                    # Replace '::' with '.' to standardize the format
+                    qualified_name = qualified_name.replace("::", ".")
+                    called_components.add(qualified_name)
+
+            # Handle binary expressions like std::cout << "Hello";
+            elif node.type == "binary_expression":
+                left_node = node.child(0)
+                right_node = node.child(1)
+                if left_node and right_node:
+                    visit_node(left_node)
+                    visit_node(right_node)
+
+            # Handle variable declarations like: MyClass obj;
+            elif node.type == "declaration":
+                type_node = node.child_by_field_name("type")
+                var_node = node.child_by_field_name("declarator")
+
+                if type_node and var_node:
+                    var_name = var_node.text.decode('utf-8').split(
+                        '(')[0].strip()  # Capture only the variable name
                     type_name = type_node.text.decode('utf-8')
-                    if type_name in class_names:
-                        variable_to_class[var_name] = type_name
+                    variable_to_class[var_name] = type_name
 
-        def traverse_tree(node, class_scope=None):
-            visit_node(node, class_scope)
+        def traverse_tree(node):
+            visit_node(node)
             for child in node.children:
-                traverse_tree(child, class_scope)
+                traverse_tree(child)
 
-        class_names = [
-            component
-            for component in self.file_parser.extract_component_names()
-            if '.' not in component
-        ]
+        # Traverse the tree and extract called components
         traverse_tree(tree.root_node)
-
-        # Filter out variable-based calls
-        filtered_called_components = set()
-        for called_component in called_components:
-            parts = called_component.split('.')
-            if len(parts) > 1 and parts[0] in variable_to_class:
-                class_name = variable_to_class[parts[0]]
-                method_name = parts[1]
-                filtered_called_components.add(f"{class_name}.{method_name}")
-            else:
-                filtered_called_components.add(called_component)
-
-        return list(filtered_called_components)
+        # print(variable_to_class)  # For debugging purposes
+        return list(called_components)
 
     def extract_signature(self):
         CPP_LANGUAGE = Language(tscpp.language())
