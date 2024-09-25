@@ -73,13 +73,17 @@ def test_cpp_file_parser(cpp_code_file):
             "Wrong component names extraction!"
 
     called_components = parser.extract_called_components()
+    # print(called_components)
     assert set(called_components) == set(['SampleClass.greet',
                                           'SampleClass.sampleMethod',
                                           'SampleClass.anotherMethod',
-                                          'std::cout']), \
+                                          'std.cout',
+                                          'std.string',
+                                          'std.endl']), \
             "Wrong called components extraction!"
 
     callable_components = parser.extract_callable_components()
+    print(callable_components)
     assert set(callable_components) == set(['SampleClass',
                                             'SampleClass.SampleClass'
                                             'SampleClass.sampleMethod',

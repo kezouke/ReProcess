@@ -14,7 +14,7 @@ def find_code_files(directory: str) -> List[str]:
         List[str]: A list of absolute paths to all code files found within the directory and its subdirectories.
     """
     # Define the set of file extensions we're interested in
-    code_extensions = {".py", ".c", ".cpp", ".java", ".go", ".js"}
+    code_extensions = {".py", ".c", ".cpp", ".java", ".go", ".js", ".ts"}
     code_files = []
 
     # Walk through the directory and its subdirectories

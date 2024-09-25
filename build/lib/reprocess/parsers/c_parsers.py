@@ -59,8 +59,11 @@ class CFileParser(TreeSitterFileParser):
                     func_name = func_node.text.decode('utf-8')
                     components.append(func_name)
             elif node.type == "struct_specifier":
-                struct_name = node.child_by_field_name("name").text.decode(
-                    'utf-8')
+                struct_node = node.child_by_field_name("name")
+                if struct_node:
+                    struct_name = struct_node.text.decode("utf-8")
+                else:
+                    struct_name = 'typedef'
                 components.append(struct_name)
                 body = node.child_by_field_name("body")
                 if body:
@@ -129,8 +132,11 @@ class CFileParser(TreeSitterFileParser):
                     func_name = func_node.text.decode('utf-8')
                     callable_components.add(func_name)
             elif node.type == "struct_specifier":
-                struct_name = node.child_by_field_name("name").text.decode(
-                    'utf-8')
+                struct_node = node.child_by_field_name("name")
+                if struct_node:
+                    struct_name = struct_node.text.decode('utf-8')
+                else:
+                    struct_name = 'typedef'
                 callable_components.add(struct_name)
                 body = node.child_by_field_name("body")
                 if body:
@@ -241,8 +247,11 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
                     components.add(struct_field)
             elif node.type == 'declaration' and node.child(
                     0).type == 'struct_specifier':
-                struct_name = node.child(0).child_by_field_name(
-                    'name').text.decode('utf-8')
+                struct_node = node.child(0).child_by_field_name('name')
+                if struct_node:
+                    struct_name = struct_node.text.decode('utf-8')
+                else:
+                    struct_name = 'typedef'
                 var_name = node.child(1).text.decode('utf-8')
                 struct_vars[var_name] = struct_name
             # Recursively go through all child nodes
