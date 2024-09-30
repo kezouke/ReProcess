@@ -196,7 +196,7 @@ class GoFileParser(TreeSitterFileParser):
 
                 # If we encounter an import_declaration node
                 if child.type == 'import_declaration':
-
+                    import_spec_list = []
                     for child2 in child.children:
                         if child2.type == "import_spec_list":
                             import_spec_list = child2
