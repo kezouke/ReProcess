@@ -62,30 +62,30 @@ def test_java_file_parser(java_code_file):
     parser = JavaFileParser(file_path, temp_dir_name)
 
     cmp_names = parser.extract_component_names()
-    assert set(cmp_names) == set(['GeneratedCode.java.SampleClass', 
-                                  'GeneratedCode.java.SampleClass.name', 
-                                  'GeneratedCode.java.SampleClass.greet', 
-                                  'GeneratedCode.java.SampleClass.sampleMethod', 
-                                  'GeneratedCode.java.SampleClass.anotherMethod', 
-                                  'GeneratedCode.java.SampleClass.main', 
+    assert set(cmp_names) == set(['GeneratedCode.java.SampleClass',
+                                  'GeneratedCode.java.SampleClass.name',
+                                  'GeneratedCode.java.SampleClass.greet',
+                                  'GeneratedCode.java.SampleClass.sampleMethod',
+                                  'GeneratedCode.java.SampleClass.anotherMethod',
+                                  'GeneratedCode.java.SampleClass.main',
                                   'GeneratedCode.java.SampleClass.main.sc']), \
             "Wrong component names extraction!"
 
     called_components = parser.extract_called_components()
-    assert set(called_components) == set(['GeneratedCode.java.SampleClass.sampleMethod', 
-                                          'GeneratedCode.java.SampleClass.anotherMethod', 
-                                          'GeneratedCode.java.SampleClass.greet', 
-                                          'System.out.println', 
+    assert set(called_components) == set(['GeneratedCode.java.SampleClass.sampleMethod',
+                                          'GeneratedCode.java.SampleClass.anotherMethod',
+                                          'GeneratedCode.java.SampleClass.greet',
+                                          'System.out.println',
                                           'GeneratedCode.java.SampleClass']), \
             "Wrong called components extraction!"
 
     callable_components = parser.extract_callable_components()
-    assert set(callable_components) == set(['GeneratedCode.java.SampleClass', 
-                                            'GeneratedCode.java.SampleClass.name', 
-                                            'GeneratedCode.java.SampleClass.greet', 
-                                            'GeneratedCode.java.SampleClass.sampleMethod', 
-                                            'GeneratedCode.java.SampleClass.anotherMethod', 
-                                            'GeneratedCode.java.SampleClass.main', 
+    assert set(callable_components) == set(['GeneratedCode.java.SampleClass',
+                                            'GeneratedCode.java.SampleClass.name',
+                                            'GeneratedCode.java.SampleClass.greet',
+                                            'GeneratedCode.java.SampleClass.sampleMethod',
+                                            'GeneratedCode.java.SampleClass.anotherMethod',
+                                            'GeneratedCode.java.SampleClass.main',
                                             'GeneratedCode.java.SampleClass.main.sc']), \
             "Wrong callable components extraction!"
 
