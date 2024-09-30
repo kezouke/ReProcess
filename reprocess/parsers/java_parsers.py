@@ -84,23 +84,28 @@ class JavaFileParser(TreeSitterFileParser):
                     if child.type == 'local_variable_declaration':
                         for var_child in child.children:
                             if var_child.type == 'variable_declarator':
-                                var_name = self._node_text(var_child.child_by_field_name('name'))
-                                components.append(f"{full_method_name}.{var_name}")
+                                var_name = self._node_text(
+                                    var_child.child_by_field_name('name'))
+                                components.append(
+                                    f"{full_method_name}.{var_name}")
 
         # If the node is a field declaration, extract global (class-level) variables
         elif node.type == 'field_declaration':
             for child in node.children:
                 if child.type == 'variable_declarator':
-                    var_name = self._node_text(child.child_by_field_name('name'))
+                    var_name = self._node_text(
+                        child.child_by_field_name('name'))
                     components.append(f"{class_path}.{var_name}")
 
         # Recursively process children nodes
         for child in node.children:
-            if node.type not in ['class_declaration', 'method_declaration', 'field_declaration']:
+            if node.type not in [
+                    'class_declaration', 'method_declaration',
+                    'field_declaration'
+            ]:
                 components.extend(self._find_cmp_names(child, class_path))
 
         return components
-
 
     def extract_component_names(self):
         """
@@ -378,11 +383,11 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
         Returns:
             Optional[ts.Node]: The AST node representing the component, or None if not found.
         """
-        
+
         # Check if the current node is a class or method declaration
         if node.type in ["class_declaration", "method_declaration"]:
             node_name = self._node_text(node.child_by_field_name("name"))
-            
+
             # If the name matches, continue searching for the next part in name_parts
             if node_name == name_parts[0]:
                 self.component_type = "class" if node.type == "class_declaration" else "method"
@@ -392,13 +397,15 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
                     # Continue searching within the class or method body
                     body_node = node.child_by_field_name("body")
                     if body_node:
-                        return self._find_component_node(body_node, name_parts[1:])
+                        return self._find_component_node(
+                            body_node, name_parts[1:])
 
         # Check if the current node is a field declaration (class-level/global variables)
         elif node.type == "field_declaration" and len(name_parts) == 1:
             for child in node.children:
                 if child.type == "variable_declarator":
-                    var_name = self._node_text(child.child_by_field_name("name"))
+                    var_name = self._node_text(
+                        child.child_by_field_name("name"))
                     if var_name == name_parts[0]:
                         self.component_type = "variable"
                         return child  # Found the class-level variable
@@ -413,10 +420,12 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
                     return self._find_component_node(body_node, name_parts[1:])
 
         # Check for local variable declarations in method body
-        elif node.type == "local_variable_declaration" and len(name_parts) == 1:
+        elif node.type == "local_variable_declaration" and len(
+                name_parts) == 1:
             for child in node.children:
                 if child.type == "variable_declarator":
-                    var_name = self._node_text(child.child_by_field_name("name"))
+                    var_name = self._node_text(
+                        child.child_by_field_name("name"))
                     if var_name == name_parts[0]:
                         self.component_type = "variable"
                         return child  # Found the local variable
@@ -462,15 +471,44 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
 
     def extract_callable_objects(self):
         """
-        Extracts names of callable objects defined within the component code.
+        Extracts names of callable objects and variables defined within the component code.
         
         Returns:
-            List[str]: List of names of callable objects.
+            List[str]: List of names of callable objects and variables.
         """
-        return list(
-            set(
-                self.file_parser._rec_called_components_finder(
-                    self.component_node)))
+        # Extract callable objects (method invocations, function calls, etc.)
+        callable_objects = set(
+            self.file_parser._rec_called_components_finder(
+                self.component_node))
+
+        # Extract variable references (identifiers) within the component node
+        variables = set()
+        self._extract_variables(self.component_node, variables)
+        variables_sorted = set()
+        for variable in variables:
+            for cmp in self.file_parser.extract_component_names():
+                if cmp.split(
+                        ".")[-1] == variable and self.component_name != cmp:
+                    variables_sorted.add(cmp)
+
+        # Combine callable objects and variables into a single list
+        return list(callable_objects.union(variables_sorted))
+
+    def _extract_variables(self, node, variables):
+        """
+        Recursively finds variable references (identifiers) within the given node.
+
+        Args:
+            node: The current AST node being processed.
+            variables: A set to collect found variable names.
+        """
+        if node.type == "identifier":
+            # Assuming the identifier is not part of a method invocation
+            variables.add(self._node_text(node))
+
+        # Recursively search all child nodes for more variable references
+        for child in node.children:
+            self._extract_variables(child, variables)
 
     def extract_signature(self):
         JAVA_LANGUAGE = Language(tsjava.language())
