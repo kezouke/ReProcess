@@ -368,29 +368,58 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
 
     def _find_component_node(self, node, name_parts):
         """
-        Recursively finds the AST node corresponding to the specified component.
+        Recursively finds the AST node corresponding to the specified component (class, method, or variable).
         
         Args:
             node: The current AST node being processed.
             name_parts: List of component names to match against.
+                        Example: ['SampleClass', 'anotherMethod', 'variableName']
             
         Returns:
             Optional[ts.Node]: The AST node representing the component, or None if not found.
         """
+        
+        # Check if the current node is a class or method declaration
         if node.type in ["class_declaration", "method_declaration"]:
-            # Get the exact name of the class or method
             node_name = self._node_text(node.child_by_field_name("name"))
+            
+            # If the name matches, continue searching for the next part in name_parts
             if node_name == name_parts[0]:
-                # Set the component type if a match is found
                 self.component_type = "class" if node.type == "class_declaration" else "method"
                 if len(name_parts) == 1:
-                    return node
+                    return node  # Found the class or method
                 else:
-                    # Continue searching within the nested body
+                    # Continue searching within the class or method body
                     body_node = node.child_by_field_name("body")
                     if body_node:
-                        return self._find_component_node(
-                            body_node, name_parts[1:])
+                        return self._find_component_node(body_node, name_parts[1:])
+
+        # Check if the current node is a field declaration (class-level/global variables)
+        elif node.type == "field_declaration" and len(name_parts) == 1:
+            for child in node.children:
+                if child.type == "variable_declarator":
+                    var_name = self._node_text(child.child_by_field_name("name"))
+                    if var_name == name_parts[0]:
+                        self.component_type = "variable"
+                        return child  # Found the class-level variable
+
+        # Check if the current node is a method declaration and search for local variables
+        elif node.type == "method_declaration" and len(name_parts) > 1:
+            method_name = self._node_text(node.child_by_field_name("name"))
+            if method_name == name_parts[0]:
+                body_node = node.child_by_field_name("body")
+                if body_node:
+                    # Search for local variables in the method body
+                    return self._find_component_node(body_node, name_parts[1:])
+
+        # Check for local variable declarations in method body
+        elif node.type == "local_variable_declaration" and len(name_parts) == 1:
+            for child in node.children:
+                if child.type == "variable_declarator":
+                    var_name = self._node_text(child.child_by_field_name("name"))
+                    if var_name == name_parts[0]:
+                        self.component_type = "variable"
+                        return child  # Found the local variable
 
         # Recursively search child nodes
         for child in node.children:
