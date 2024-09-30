@@ -48,14 +48,15 @@ class JavaFileParser(TreeSitterFileParser):
 
     def _find_cmp_names(self, node, class_path=""):
         """
-        Recursively finds component names within the AST starting from the given node.
+        Recursively finds component names (classes, methods) and variables (global, local)
+        within the AST starting from the given node.
         
         Args:
             node: The current AST node being processed.
             class_path: The path of the class currently being processed.
             
         Returns:
-            List[str]: List of component names found.
+            List[str]: List of component names (classes, methods) and variable names (global, local).
         """
         components = []
 
@@ -65,7 +66,7 @@ class JavaFileParser(TreeSitterFileParser):
             full_class_name = f"{class_path}.{class_name}" if class_path else class_name
             components.append(full_class_name)
 
-            # Recursively extract nested classes and methods
+            # Recursively extract nested classes, methods, and variables
             class_body = node.child_by_field_name('body')
             for child in class_body.children:
                 components.extend(self._find_cmp_names(child, full_class_name))
@@ -76,12 +77,30 @@ class JavaFileParser(TreeSitterFileParser):
             full_method_name = f"{class_path}.{method_name}" if class_path else method_name
             components.append(full_method_name)
 
-        # Recursively process children nodes, but only if we're not already inside a class or method
+            # Check for local variables inside the method
+            method_body = node.child_by_field_name('body')
+            if method_body:
+                for child in method_body.children:
+                    if child.type == 'local_variable_declaration':
+                        for var_child in child.children:
+                            if var_child.type == 'variable_declarator':
+                                var_name = self._node_text(var_child.child_by_field_name('name'))
+                                components.append(f"{full_method_name}.{var_name}")
+
+        # If the node is a field declaration, extract global (class-level) variables
+        elif node.type == 'field_declaration':
+            for child in node.children:
+                if child.type == 'variable_declarator':
+                    var_name = self._node_text(child.child_by_field_name('name'))
+                    components.append(f"{class_path}.{var_name}")
+
+        # Recursively process children nodes
         for child in node.children:
-            if node.type not in ['class_declaration', 'method_declaration']:
+            if node.type not in ['class_declaration', 'method_declaration', 'field_declaration']:
                 components.extend(self._find_cmp_names(child, class_path))
 
         return components
+
 
     def extract_component_names(self):
         """
