@@ -67,6 +67,13 @@ class PythonFileParser(TreeSitterFileParser):
                             f"{node.name}.{class_body_node.name}")
             elif isinstance(node, ast.FunctionDef):
                 components.append(node.name)
+            elif isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name):
+                        components.append(target.id)
+            elif isinstance(node, ast.Global):
+                for name in node.names:
+                    components.append(name)
 
         for node in self.tree.body:
             visit_node(node)
@@ -205,6 +212,18 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
                         ) and class_node.name == component_name_splitted[1]:
                             self.component_type = "method"
                             return ast.unparse(class_node)
+            elif isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(
+                            target, ast.Name
+                    ) and target.id == component_name_splitted[0]:
+                        self.component_type = "variable"
+                        return ast.unparse(node)
+            elif isinstance(node, ast.Global):
+                for name in node.names:
+                    if name == component_name_splitted[0]:
+                        self.component_type = "variable"
+                        return ast.unparse(node)
         return ""
 
     def _collect_used_imports(self, code):
@@ -368,16 +387,26 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
         called_components = set()
 
         for node in ast.walk(tree):
-            if isinstance(node, ast.Call):
+            # Collect global declarations (global variables like 'ENV')
+            if isinstance(node, ast.Global):
+                called_components.update(
+                    node.names)  # Add the global variable names
+            # Collect function calls and attributes
+            elif isinstance(node, ast.Call):
                 if isinstance(node.func, ast.Name):
                     called_components.add(node.func.id)
                 elif isinstance(node.func, ast.Attribute):
                     called_components.add(node.func.attr)
+            # Collect variables (Names) being used (loaded)
+            elif isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
+                called_components.add(node.id)
 
         called_components = list(called_components)
         resulted_array = []
         for cmp in called_components:
-            if cmp in self.file_parser.extract_callable_components():
+            if cmp in self.file_parser.extract_callable_components(
+            ) or f"{self.file_parser.packages}.{cmp}" in self.file_parser.extract_component_names(
+            ):
                 resulted_array.append(f"{self.file_parser.packages}.{cmp}")
         resulted_array += imports
         return resulted_array
