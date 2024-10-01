@@ -121,7 +121,7 @@ class CppFileParser(TreeSitterFileParser):
                         instance_name = func_name.split(".")[0]
                         if instance_name in variable_to_class:
                             class_name = variable_to_class[instance_name]
-                            full_func_name = f"{class_name}.{func_name.split('.')[1]}"
+                            full_func_name = f"{class_name}.{func_name.split('.')[-1]}"
                             called_components.add(full_func_name)
 
             # Handle field expressions like obj.method()
@@ -388,7 +388,8 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
                         instance_name = func_name.split(".")[0]
                         if instance_name in variable_to_class:
                             class_name = variable_to_class[instance_name]
-                            full_func_name = f"{class_name}.{func_name.split('.')[1]}"
+                            func_name_splitted = func_name.split('.')
+                            full_func_name = f"{class_name}.{func_name_splitted[-1]}"
                             called_components.add(full_func_name)
 
             # Handle field expressions like obj.method()
