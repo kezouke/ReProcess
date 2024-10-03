@@ -293,23 +293,33 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
 
         def visit_node(node):
             """Visits a node in the AST and checks if it matches the specified component."""
-            if node.type == "function_definition" and node.child_by_field_name(
-                    "declarator"):
+            # Check if the node is a function definition
+            if node.type == "function_definition" and node.child_by_field_name("declarator"):
                 self.component_type = "function"
-                func_node = node.child_by_field_name(
-                    "declarator").child_by_field_name("declarator")
-                if func_node and func_node.text.decode(
-                        'utf-8') == component_name_splitted[0]:
+                func_node = node.child_by_field_name("declarator").child_by_field_name("declarator")
+                if func_node and func_node.text.decode('utf-8') == component_name_splitted[0]:
                     return node
-            elif node.type == "struct_specifier" and node.child_by_field_name(
-                    "name"):
-                struct_name = node.child_by_field_name("name").text.decode(
-                    'utf-8')
+
+            # Check if the node is a struct
+            elif node.type == "struct_specifier" and node.child_by_field_name("name"):
+                struct_name = node.child_by_field_name("name").text.decode('utf-8')
                 if struct_name == component_name_splitted[0]:
                     self.component_type = "structure"
                     return node
 
+            # Check if the node is a variable declaration
+            elif node.type == "init_declarator":  # Variable declaration with initialization
+                declarator = node.child_by_field_name('declarator')
+                if declarator and declarator.text.decode('utf8') == component_name_splitted[0]:
+                    self.component_type = "variable"
+                    return node
+            elif node.type == "declarator" and node.parent.type != "function_declarator":  # General variable declarator
+                if node.text.decode('utf8') == component_name_splitted[0]:
+                    self.component_type = "variable"
+                    return node
+
         def traverse_tree(node):
+            """Recursively traverses the AST to find the specified component."""
             result_node = visit_node(node)
             if result_node:
                 return result_node
@@ -320,16 +330,18 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
 
         root_node = self.file_parser.tree.root_node
         found_node = traverse_tree(root_node)
+        
         if found_node:
-            extracted_code = self.file_parser.source_code[
-                found_node.start_byte:found_node.end_byte]
-            if self.component_type == "structure" and len(
-                    component_name_splitted) > 1:
+            extracted_code = self.file_parser.source_code[found_node.start_byte:found_node.end_byte]
+            
+            # Handle struct fields if necessary
+            if self.component_type == "structure" and len(component_name_splitted) > 1:
                 self.component_type = "structure_field"
                 field_name = component_name_splitted[1]
                 field_code = self._extract_field_code(found_node, field_name)
                 if field_code:
                     return f"struct {component_name_splitted[0]} {{\n{field_code}\n}}"
+            
             return extracted_code
         return ""
 
