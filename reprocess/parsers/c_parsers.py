@@ -86,11 +86,6 @@ class CFileParser(TreeSitterFileParser):
             elif node.type == 'declarator' and node.parent.type != 'function_declarator':  # General variable declarator
                 variable_name = node.text.decode('utf8')
                 variables.append(variable_name)
-            elif node.type == 'parameter_declaration':  # Function parameters
-                declarator = node.child_by_field_name('declarator')
-                if declarator:
-                    variable_name = declarator.text.decode('utf8')
-                    variables.append(variable_name)
 
         def traverse_tree(node):
             """Recursively traverses the AST starting from the given node."""
@@ -288,6 +283,13 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
                 local_vars.add(var_name)
                 declared_variables.add(var_name)
 
+            elif node.type == 'parameter_declaration':
+                # Track function parameter declaration
+                param_node = node.child_by_field_name('declarator')
+                if param_node:
+                    param_name = param_node.text.decode('utf-8')
+                    local_vars.add(param_name)
+
             elif node.type == 'identifier':
                 # Check if the identifier is a variable that is used but not declared locally
                 var_name = node.text.decode('utf-8')
@@ -305,11 +307,10 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
         _extract_components(root_node, called_components, struct_vars,
                             local_vars)
 
-        res_vars = [
-            var for var in used_variables if var != self.component_name
-        ]
+        res_vars = set(var for var in used_variables
+                       if var != self.component_name)
         # Combine callable objects (functions and struct fields) with used external/global variables
-        return list(called_components) + res_vars
+        return list(called_components.union(res_vars))
 
     def _extract_code_without_imports(self):
 
