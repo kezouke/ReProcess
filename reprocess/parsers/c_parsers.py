@@ -43,21 +43,25 @@ class CFileParser(TreeSitterFileParser):
 
     def extract_component_names(self):
         """
-        Extracts names of components (functions and structs) defined in the C file.
+        Extracts names of components (functions, structs) and variables defined in the C file.
         
         Returns:
-            List[str]: List of component names.
+            List[str]: List of component names and variables.
         """
         components = []
+        variables = []
 
         def visit_node(node):
-            """Visits a node in the AST and extracts component names."""
+            """Visits a node in the AST and extracts component names and variables."""
+            # Extract function names
             if node.type == "function_definition":
                 func_node = node.child_by_field_name(
                     "declarator").child_by_field_name("declarator")
                 if func_node:
                     func_name = func_node.text.decode('utf-8')
                     components.append(func_name)
+
+            # Extract struct names and fields
             elif node.type == "struct_specifier":
                 struct_node = node.child_by_field_name("name")
                 if struct_node:
@@ -73,17 +77,37 @@ class CFileParser(TreeSitterFileParser):
                                 "declarator").text.decode('utf-8')
                             components.append(f"{struct_name}.{field_name}")
 
+            # Extract variables (using the logic from the previous code)
+            if node.type == 'init_declarator':  # Variable declaration with initialization
+                declarator = node.child_by_field_name('declarator')
+                if declarator:
+                    variable_name = declarator.text.decode('utf8')
+                    variables.append(variable_name)
+            elif node.type == 'declarator' and node.parent.type != 'function_declarator':  # General variable declarator
+                variable_name = node.text.decode('utf8')
+                variables.append(variable_name)
+            elif node.type == 'parameter_declaration':  # Function parameters
+                declarator = node.child_by_field_name('declarator')
+                if declarator:
+                    variable_name = declarator.text.decode('utf8')
+                    variables.append(variable_name)
+
         def traverse_tree(node):
             """Recursively traverses the AST starting from the given node."""
             visit_node(node)
             for child in node.children:
                 traverse_tree(child)
 
+        # Start traversal from the root node
         traverse_tree(self.tree.root_node)
 
+        # Replace hyphens with underscores for component names
         modules = [component.replace("-", "_") for component in components]
 
-        return modules
+        # Combine components and variables
+        all_identifiers = modules + variables
+
+        return all_identifiers
 
     def extract_called_components(self) -> List[str]:
         """
