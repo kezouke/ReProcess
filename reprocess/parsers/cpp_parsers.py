@@ -48,28 +48,36 @@ class CppFileParser(TreeSitterFileParser):
 
     def extract_component_names(self):
         """
-        Extracts names of components (functions and classes) defined in the C++ file.
-        
+        Extracts names of components (functions, classes, and variables) defined in the C++ file.
+
         Returns:
             List[str]: List of component names.
         """
         components = []
 
         def visit_node(node, class_name=None):
+            # Extract function names
             if node.type == "function_definition":
-                func_node = node.child_by_field_name(
-                    "declarator").child_by_field_name("declarator")
+                func_node = node.child_by_field_name("declarator").child_by_field_name("declarator")
                 if func_node:
-                    func_name = func_node.text.decode('utf-8').replace(
-                        "::", ".")
+                    func_name = func_node.text.decode('utf-8').replace("::", ".")
                     if class_name:
                         func_name = f"{class_name}.{func_name}"
                     components.append(func_name)
+
+            # Extract class names
             elif node.type == "class_specifier":
                 class_name_node = node.child_by_field_name("name")
                 if class_name_node:
                     class_name = class_name_node.text.decode('utf-8')
                     components.append(class_name)
+
+            # Extract variable names
+            elif node.type == "init_declarator":
+                declarator_node = node.child_by_field_name("declarator")
+                if declarator_node:
+                    var_name = declarator_node.text.decode('utf-8')
+                    components.append(var_name)
 
         def traverse_tree(node, class_name=None):
             if node.type == "class_specifier":
