@@ -36,13 +36,56 @@ class GoFileParser(TreeSitterFileParser):
 
     def _rec_component_name_extractor(self,
                                       node: Node,
-                                      current_struct: str = "") -> list:
+                                      current_struct: str = "",
+                                      current_function: str = "") -> list:
         component_names = []
 
         # Traverse the AST
         for child in node.children:
+            # Check for global variables
+            if child.type == 'var_declaration':
+                for var_spec_list in child.children:
+                    if var_spec_list.type == 'var_spec_list':
+                        for var_spec in var_spec_list.children:
+                            var_name_node = var_spec.child_by_field_name(
+                                'name')
+                            if var_name_node:
+                                var_name = var_name_node.text.decode('utf-8')
+                                if current_struct:  # If we're in a struct
+                                    component_names.append(
+                                        f"{current_struct}.{var_name}")
+                                elif not current_function:
+                                    component_names.append(var_name)
+                    else:
+                        var_name_node = var_spec_list.child_by_field_name(
+                            'name')
+                        if var_name_node:
+                            var_name = var_name_node.text.decode('utf-8')
+                            if current_struct:  # If we're in a struct
+                                component_names.append(
+                                    f"{current_struct}.{var_name}")
+                            elif not current_function:  # Global variables
+                                component_names.append(var_name)
+                        # Handle multiple variables in a single declaration
+                        for sub_var in var_spec_list.children:
+                            if sub_var.type == 'identifier':
+                                sub_var_name = sub_var.text.decode('utf-8')
+                                if current_struct:
+                                    component_names.append(
+                                        f"{current_struct}.{sub_var_name}")
+                                elif not current_function:
+                                    component_names.append(sub_var_name)
+
+            # Check for assignments (short variable declaration)
+            elif child.type == 'short_var_declaration':
+                for var_node in child.children[0].children:
+                    if var_node.type == 'identifier':
+                        var_name = var_node.text.decode('utf-8')
+                        if not current_function:
+                            component_names.append(var_name)
+
             # Check for a struct type declaration
-            if child.type == 'type_declaration':
+            elif child.type == 'type_declaration':
                 type_spec = None
                 for child2 in child.children:
                     if child2.type == "type_spec":
@@ -70,23 +113,39 @@ class GoFileParser(TreeSitterFileParser):
                         method_name = method_name_node.text.decode('utf-8')
                         full_method_name = f"{struct_name}.{method_name}"
                         component_names.append(full_method_name)
+                        # Recurse into the method to find variables
+                        component_names.extend(
+                            self._rec_component_name_extractor(
+                                child,
+                                current_struct=struct_name,
+                                current_function=full_method_name))
 
             # Check for a function declaration
             elif child.type == 'function_declaration':
                 function_name_node = child.child_by_field_name('name')
                 if function_name_node:
                     function_name = function_name_node.text.decode('utf-8')
+                    current_function = function_name  # Set current function context
                     component_names.append(function_name)
+                    # Recurse into the function to find variables
+                    component_names.extend(
+                        self._rec_component_name_extractor(
+                            child,
+                            current_struct="",
+                            current_function=current_function))
 
-            # Recurse to handle nested structures
+            # Recurse to handle nested structures and variables
             component_names.extend(
-                self._rec_component_name_extractor(child, current_struct))
+                self._rec_component_name_extractor(
+                    child,
+                    current_struct=current_struct,
+                    current_function=current_function))
 
         return component_names
 
     def extract_component_names(self):
-        component_names = self._rec_component_name_extractor(
-            self.tree.root_node)
+        component_names = set(
+            self._rec_component_name_extractor(self.tree.root_node))
 
         modules = [
             f"{self.packages}.{component}".replace("-", "_")
