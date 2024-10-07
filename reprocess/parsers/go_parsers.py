@@ -343,6 +343,44 @@ class GoComponentFillerHelper(TreeSitterComponentFillerHelper):
                                                 end_byte]
                         break
 
+                # Check for variable declarations (var_declaration)
+                elif child.type == 'var_declaration':
+                    for var_spec_list in child.children:
+                        if var_spec_list.type == 'var_spec_list':
+                            for var_spec in var_spec_list.children:
+                                var_name_node = var_spec.child_by_field_name(
+                                    'name')
+                                if var_name_node:
+                                    var_name = var_name_node.text.decode(
+                                        'utf-8')
+                                    if var_name == name:
+                                        self.component_type = "variable"
+                                        # Extract the code for the variable declaration
+                                        code = self.source_code[
+                                            child.start_byte:child.end_byte]
+                                        break
+                        else:
+                            var_name_node = var_spec_list.child_by_field_name(
+                                'name')
+                            if var_name_node:
+                                var_name = var_name_node.text.decode('utf-8')
+                                if var_name == name:
+                                    self.component_type = "variable"
+                                    code = self.source_code[
+                                        child.start_byte:child.end_byte]
+                                    break
+
+                # Check for short variable declarations (short_var_declaration)
+                elif child.type == 'short_var_declaration':
+                    for var_node in child.children[0].children:
+                        if var_node.type == 'identifier':
+                            var_name = var_node.text.decode('utf-8')
+                            if var_name == name:
+                                self.component_type = "variable"
+                                code = self.source_code[child.start_byte:child.
+                                                        end_byte]
+                                break
+
                 # Recurse into child nodes
                 code += extract_code_from_node(child, name)
 
@@ -364,9 +402,11 @@ class GoComponentFillerHelper(TreeSitterComponentFillerHelper):
         return component_code
 
     def extract_callable_objects(self):
-        var_types = {}
-        called_components = set()
+        declared_vars = set()  # Track variables declared within the code
+        used_vars = set()  # Track variables used within the code
+        local_vars = set()  # Track local variables to exclude them later
         imports = self.file_parser.extract_imports()
+        var_types = {}
         package_name = self.file_parser.packages.replace("/", ".")
 
         # Create a map of import aliases to their full paths
@@ -375,6 +415,8 @@ class GoComponentFillerHelper(TreeSitterComponentFillerHelper):
             for imp in imports
         }
 
+        _ = [declared_vars.add(imp) for imp in import_alias_map]
+
         def resolve_full_name(name: str):
             """Resolve the full name of a component using imports and the default package."""
             # Check if the name matches any import alias
@@ -382,12 +424,12 @@ class GoComponentFillerHelper(TreeSitterComponentFillerHelper):
                 if name == alias or name.startswith(alias + "."):
                     # If it's an alias match, replace the alias with the full path
                     return name.replace(alias, full_path)
-
             # Otherwise, assume it's from the same package
             return f"{package_name}.{name}"
 
-        def traverse_node(node: Node, current_package: str):
+        def traverse_node(node: Node):
             for child in node.children:
+                # Track method calls and variables being used
                 if child.type == 'call_expression':
                     function_node = child.child_by_field_name('function')
                     if function_node:
@@ -401,19 +443,38 @@ class GoComponentFillerHelper(TreeSitterComponentFillerHelper):
                                 operand_name = operand_node.text.decode(
                                     'utf-8')
                                 field_name = field_node.text.decode('utf-8')
+                                used_vars.add(operand_name
+                                              )  # Track the operand being used
+
+                                full_method_name = f"{operand_name}.{field_name}"
+                                declared_vars.add(
+                                    resolve_full_name(field_name))
                                 struct_name = var_types.get(
                                     operand_name, operand_name)
+
+                                declared_vars.add(
+                                    resolve_full_name(struct_name))
                                 full_method_name = f"{struct_name}.{field_name}"
-                                called_components.add(
+                                used_vars.add(resolve_full_name(struct_name))
+                                used_vars.add(
                                     resolve_full_name(full_method_name))
                         else:
                             # This is a function call
                             function_name = function_node.text.decode('utf-8')
-                            called_components.add(
-                                resolve_full_name(function_name))
+                            if function_name not in local_vars:  # Exclude local variables
+                                declared_vars.add(function_name)
+                                used_vars.add(resolve_full_name(function_name))
 
-                elif child.type == 'short_var_declaration':
-                    left_node = child.child_by_field_name('left')
+                # Track declared variables (both local and global)
+                elif child.type == 'short_var_declaration' or child.type == 'var_declaration':
+                    left_node = child.child_by_field_name(
+                        'left') or child.child_by_field_name('name')
+                    if left_node:
+                        for var in left_node.children:
+                            var_txt = var.text.decode('utf-8')
+                            local_vars.add(var_txt)  # Track local variables
+                            declared_vars.add(var_txt)
+
                     right_node = child.child_by_field_name('right')
                     if left_node and right_node:
                         var_names = [
@@ -431,24 +492,51 @@ class GoComponentFillerHelper(TreeSitterComponentFillerHelper):
                                         for var_name in var_names:
                                             var_types[var_name] = struct_type
 
+                # Check function parameters (also declared variables)
                 elif child.type == 'parameter_list':
-                    # Capture function parameters and their types
                     for param in child.named_children:
                         param_name_node = param.child_by_field_name('name')
                         param_type_node = param.child_by_field_name('type')
+
                         if param_name_node and param_type_node:
+                            param_name = param_name_node.text.decode('utf-8')
+                            declared_vars.add(param_name)
+                            local_vars.add(
+                                param_name)  # Track as local variable
+
                             var_name = param_name_node.text.decode('utf-8')
                             var_type = param_type_node.text.decode('utf-8')
                             var_types[var_name] = var_type
 
-                traverse_node(child, current_package)
+                # Check for assignment statements using existing variables
+                elif child.type == 'assignment_statement':
+                    left_node = child.child_by_field_name('left')
+                    if left_node:
+                        for var in left_node.named_children:
+                            var_name = var.text.decode('utf-8')
+                            if var_name not in local_vars:  # Exclude local variables
+                                used_vars.add(resolve_full_name(var_name))
+
+                # Capture any identifier references (used variables)
+                elif child.type == 'identifier':
+                    var_name = child.text.decode('utf-8')
+                    if var_name not in local_vars and child.parent.type != 'literal_element':  # Exclude local variables
+                        # print(resolve_full_name(var_name))
+                        used_vars.add(resolve_full_name(var_name))
+
+                # Recursively traverse children
+                traverse_node(child)
 
         # Start traversal from the root node
         component_code_tree = self.file_parser.parser.parse(
             bytes(self.component_code, "utf8"))
-        traverse_node(component_code_tree.root_node, package_name)
+        traverse_node(component_code_tree.root_node)
 
-        return list(called_components)
+        declared_vars.add(self.component_name)
+
+        # Variables being used but not declared in the current code
+        external_vars = used_vars - declared_vars
+        return list(external_vars)
 
     def extract_signature(self):
         GO_LANGUAGE = Language(tsgo.language())
