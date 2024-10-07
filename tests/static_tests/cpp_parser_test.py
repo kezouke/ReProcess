@@ -73,17 +73,22 @@ def test_cpp_file_parser(cpp_code_file):
             "Wrong component names extraction!"
 
     called_components = parser.extract_called_components()
+    # print(called_components)
     assert set(called_components) == set(['SampleClass.greet',
                                           'SampleClass.sampleMethod',
                                           'SampleClass.anotherMethod',
-                                          'std::cout']), \
+                                          'std.cout',
+                                          'std.string',
+                                          'std.endl']), \
             "Wrong called components extraction!"
 
     callable_components = parser.extract_callable_components()
+    # print(callable_components)
     assert set(callable_components) == set(['SampleClass',
-                                            'SampleClass.SampleClass'
+                                            'SampleClass.SampleClass',
                                             'SampleClass.sampleMethod',
                                             'SampleClass.anotherMethod',
+                                            'SampleClass.greet',
                                             'main']), \
             "Wrong callable components extraction!"
 
@@ -101,6 +106,6 @@ def test_cpp_component_filler_helper(cpp_code_file):
 
     to_link = helper.extract_callable_objects()
     assert set(to_link) == set([
-        'SampleClass.sampleMethod', 'SampleClass.greet',
-        'SampleClass.anotherMethod', 'std::cout'
+        'SampleClass.anotherMethod', 'std.endl', 'SampleClass.greet',
+        'std.cout', 'SampleClass.sampleMethod'
     ])

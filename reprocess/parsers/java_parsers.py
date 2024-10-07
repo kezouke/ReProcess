@@ -117,6 +117,12 @@ class JavaFileParser(TreeSitterFileParser):
         """
         components = []
 
+        # Track class name for static method calls
+        if node.type == "class_declaration":
+            class_name_node = node.child_by_field_name("name")
+            if class_name_node:
+                self.current_class_name = self._node_text(class_name_node)
+
         # Handle object creation expressions (e.g., new ClassName())
         if node.type == "object_creation_expression":
             class_name_node = node.child_by_field_name("type")
@@ -134,26 +140,64 @@ class JavaFileParser(TreeSitterFileParser):
                             variable_name] = full_class_name
                         components.append(full_class_name)
 
-        # Handle method invocations
+        # Handle method invocations (non-static and static)
         elif node.type == "method_invocation":
             method_name_node = node.child_by_field_name("name")
             object_node = node.child_by_field_name("object")
 
-            if method_name_node and object_node:
+            if method_name_node:
                 method_name = self._node_text(method_name_node)
-                object_name = self._node_text(object_node)
 
-                # Check if the object name is a variable mapped to a class
-                class_name = self.variable_class_map.get(
-                    object_name, object_name)
-                full_class_name = self._get_fully_qualified_name(class_name)
-                components.append(f"{full_class_name}.{method_name}")
+                # Handle chained method calls like System.out.println
+                if object_node and object_node.type == "field_access":
+                    full_object_name = self._recursively_resolve_field_access(
+                        object_node)
+                    components.append(f"{full_object_name}.{method_name}")
+                else:
+                    # Handle static method calls (e.g., ClassName.method())
+                    if object_node:
+                        object_name = self._node_text(object_node)
+                        class_name = self.variable_class_map.get(
+                            object_name, object_name)
+                        full_class_name = self._get_fully_qualified_name(
+                            class_name)
+                        components.append(f"{full_class_name}.{method_name}")
+                    else:
+                        # No explicit object, could be a static method call
+                        if self.current_class_name:
+                            class_name = self._get_fully_qualified_name(
+                                self.current_class_name)
+                            components.append(f"{class_name}.{method_name}")
 
         # Recursively process children nodes
         for child in node.children:
             components.extend(self._rec_called_components_finder(child))
 
         return components
+
+    def _recursively_resolve_field_access(self, node):
+        """
+        Recursively resolves field_access nodes to handle chained calls like System.out.
+        
+        Args:
+            node: The AST node representing a field access.
+            
+        Returns:
+            str: The fully resolved field access as a single string.
+        """
+        parts = []
+        while node and node.type == "field_access":
+            field_name_node = node.child_by_field_name("field")
+            object_node = node.child_by_field_name("object")
+            if field_name_node:
+                parts.insert(0, self._node_text(field_name_node))
+            if object_node and object_node.type == "field_access":
+                node = object_node  # Move up the chain
+            else:
+                if object_node:
+                    parts.insert(0, self._node_text(object_node))
+                break
+        return ".".join(parts)
 
     def _get_fully_qualified_name(self, class_name):
         """

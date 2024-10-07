@@ -15,7 +15,7 @@ print(parser.extract_callable_components())
 print("\nImports:")
 print(parser.extract_imports())
 
-helper = CppComponentFillerHelper("MyClass.anotherMethod", file_path, parser)
+helper = CppComponentFillerHelper("main", file_path, parser)
 print()
 print(helper.extract_component_code())
 print(helper.extract_callable_objects())

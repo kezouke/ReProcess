@@ -270,6 +270,9 @@ class TypeScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
                  file_parser: TreeSitterFileParser) -> None:
         super().__init__(component_name, component_file_path, file_parser)
 
+    def extract_signature(self):
+        pass
+
     def extract_component_code(self):
         """
         Extracts the code of the specified TypeScript component along with its required imports.

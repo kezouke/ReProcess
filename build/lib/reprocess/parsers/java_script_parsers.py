@@ -436,7 +436,6 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
 
     def extract_callable_objects(self):
         if not self.component_node:
-            print(self.component_name)
             return []
 
         called_components = set()
