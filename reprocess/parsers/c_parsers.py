@@ -48,7 +48,7 @@ class CFileParser(TreeSitterFileParser):
         Returns:
             List[str]: List of component names.
         """
-        components = []
+        components = set()
 
         def visit_node(node):
             """Visits a node in the AST and extracts component names."""
@@ -57,27 +57,28 @@ class CFileParser(TreeSitterFileParser):
                     "declarator").child_by_field_name("declarator")
                 if func_node:
                     func_name = func_node.text.decode('utf-8')
-                    components.append(func_name)
+                    components.add(func_name)
             elif node.type == "struct_specifier":
                 struct_node = node.child_by_field_name("name")
                 if struct_node:
                     struct_name = struct_node.text.decode("utf-8")
                 else:
                     struct_name = 'typedef'
-                components.append(struct_name)
+                components.add(struct_name)
                 body = node.child_by_field_name("body")
                 if body:
                     for struct_node in body.children:
                         if struct_node.type == "field_declaration":
                             field_name = struct_node.child_by_field_name(
                                 "declarator").text.decode('utf-8')
-                            components.append(f"{struct_name}.{field_name}")
+                            components.add(f"{struct_name}.{field_name}")
 
         def traverse_tree(node):
             """Recursively traverses the AST starting from the given node."""
             visit_node(node)
             for child in node.children:
                 traverse_tree(child)
+        
 
         traverse_tree(self.tree.root_node)
 
