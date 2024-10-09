@@ -38,13 +38,14 @@ class JavaScriptFileParser(TreeSitterFileParser):
 
     def extract_component_names(self):
         """
-        Extracts component names such as classes, functions, and methods,
-        including handling nested classes.
+        Extracts component names such as classes, functions, methods, and variables,
+        including handling global variables, variables within functions or methods,
+        and class field definitions.
         """
         components = []
 
         # Helper function to traverse nodes
-        def traverse(node, prefix=""):
+        def traverse(node, prefix="", in_function_scope=False):
             # Check for class declarations
             if node.type == "class_declaration":
                 class_name_node = node.child_by_field_name("name")
@@ -53,7 +54,7 @@ class JavaScriptFileParser(TreeSitterFileParser):
                         class_name_node.start_byte:class_name_node.end_byte]
                     full_class_name = f"{prefix}{class_name}" if prefix else class_name
                     components.append(full_class_name)
-                    # Traverse class body to find methods and nested classes
+                    # Traverse class body to find methods, nested classes, and variables
                     class_body_node = node.child_by_field_name("body")
                     if class_body_node:
                         for child in class_body_node.children:
@@ -64,8 +65,25 @@ class JavaScriptFileParser(TreeSitterFileParser):
                                     method_name = self.source_code[
                                         method_name_node.
                                         start_byte:method_name_node.end_byte]
+                                    method_prefix = f"{full_class_name}.{method_name}"
+                                    components.append(method_prefix)
+                                    # Traverse the method body to find variables inside
+                                    method_body_node = child.child_by_field_name(
+                                        "body")
+                                    if method_body_node:
+                                        traverse(method_body_node,
+                                                 f"{method_prefix}.",
+                                                 in_function_scope=True)
+                            elif child.type == "field_definition":
+                                # Handle class fields
+                                field_name_node = child.child_by_field_name(
+                                    "property")
+                                if field_name_node:
+                                    field_name = self.source_code[
+                                        field_name_node.
+                                        start_byte:field_name_node.end_byte]
                                     components.append(
-                                        f"{full_class_name}.{method_name}")
+                                        f"{full_class_name}.{field_name}")
                             elif child.type == "field_definition":
                                 value_node = child.child_by_field_name("value")
                                 if value_node and value_node.type == "class":
@@ -84,13 +102,20 @@ class JavaScriptFileParser(TreeSitterFileParser):
                                         traverse(nested_class_node,
                                                  f"{nested_class_full_name}.")
 
-            # Handle method definitions in nested classes
+            # Handle method definitions (in nested classes or standalone)
             elif node.type == "method_definition" and prefix != "":
                 method_name_node = node.child_by_field_name("name")
                 if method_name_node:
                     method_name = self.source_code[
                         method_name_node.start_byte:method_name_node.end_byte]
-                    components.append(f"{prefix}{method_name}")
+                    method_prefix = f"{prefix}{method_name}"
+                    components.append(method_prefix)
+                    # Traverse method body for variables
+                    method_body_node = node.child_by_field_name("body")
+                    if method_body_node:
+                        traverse(method_body_node,
+                                 f"{method_prefix}.",
+                                 in_function_scope=True)
 
             # Handle function declarations
             elif node.type == "function_declaration":
@@ -99,11 +124,47 @@ class JavaScriptFileParser(TreeSitterFileParser):
                     function_name = self.source_code[
                         function_name_node.start_byte:function_name_node.
                         end_byte]
-                    components.append(function_name)
+                    function_prefix = f"{prefix}{function_name}"
+                    components.append(function_prefix)
+                    # Traverse function body for variables
+                    function_body_node = node.child_by_field_name("body")
+                    if function_body_node:
+                        traverse(function_body_node,
+                                 f"{function_prefix}.",
+                                 in_function_scope=True)
+
+            # Handle variable declarations (var, let, const)
+            elif node.type in ("variable_declaration", "lexical_declaration"):
+                for child in node.children:
+                    if child.type == "variable_declarator":
+                        var_name_node = child.child_by_field_name("name")
+                        if var_name_node:
+                            var_name = self.source_code[
+                                var_name_node.start_byte:var_name_node.
+                                end_byte]
+                            # Only prefix if we're in a function/method scope
+                            if in_function_scope:
+                                components.append(f"{prefix}{var_name}")
+                            elif node.parent.type == 'program':
+                                # Global variables are not prefixed by a function/method
+                                components.append(var_name)
+
+            # Handle assignment expressions (for global variables like `a_test`)
+            elif node.type == "assignment_expression":
+                # print(self.source_code[node.start_byte:node.end_byte])
+                if node.child_by_field_name(
+                        "left") and node.child_by_field_name("right"):
+                    # Check if it's an assignment expression (global variable case)
+                    assignment_node = node.child_by_field_name("left")
+                    if assignment_node and assignment_node.type == "identifier":
+                        var_name = self.source_code[assignment_node.start_byte:
+                                                    assignment_node.end_byte]
+                        if not in_function_scope:
+                            components.append(var_name)
 
             # Recursively traverse children
             for child in node.children:
-                traverse(child, prefix)
+                traverse(child, prefix, in_function_scope)
 
         # Start traversing from the root node
         traverse(self.tree.root_node)
@@ -300,11 +361,14 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
     def extract_component_code(self):
         """
         Extracts the source code of the specified component, including relevant import statements.
+        Supports extraction for classes, methods, functions, and variables (global, class fields, method variables).
         """
         # Get the root node of the AST
         root_node = self.file_parser.tree.root_node
         component_code = ''
         import_statements = []
+        packages = self.file_parser.packages.replace("-", "_")
+        component_name = self.component_name.replace(f"{packages}.", "")
 
         # Extract import statements first
         import_statements = self.file_parser.extract_imports()
@@ -324,7 +388,7 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
             if not component_name_parts:
                 return None
 
-            # Check if this node represents the target component
+            # Handle class declarations
             if node.type == 'class_declaration':
                 class_name_node = node.child_by_field_name('name')
                 if class_name_node and decode_node_text(
@@ -332,7 +396,7 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
                     if len(component_name_parts) == 1:
                         self.component_type = "class"
                         return node  # Found the target class
-                    # Look for nested classes or methods within this class
+                    # Look for nested classes, methods, or fields within this class
                     body_node = node.child_by_field_name('body')
                     if body_node:
                         for child in body_node.children:
@@ -340,99 +404,102 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
                                 child, component_name_parts[1:])
                             if result:
                                 return result
-
+            # Handle field definitions (class fields)
             elif node.type == 'field_definition':
-                # Handle field that might be a nested class
-                property_node = node.child_by_field_name('property')
-                value_node = node.child_by_field_name('value')
-                if property_node and value_node and value_node.type == 'class':
-                    if decode_node_text(
-                            property_node) == component_name_parts[0]:
-                        if len(component_name_parts) == 1:
-                            self.component_type = "class"
-                            return value_node  # Found the nested class
-                        return find_component_node(value_node,
-                                                   component_name_parts[1:])
+                field_name_node = node.child_by_field_name('property')
+                if field_name_node and decode_node_text(
+                        field_name_node) == component_name_parts[0]:
+                    if len(component_name_parts) == 1:
+                        self.component_type = "field"
+                        return node  # Found the target class field
 
-            elif node.type == 'class':  # Handle nested class bodies
-                if len(component_name_parts) == 0:
-                    self.component_type = "class"
-                    return node
-                body_node = node.child_by_field_name('body')
-                if body_node:
-                    for child in body_node.children:
-                        result = find_component_node(child,
-                                                     component_name_parts)
-                        if result:
-                            return result
-
+            # Handle method definitions inside classes
             elif node.type == 'method_definition':
-                # Check if this method is the one we're looking for
                 method_name_node = node.child_by_field_name('name')
                 if method_name_node and decode_node_text(
                         method_name_node) == component_name_parts[0]:
                     if len(component_name_parts) == 1:
                         self.component_type = "method"
                         return node  # Found the target method
+                    # Traverse the method body for variables
+                    method_body_node = node.child_by_field_name('body')
+                    if method_body_node:
+                        for child in method_body_node.children:
+                            result = find_component_node(
+                                child, component_name_parts[1:])
+                            if result:
+                                return result
 
+            # Handle function declarations (outside classes)
             elif node.type == 'function_declaration':
-                # Check for function declarations
                 function_name_node = node.child_by_field_name('name')
                 if function_name_node and decode_node_text(
                         function_name_node) == component_name_parts[0]:
-                    self.component_type = "function"
-                    return node  # Found the target function
+                    if len(component_name_parts) == 1:
+                        self.component_type = "function"
+                        return node  # Found the target function
+                    # Traverse the function body for variables
+                    function_body_node = node.child_by_field_name('body')
+                    if function_body_node:
+                        for child in function_body_node.children:
+                            result = find_component_node(
+                                child, component_name_parts[1:])
+                            if result:
+                                return result
 
-            # Traverse child nodes
+            # Handle variable declarations (global or local)
+            elif node.type in ("variable_declaration", "lexical_declaration"):
+                for child in node.children:
+                    if child.type == "variable_declarator":
+                        var_name_node = child.child_by_field_name("name")
+                        if var_name_node and decode_node_text(
+                                var_name_node) == component_name_parts[0]:
+                            if len(component_name_parts) == 1:
+                                self.component_type = "variable"
+                                return node  # Found the target variable declaration
+
+            elif node.type == "assignment_expression":
+                if node.child_by_field_name(
+                        "left") and node.child_by_field_name("right"):
+                    assignment_node = node.child_by_field_name("left")
+                    if assignment_node and assignment_node.type == "identifier":
+                        var_name = self.source_code[assignment_node.start_byte:
+                                                    assignment_node.end_byte]
+                        if var_name == component_name_parts[0] and len(
+                                component_name_parts) == 1:
+                            self.component_type = "variable"
+                            return node.parent
+
+            # Traverse child nodes if none of the above matched
             for child in node.children:
                 result = find_component_node(child, component_name_parts)
                 if result:
                     return result
             return None
 
-        # Helper function to collect all identifiers used in the component node
-        def collect_identifiers(node, identifiers):
-            if node.type == 'identifier':
-                identifiers.add(decode_node_text(node))
-            for child in node.children:
-                collect_identifiers(child, identifiers)
+        # Helper function to extract the code from the identified node
+        def extract_code_from_node(node):
+            if node:
+                start_byte = node.start_byte
+                end_byte = node.end_byte
+                return self.source_code[start_byte:end_byte]
+            return ''
 
-        # Remove package prefix from component name and split it into parts
-        component_name_parts = self.component_name.replace(
-            f"{self.file_parser.packages}.", "").split('.')
+        # Split the component name into parts (for handling nested classes, methods, etc.)
+        component_name_parts = component_name.split('.')
 
         # Find the component node in the AST
         component_node = find_component_node(root_node, component_name_parts)
         self.component_node = component_node
-
+        # If the component was found, extract the code
         if component_node:
-            # If the component is found, extract the source code for the component
-            component_code = self.file_parser.source_code[
-                component_node.start_byte:component_node.end_byte]
+            component_code = extract_code_from_node(component_node)
 
-            # Handle extraction of class declaration if missing class name
-            if component_node.type == 'class' and component_node.parent.type == 'field_definition':
-                # Check if this is a class nested inside a field definition
-                class_name = decode_node_text(
-                    component_node.parent.child_by_field_name('property'))
-                if class_name:
-                    class_declaration = f"class {class_name} " + component_code[
-                        len('class '):]
-                    component_code = class_declaration
-
-            # Collect all identifiers used in the component code
-            used_identifiers = set()
-            collect_identifiers(component_node, used_identifiers)
-
-            # Filter imports to only include those that are used
-            used_imports = [
-                imports_code[imp] for imp in imports_code
-                if imp in used_identifiers
-            ]
-            imports_code = '\n'.join(used_imports)
-            return imports_code + '\n\n' + component_code
-
-        return component_code
+        # Return the component code along with relevant imports
+        return '\n'.join([
+            imports_code.get(key, "")
+            for key in imports_code if key in component_code
+        ]) + component_code
 
     def extract_callable_objects(self):
         if not self.component_node:
