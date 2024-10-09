@@ -507,6 +507,9 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
 
         called_components = set()
         variable_types = {}
+        global_variables = set()
+        local_variables = set(
+        )  # To track variables declared within the component
 
         # Step 1: Store imported components in a dictionary for quick lookup
         import_map = {}
@@ -518,25 +521,50 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
 
         # Step 2: Store local components
         local_components = self.file_parser.extract_component_names()
+        # print(local_components)
+        # Step 3: Detect global variables
+        global_vars = set()  # Store global variables declared in the file
+        root_node = self.file_parser.tree.root_node
 
-        # Helper function to traverse nodes
+        # Traverse to find global variables (usually declared at the top level)
+        def detect_global_vars(node):
+            if node.type in ("variable_declaration", "lexical_declaration"):
+                for child in node.children:
+                    if child.type == "variable_declarator":
+                        var_name_node = child.child_by_field_name("name")
+                        if var_name_node:
+                            var_name = self.file_parser.source_code[
+                                var_name_node.start_byte:var_name_node.
+                                end_byte]
+                            global_vars.add(var_name)
+            elif node.type == "field_definition":
+                # Handle class fields
+                field_name_node = node.child_by_field_name("property")
+                if field_name_node:
+                    field_name = self.file_parser.source_code[
+                        field_name_node.start_byte:field_name_node.end_byte]
+                    global_vars.add(field_name)
+
+            # Recursively traverse the AST to find more global declarations
+            for child in node.children:
+                detect_global_vars(child)
+
+        detect_global_vars(root_node)  # Collect global variables
+
+        # Helper function to traverse nodes within the component
         def traverse(node):
-            # Check for variable declarations
-            if node.type == "variable_declarator":
-                variable_name_node = node.child_by_field_name("name")
-                value_node = node.child_by_field_name("value")
-
-                if value_node and value_node.type == "new_expression":
-                    constructor_node = value_node.child_by_field_name(
-                        "constructor")
-                    if constructor_node:
-                        variable_name = self.file_parser.source_code[
-                            variable_name_node.start_byte:variable_name_node.
-                            end_byte]
-                        constructor_name = self.file_parser.source_code[
-                            constructor_node.start_byte:constructor_node.
-                            end_byte]
-                        variable_types[variable_name] = constructor_name
+            # Check for variable declarations (local to the function)
+            if node.type in ("variable_declaration", "lexical_declaration"):
+                for declarator in node.named_children:
+                    if declarator.type == "variable_declarator":
+                        variable_name_node = declarator.child_by_field_name(
+                            "name")
+                        if variable_name_node:
+                            variable_name = self.file_parser.source_code[
+                                variable_name_node.
+                                start_byte:variable_name_node.end_byte]
+                            local_variables.add(
+                                variable_name)  # Track local variable
 
             # Check for function or method calls
             elif node.type == "call_expression":
@@ -566,33 +594,77 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
                         property_node = function_node.child_by_field_name(
                             "property")
                         if object_node and property_node:
-                            object_name = self.file_parser.source_code[
-                                object_node.start_byte:object_node.end_byte]
-                            property_name = self.file_parser.source_code[
-                                property_node.start_byte:property_node.
-                                end_byte]
-
-                            # Check if the object name is in the variable_types dictionary
-                            if object_name in variable_types:
-                                # Use class type if available
-                                class_type = variable_types[object_name]
-                                full_component = f"{class_type}.{property_name}"
-                                if class_type in import_map:
-                                    called_components.add(
-                                        f"{import_map[class_type]}.{property_name}"
-                                    )
-                                else:
-                                    called_components.add(
-                                        f"{self.file_parser.packages}.{full_component}"
-                                    )
+                            # Handle 'this' references
+                            if object_node.type == "this":
+                                property_name = self.file_parser.source_code[
+                                    property_node.start_byte:property_node.
+                                    end_byte]
+                                called_components.add(
+                                    property_name
+                                )  # Add property to called components
                             else:
-                                # If object_name is not a tracked instance, add it directly
-                                if f"{object_name}.{property_name}" in import_map:
-                                    called_components.add(import_map[
-                                        f"{object_name}.{property_name}"])
+                                object_name = self.file_parser.source_code[
+                                    object_node.start_byte:object_node.
+                                    end_byte]
+                                property_name = self.file_parser.source_code[
+                                    property_node.start_byte:property_node.
+                                    end_byte]
+
+                                # Check if the object name is in the variable_types dictionary
+                                if object_name in variable_types:
+                                    # Use class type if available
+                                    class_type = variable_types[object_name]
+                                    full_component = f"{class_type}.{property_name}"
+                                    if class_type in import_map:
+                                        called_components.add(
+                                            f"{import_map[class_type]}.{property_name}"
+                                        )
+                                    else:
+                                        called_components.add(
+                                            f"{self.file_parser.packages}.{full_component}"
+                                        )
                                 else:
-                                    called_components.add(
-                                        f"{object_name}.{property_name}")
+                                    # If object_name is not a tracked instance, add it directly
+                                    if f"{object_name}.{property_name}" in import_map:
+                                        called_components.add(import_map[
+                                            f"{object_name}.{property_name}"])
+                                    else:
+                                        called_components.add(
+                                            f"{object_name}.{property_name}")
+            elif node.type == "member_expression":
+                object_node = node.child_by_field_name("object")
+                property_node = node.child_by_field_name("property")
+                # print(object_node, property_node)
+
+                if object_node and property_node:
+                    # Handle 'this' references
+                    if object_node.type == "this":
+                        property_name = self.file_parser.source_code[
+                            property_node.start_byte:property_node.end_byte]
+                        flag = True
+                        for cmp_n in local_components:
+                            if cmp_n.split(".")[-1] == property_name:
+                                global_variables.add(cmp_n)
+                                flag = False
+                                break
+                        if flag:
+                            called_components.add(
+                                property_name
+                            )  # Add property to called components
+
+            # Check if the node is a reference to a global variable
+            elif node.type == "identifier":
+                var_name = self.file_parser.source_code[node.start_byte:node.
+                                                        end_byte]
+                if var_name in global_vars and var_name not in local_variables:
+                    flag = True
+                    for cmp_n in local_components:
+                        if cmp_n.split(".")[-1] == var_name:
+                            global_variables.add(cmp_n)
+                            flag = False
+                            break
+                    if flag:
+                        global_variables.add(var_name)
 
             # Recursively traverse children
             for child in node.children:
@@ -601,15 +673,8 @@ class JavaScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
         # Start traversing from the component node
         traverse(self.component_node)
 
-        # Convert variable types to their fully qualified names
-        for variable in variable_types:
-            if f"{self.file_parser.packages}.{variable_types[variable]}" in local_components:
-                variable_types[
-                    variable] = f"{self.file_parser.packages}.{variable_types[variable]}"
-            elif variable_types[variable] in import_map:
-                variable_types[variable] = import_map[variable_types[variable]]
-
-        return list(called_components) + list(variable_types.values())
+        # Combine called components and global variables into the result
+        return list(called_components) + list(global_variables)
 
     def extract_signature(self):
         JS_LANGUAGE = Language(tsjs.language())
