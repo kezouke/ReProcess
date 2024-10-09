@@ -49,9 +49,28 @@ class TypeScriptFileParser(TreeSitterFileParser):
             List[str]: List of component names found.
         """
         components = []
-        # print(node)
+
         if node is not None:
-            if node.type == 'class_declaration':
+            # Handle global variables
+            if node.type == 'lexical_declaration':
+                for child in node.children:
+                    if child.type == 'variable_declarator':
+                        var_name = child.child_by_field_name('name')
+                        if var_name:
+                            name = var_name.text.decode('utf8')
+                            components.append(name)  # Add global variable name
+
+            elif node.type == 'variable_declaration':
+                for child in node.children:
+                    if child.type == 'variable_declarator':
+                        var_name = child.child_by_field_name('name')
+                        if var_name:
+                            name = var_name.text.decode('utf8')
+                            full_name = f"{class_path}.{name}" if class_path else name
+                            components.append(full_name)  # Add variable name
+
+            # Handle class declarations
+            elif node.type == 'class_declaration':
                 class_name = self._node_text(node.child_by_field_name('name'))
                 full_class_name = f"{class_path}.{class_name}" if class_path else class_name
                 components.append(full_class_name)
@@ -61,30 +80,80 @@ class TypeScriptFileParser(TreeSitterFileParser):
                 for child in class_body.children:
                     components.extend(
                         self._find_cmp_names(child, full_class_name))
-            elif node.type == 'function_declaration':
 
+            # Handle function declarations
+            elif node.type == 'function_declaration':
                 function_name = self._node_text(
                     node.child_by_field_name('name'))
                 full_function_name = f"{class_path}.{function_name}" if class_path else function_name
                 components.append(full_function_name)
+
+                # Extract variables within the function
+                components.extend(
+                    self._extract_variables(node, full_function_name))
+
+            elif node.type == 'enum_declaration':
+                enum_name = node.child_by_field_name('name')
+                if enum_name:
+                    enum_name_str = enum_name.text.decode('utf8')
+
+                    # Add the enum itself to the list
+                    components.append(enum_name_str)
+
+            # Handle method definitions
             elif node.type == 'method_definition':
-                function_name = self._node_text(
-                    node.child_by_field_name('name'))
-                full_function_name = f"{class_path}.{function_name}" if class_path else function_name
-                components.append(full_function_name)
+                method_name = self._node_text(node.child_by_field_name('name'))
+                full_method_name = f"{class_path}.{method_name}" if class_path else method_name
+                components.append(full_method_name)
+
+                # Extract variables within the method
+                components.extend(
+                    self._extract_variables(node, full_method_name))
+
             # Recursively traverse other child nodes if not already handled
             for child in node.children:
                 if node.type not in [
                         'class_declaration', 'function_declaration',
-                        'method_definition'
+                        'method_definition', 'lexical_declaration',
+                        'variable_declaration'
                 ]:
                     components.extend(self._find_cmp_names(child, class_path))
 
         return components
 
+    def _extract_variables(self, node, class_path):
+        """
+        Extracts variable names, including enum and object types, from the AST node.
+        
+        Args:
+            node: The current AST node being processed.
+            class_path: The path of the class currently being processed.
+            
+        Returns:
+            List[str]: List of variable names found.
+        """
+        variable_names = []
+
+        # Check for lexical declarations and variable declarators
+        if node.type in ['lexical_declaration', 'variable_declaration']:
+            for child in node.children:
+                if child.type == 'variable_declarator':
+                    var_name = child.child_by_field_name('name')
+                    if var_name:
+                        name = var_name.text.decode('utf8')
+                        full_name = f"{class_path}.{name}" if class_path else name
+                        variable_names.append(
+                            full_name)  # Add base variable name
+
+        # Recursively visit child nodes for variable extraction
+        for child in node.children:
+            variable_names.extend(self._extract_variables(child, class_path))
+
+        return variable_names
+
     def extract_component_names(self):
         """
-        Extracts names of components (classes and methods) defined in the TypeScript file.
+        Extracts names of components (classes, methods, and variables) defined in the TypeScript file.
         
         Returns:
             List[str]: List of component names.
