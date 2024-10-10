@@ -43,24 +43,32 @@ class CFileParser(TreeSitterFileParser):
 
     def extract_component_names(self):
         """
-        Extracts names of components (functions and structs) defined in the C file.
+        Extracts names of components (functions, structs) and variables defined in the C file.
         
         Returns:
-            List[str]: List of component names.
+            List[str]: List of component names and variables.
         """
         components = []
+        stack = [self.tree.root_node]
+        variables = []
 
         def visit_node(node):
-            """Visits a node in the AST and extracts component names."""
+            """Visits a node in the AST and extracts component names and variables."""
+            # Extract function names
             if node.type == "function_definition":
                 func_node = node.child_by_field_name(
                     "declarator").child_by_field_name("declarator")
                 if func_node:
                     func_name = func_node.text.decode('utf-8')
                     components.append(func_name)
+
+            # Extract struct names and fields
             elif node.type == "struct_specifier":
-                struct_name = node.child_by_field_name("name").text.decode(
-                    'utf-8')
+                struct_node = node.child_by_field_name("name")
+                if struct_node:
+                    struct_name = struct_node.text.decode("utf-8")
+                else:
+                    struct_name = 'typedef'
                 components.append(struct_name)
                 body = node.child_by_field_name("body")
                 if body:
@@ -70,17 +78,29 @@ class CFileParser(TreeSitterFileParser):
                                 "declarator").text.decode('utf-8')
                             components.append(f"{struct_name}.{field_name}")
 
-        def traverse_tree(node):
-            """Recursively traverses the AST starting from the given node."""
+            # Extract variables (using the logic from the previous code)
+            if node.type == 'init_declarator':  # Variable declaration with initialization
+                declarator = node.child_by_field_name('declarator')
+                if declarator:
+                    variable_name = declarator.text.decode('utf8')
+                    variables.append(variable_name)
+            elif node.type == 'declarator' and node.parent.type != 'function_declarator':  # General variable declarator
+                variable_name = node.text.decode('utf8')
+                variables.append(variable_name)
+
+        while stack:
+            node = stack.pop()
             visit_node(node)
             for child in node.children:
-                traverse_tree(child)
+                stack.append(child)
 
-        traverse_tree(self.tree.root_node)
-
+        # Replace hyphens with underscores for component names
         modules = [component.replace("-", "_") for component in components]
 
-        return modules
+        # Combine components and variables
+        all_identifiers = modules + variables
+
+        return all_identifiers
 
     def extract_called_components(self) -> List[str]:
         """
@@ -90,6 +110,7 @@ class CFileParser(TreeSitterFileParser):
             List[str]: List of names of called components.
         """
         called_components = set()
+        stack = [self.tree.root_node]
 
         def visit_node(node):
             """Visits a node in the AST and identifies called components."""
@@ -102,13 +123,11 @@ class CFileParser(TreeSitterFileParser):
                 if field_node:
                     called_components.add(field_node.text.decode('utf-8'))
 
-        def traverse_tree(node):
-            """Recursively traverses the AST starting from the given node."""
+        while stack:
+            node = stack.pop()
             visit_node(node)
             for child in node.children:
-                traverse_tree(child)
-
-        traverse_tree(self.tree.root_node)
+                stack.append(child)
 
         return list(called_components)
 
@@ -120,6 +139,7 @@ class CFileParser(TreeSitterFileParser):
             List[str]: List of names of callable components.
         """
         callable_components = set()
+        stack = [self.tree.root_node]
 
         def visit_node(node):
             if node.type == "function_definition":
@@ -129,8 +149,11 @@ class CFileParser(TreeSitterFileParser):
                     func_name = func_node.text.decode('utf-8')
                     callable_components.add(func_name)
             elif node.type == "struct_specifier":
-                struct_name = node.child_by_field_name("name").text.decode(
-                    'utf-8')
+                struct_node = node.child_by_field_name("name")
+                if struct_node:
+                    struct_name = struct_node.text.decode('utf-8')
+                else:
+                    struct_name = 'typedef'
                 callable_components.add(struct_name)
                 body = node.child_by_field_name("body")
                 if body:
@@ -141,12 +164,11 @@ class CFileParser(TreeSitterFileParser):
                             callable_components.add(
                                 f"{struct_name}.{field_name}")
 
-        def traverse_tree(node):
+        while stack:
+            node = stack.pop()
             visit_node(node)
             for child in node.children:
-                traverse_tree(child)
-
-        traverse_tree(self.tree.root_node)
+                stack.append(child)
 
         return list(callable_components)
 
@@ -158,6 +180,7 @@ class CFileParser(TreeSitterFileParser):
             List[str]: List of import statements found in the file.
         """
         imports = []
+        stack = [self.tree.root_node]
 
         def visit_node(node):
             if node.type == "preproc_include":
@@ -166,12 +189,11 @@ class CFileParser(TreeSitterFileParser):
                     imports.append(
                         include_node.text.decode('utf-8').strip('"<>'))
 
-        def traverse_tree(node):
+        while stack:
+            node = stack.pop()
             visit_node(node)
             for child in node.children:
-                traverse_tree(child)
-
-        traverse_tree(self.tree.root_node)
+                stack.append(child)
 
         return imports
 
@@ -218,41 +240,74 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
 
     def extract_callable_objects(self):
         """
-        Extracts callable objects defined within the component.
+        Extracts callable objects and external/global variable usage within the component.
         
         Returns:
-            List[str]: List of callable object names.
+            List[str]: List of callable object names and external/global variables used.
         """
         code = self.extract_component_code()
         tree = self.file_parser.parser.parse(bytes(code, "utf8"))
         called_components = set()
+        used_variables = set()
+        declared_variables = set()
 
-        def _extract_components(node, components, struct_vars):
-            """Recursively extracts callable objects from the AST."""
+        def _extract_components(node, components, struct_vars, local_vars):
+            """Recursively extracts callable objects and variable usage from the AST."""
             if node.type == 'call_expression':
                 function_name = node.child_by_field_name(
                     'function').text.decode('utf-8')
                 components.add(function_name)
+
             elif node.type == 'field_expression':
                 variable_name = node.child(0).text.decode('utf-8')
                 field_name = node.child(2).text.decode('utf-8')
                 if variable_name in struct_vars:
                     struct_field = f"{struct_vars[variable_name]}.{field_name}"
                     components.add(struct_field)
+
             elif node.type == 'declaration' and node.child(
                     0).type == 'struct_specifier':
-                struct_name = node.child(0).child_by_field_name(
-                    'name').text.decode('utf-8')
+                # Struct declaration
+                struct_node = node.child(0).child_by_field_name('name')
+                struct_name = struct_node.text.decode(
+                    'utf-8') if struct_node else 'typedef'
                 var_name = node.child(1).text.decode('utf-8')
                 struct_vars[var_name] = struct_name
+
+            elif node.type == 'init_declarator' or node.type == 'declarator':
+                # Variable declaration
+                var_name = node.text.decode('utf-8')
+                local_vars.add(var_name)
+                declared_variables.add(var_name)
+
+            elif node.type == 'parameter_declaration':
+                # Track function parameter declaration
+                param_node = node.child_by_field_name('declarator')
+                if param_node:
+                    param_name = param_node.text.decode('utf-8')
+                    local_vars.add(param_name)
+
+            elif node.type == 'identifier':
+                # Check if the identifier is a variable that is used but not declared locally
+                var_name = node.text.decode('utf-8')
+                if var_name not in local_vars:
+                    used_variables.add(var_name)
+
             # Recursively go through all child nodes
             for child in node.children:
-                _extract_components(child, components, struct_vars)
+                _extract_components(child, components, struct_vars, local_vars)
 
         root_node = tree.root_node
         struct_vars = {}
-        _extract_components(root_node, called_components, struct_vars)
-        return list(called_components)
+        local_vars = set()
+
+        _extract_components(root_node, called_components, struct_vars,
+                            local_vars)
+
+        res_vars = set(var for var in used_variables
+                       if var != self.component_name)
+        # Combine callable objects (functions and struct fields) with used external/global variables
+        return list(called_components.union(res_vars))
 
     def _extract_code_without_imports(self):
 
@@ -260,6 +315,7 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
 
         def visit_node(node):
             """Visits a node in the AST and checks if it matches the specified component."""
+            # Check if the node is a function definition
             if node.type == "function_definition" and node.child_by_field_name(
                     "declarator"):
                 self.component_type = "function"
@@ -268,6 +324,8 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
                 if func_node and func_node.text.decode(
                         'utf-8') == component_name_splitted[0]:
                     return node
+
+            # Check if the node is a struct
             elif node.type == "struct_specifier" and node.child_by_field_name(
                     "name"):
                 struct_name = node.child_by_field_name("name").text.decode(
@@ -276,7 +334,20 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
                     self.component_type = "structure"
                     return node
 
+            # Check if the node is a variable declaration
+            elif node.type == "init_declarator":  # Variable declaration with initialization
+                declarator = node.child_by_field_name('declarator')
+                if declarator and declarator.text.decode(
+                        'utf8') == component_name_splitted[0]:
+                    self.component_type = "variable"
+                    return node
+            elif node.type == "declarator" and node.parent.type != "function_declarator":  # General variable declarator
+                if node.text.decode('utf8') == component_name_splitted[0]:
+                    self.component_type = "variable"
+                    return node
+
         def traverse_tree(node):
+            """Recursively traverses the AST to find the specified component."""
             result_node = visit_node(node)
             if result_node:
                 return result_node
@@ -287,9 +358,12 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
 
         root_node = self.file_parser.tree.root_node
         found_node = traverse_tree(root_node)
+
         if found_node:
             extracted_code = self.file_parser.source_code[
                 found_node.start_byte:found_node.end_byte]
+
+            # Handle struct fields if necessary
             if self.component_type == "structure" and len(
                     component_name_splitted) > 1:
                 self.component_type = "structure_field"
@@ -297,6 +371,7 @@ class CComponentFillerHelper(TreeSitterComponentFillerHelper):
                 field_code = self._extract_field_code(found_node, field_name)
                 if field_code:
                     return f"struct {component_name_splitted[0]} {{\n{field_code}\n}}"
+
             return extracted_code
         return ""
 

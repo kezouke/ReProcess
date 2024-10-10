@@ -15,8 +15,7 @@ print(parser.extract_called_components())
 print("\nCallable components:")
 print(parser.extract_callable_components())
 
-helper = PythonComponentFillerHelper("feed.database.get_announce_papers",
-                                     file_path, parser)
+helper = PythonComponentFillerHelper("feed.database.ENV", file_path, parser)
 print("\nComponent Code:")
 print(helper.extract_component_code())
 

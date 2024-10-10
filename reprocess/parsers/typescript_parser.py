@@ -32,7 +32,7 @@ class TypeScriptFileParser(TreeSitterFileParser):
             self.tree = self.parser.parse(bytes(self.source_code, "utf8"))
 
         # Adjust the file path relative to the repository
-        self.file_path = cutted_path[1:]
+        self.file_path = cutted_path[1:] + ".ts"
         self.variable_class_map = {}
         self.imports_map = self._map_imported_classes()
         self.local_component_names = self.extract_component_names()
@@ -49,9 +49,28 @@ class TypeScriptFileParser(TreeSitterFileParser):
             List[str]: List of component names found.
         """
         components = []
-        # print(node)
+
         if node is not None:
-            if node.type == 'class_declaration':
+            # Handle global variables
+            if node.type == 'lexical_declaration':
+                for child in node.children:
+                    if child.type == 'variable_declarator':
+                        var_name = child.child_by_field_name('name')
+                        if var_name:
+                            name = var_name.text.decode('utf8')
+                            components.append(name)  # Add global variable name
+
+            elif node.type == 'variable_declaration':
+                for child in node.children:
+                    if child.type == 'variable_declarator':
+                        var_name = child.child_by_field_name('name')
+                        if var_name:
+                            name = var_name.text.decode('utf8')
+                            full_name = f"{class_path}.{name}" if class_path else name
+                            components.append(full_name)  # Add variable name
+
+            # Handle class declarations
+            elif node.type == 'class_declaration':
                 class_name = self._node_text(node.child_by_field_name('name'))
                 full_class_name = f"{class_path}.{class_name}" if class_path else class_name
                 components.append(full_class_name)
@@ -61,30 +80,80 @@ class TypeScriptFileParser(TreeSitterFileParser):
                 for child in class_body.children:
                     components.extend(
                         self._find_cmp_names(child, full_class_name))
-            elif node.type == 'function_declaration':
 
+            # Handle function declarations
+            elif node.type == 'function_declaration':
                 function_name = self._node_text(
                     node.child_by_field_name('name'))
                 full_function_name = f"{class_path}.{function_name}" if class_path else function_name
                 components.append(full_function_name)
+
+                # Extract variables within the function
+                components.extend(
+                    self._extract_variables(node, full_function_name))
+
+            elif node.type == 'enum_declaration':
+                enum_name = node.child_by_field_name('name')
+                if enum_name:
+                    enum_name_str = enum_name.text.decode('utf8')
+
+                    # Add the enum itself to the list
+                    components.append(enum_name_str)
+
+            # Handle method definitions
             elif node.type == 'method_definition':
-                function_name = self._node_text(
-                    node.child_by_field_name('name'))
-                full_function_name = f"{class_path}.{function_name}" if class_path else function_name
-                components.append(full_function_name)
+                method_name = self._node_text(node.child_by_field_name('name'))
+                full_method_name = f"{class_path}.{method_name}" if class_path else method_name
+                components.append(full_method_name)
+
+                # Extract variables within the method
+                components.extend(
+                    self._extract_variables(node, full_method_name))
+
             # Recursively traverse other child nodes if not already handled
             for child in node.children:
                 if node.type not in [
                         'class_declaration', 'function_declaration',
-                        'method_definition'
+                        'method_definition', 'lexical_declaration',
+                        'variable_declaration'
                 ]:
                     components.extend(self._find_cmp_names(child, class_path))
 
         return components
 
+    def _extract_variables(self, node, class_path):
+        """
+        Extracts variable names, including enum and object types, from the AST node.
+        
+        Args:
+            node: The current AST node being processed.
+            class_path: The path of the class currently being processed.
+            
+        Returns:
+            List[str]: List of variable names found.
+        """
+        variable_names = []
+
+        # Check for lexical declarations and variable declarators
+        if node.type in ['lexical_declaration', 'variable_declaration']:
+            for child in node.children:
+                if child.type == 'variable_declarator':
+                    var_name = child.child_by_field_name('name')
+                    if var_name:
+                        name = var_name.text.decode('utf8')
+                        full_name = f"{class_path}.{name}" if class_path else name
+                        variable_names.append(
+                            full_name)  # Add base variable name
+
+        # Recursively visit child nodes for variable extraction
+        for child in node.children:
+            variable_names.extend(self._extract_variables(child, class_path))
+
+        return variable_names
+
     def extract_component_names(self):
         """
-        Extracts names of components (classes and methods) defined in the TypeScript file.
+        Extracts names of components (classes, methods, and variables) defined in the TypeScript file.
         
         Returns:
             List[str]: List of component names.
@@ -270,6 +339,9 @@ class TypeScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
                  file_parser: TreeSitterFileParser) -> None:
         super().__init__(component_name, component_file_path, file_parser)
 
+    def extract_signature(self):
+        pass
+
     def extract_component_code(self):
         """
         Extracts the code of the specified TypeScript component along with its required imports.
@@ -349,6 +421,32 @@ class TypeScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
                         return self._find_component_node(
                             body_node, name_parts[1:])
 
+        if node.type == 'lexical_declaration':
+            for child in node.children:
+                if child.type == 'variable_declarator':
+                    var_name = self._node_text(
+                        child.child_by_field_name("name"))
+                    if var_name == name_parts[0]:
+                        self.component_type = "variable"
+                        return child
+
+        # Check for variable declarations or class variables
+        if node.type == "variable_declaration":
+            for declarator in node.named_children:
+                if declarator.type == "variable_declarator":
+                    var_name = self._node_text(
+                        declarator.child_by_field_name("name"))
+                    if var_name == name_parts[0]:
+                        self.component_type = "variable"
+                        return declarator
+
+        # Check for enums
+        if node.type == "enum_declaration":
+            enum_name = self._node_text(node.child_by_field_name("name"))
+            if enum_name == name_parts[0]:
+                self.component_type = "enum"
+                return node
+
         # Recursively search child nodes
         for child in node.children:
             result = self._find_component_node(child, name_parts)
@@ -392,4 +490,33 @@ class TypeScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
         Returns:
             List[str]: List of names of callable objects.
         """
-        return list(set(self.file_parser._find_cmp_names(self.component_node)))
+        node_to_start = self.component_node
+        if self.component_type == "variable":
+            node_to_start = node_to_start.parent
+        cmp_names_local_cuted = self.file_parser._find_cmp_names(node_to_start)
+        cmp_names_local = set(self.file_parser.packages + "." + cmp
+                              for cmp in cmp_names_local_cuted)
+        cmp_names_global = set(self.file_parser.extract_component_names())
+        cmp_names_global = cmp_names_global.difference(cmp_names_local)
+        cmp_map = {cmp.split(".")[-1]: cmp for cmp in cmp_names_global}
+        result = set()
+        cmp_names_local_cuted = [
+            cmp.split(".")[-1] for cmp in cmp_names_local_cuted
+        ]
+
+        def traverse_node(node):
+            for child in node.children:
+                if child.type == 'identifier':
+                    var_name = child.text.decode('utf-8')
+                    if var_name in cmp_map:
+                        result.add(cmp_map[var_name])
+                    elif var_name not in cmp_names_local_cuted:
+                        result.add(var_name)
+
+                traverse_node(child)
+
+        component_code_tree = self.file_parser.parser.parse(
+            bytes(self.component_code, "utf8"))
+        traverse_node(component_code_tree.root_node)
+
+        return list(result)

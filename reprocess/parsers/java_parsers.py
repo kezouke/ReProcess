@@ -48,14 +48,15 @@ class JavaFileParser(TreeSitterFileParser):
 
     def _find_cmp_names(self, node, class_path=""):
         """
-        Recursively finds component names within the AST starting from the given node.
+        Recursively finds component names (classes, methods) and variables (global, local)
+        within the AST starting from the given node.
         
         Args:
             node: The current AST node being processed.
             class_path: The path of the class currently being processed.
             
         Returns:
-            List[str]: List of component names found.
+            List[str]: List of component names (classes, methods) and variable names (global, local).
         """
         components = []
 
@@ -65,7 +66,7 @@ class JavaFileParser(TreeSitterFileParser):
             full_class_name = f"{class_path}.{class_name}" if class_path else class_name
             components.append(full_class_name)
 
-            # Recursively extract nested classes and methods
+            # Recursively extract nested classes, methods, and variables
             class_body = node.child_by_field_name('body')
             for child in class_body.children:
                 components.extend(self._find_cmp_names(child, full_class_name))
@@ -76,9 +77,32 @@ class JavaFileParser(TreeSitterFileParser):
             full_method_name = f"{class_path}.{method_name}" if class_path else method_name
             components.append(full_method_name)
 
-        # Recursively process children nodes, but only if we're not already inside a class or method
+            # Check for local variables inside the method
+            method_body = node.child_by_field_name('body')
+            if method_body:
+                for child in method_body.children:
+                    if child.type == 'local_variable_declaration':
+                        for var_child in child.children:
+                            if var_child.type == 'variable_declarator':
+                                var_name = self._node_text(
+                                    var_child.child_by_field_name('name'))
+                                components.append(
+                                    f"{full_method_name}.{var_name}")
+
+        # If the node is a field declaration, extract global (class-level) variables
+        elif node.type == 'field_declaration':
+            for child in node.children:
+                if child.type == 'variable_declarator':
+                    var_name = self._node_text(
+                        child.child_by_field_name('name'))
+                    components.append(f"{class_path}.{var_name}")
+
+        # Recursively process children nodes
         for child in node.children:
-            if node.type not in ['class_declaration', 'method_declaration']:
+            if node.type not in [
+                    'class_declaration', 'method_declaration',
+                    'field_declaration'
+            ]:
                 components.extend(self._find_cmp_names(child, class_path))
 
         return components
@@ -117,6 +141,12 @@ class JavaFileParser(TreeSitterFileParser):
         """
         components = []
 
+        # Track class name for static method calls
+        if node.type == "class_declaration":
+            class_name_node = node.child_by_field_name("name")
+            if class_name_node:
+                self.current_class_name = self._node_text(class_name_node)
+
         # Handle object creation expressions (e.g., new ClassName())
         if node.type == "object_creation_expression":
             class_name_node = node.child_by_field_name("type")
@@ -134,26 +164,64 @@ class JavaFileParser(TreeSitterFileParser):
                             variable_name] = full_class_name
                         components.append(full_class_name)
 
-        # Handle method invocations
+        # Handle method invocations (non-static and static)
         elif node.type == "method_invocation":
             method_name_node = node.child_by_field_name("name")
             object_node = node.child_by_field_name("object")
 
-            if method_name_node and object_node:
+            if method_name_node:
                 method_name = self._node_text(method_name_node)
-                object_name = self._node_text(object_node)
 
-                # Check if the object name is a variable mapped to a class
-                class_name = self.variable_class_map.get(
-                    object_name, object_name)
-                full_class_name = self._get_fully_qualified_name(class_name)
-                components.append(f"{full_class_name}.{method_name}")
+                # Handle chained method calls like System.out.println
+                if object_node and object_node.type == "field_access":
+                    full_object_name = self._recursively_resolve_field_access(
+                        object_node)
+                    components.append(f"{full_object_name}.{method_name}")
+                else:
+                    # Handle static method calls (e.g., ClassName.method())
+                    if object_node:
+                        object_name = self._node_text(object_node)
+                        class_name = self.variable_class_map.get(
+                            object_name, object_name)
+                        full_class_name = self._get_fully_qualified_name(
+                            class_name)
+                        components.append(f"{full_class_name}.{method_name}")
+                    else:
+                        # No explicit object, could be a static method call
+                        if self.current_class_name:
+                            class_name = self._get_fully_qualified_name(
+                                self.current_class_name)
+                            components.append(f"{class_name}.{method_name}")
 
         # Recursively process children nodes
         for child in node.children:
             components.extend(self._rec_called_components_finder(child))
 
         return components
+
+    def _recursively_resolve_field_access(self, node):
+        """
+        Recursively resolves field_access nodes to handle chained calls like System.out.
+        
+        Args:
+            node: The AST node representing a field access.
+            
+        Returns:
+            str: The fully resolved field access as a single string.
+        """
+        parts = []
+        while node and node.type == "field_access":
+            field_name_node = node.child_by_field_name("field")
+            object_node = node.child_by_field_name("object")
+            if field_name_node:
+                parts.insert(0, self._node_text(field_name_node))
+            if object_node and object_node.type == "field_access":
+                node = object_node  # Move up the chain
+            else:
+                if object_node:
+                    parts.insert(0, self._node_text(object_node))
+                break
+        return ".".join(parts)
 
     def _get_fully_qualified_name(self, class_name):
         """
@@ -305,29 +373,62 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
 
     def _find_component_node(self, node, name_parts):
         """
-        Recursively finds the AST node corresponding to the specified component.
+        Recursively finds the AST node corresponding to the specified component (class, method, or variable).
         
         Args:
             node: The current AST node being processed.
             name_parts: List of component names to match against.
+                        Example: ['SampleClass', 'anotherMethod', 'variableName']
             
         Returns:
             Optional[ts.Node]: The AST node representing the component, or None if not found.
         """
+
+        # Check if the current node is a class or method declaration
         if node.type in ["class_declaration", "method_declaration"]:
-            # Get the exact name of the class or method
             node_name = self._node_text(node.child_by_field_name("name"))
+
+            # If the name matches, continue searching for the next part in name_parts
             if node_name == name_parts[0]:
-                # Set the component type if a match is found
                 self.component_type = "class" if node.type == "class_declaration" else "method"
                 if len(name_parts) == 1:
-                    return node
+                    return node  # Found the class or method
                 else:
-                    # Continue searching within the nested body
+                    # Continue searching within the class or method body
                     body_node = node.child_by_field_name("body")
                     if body_node:
                         return self._find_component_node(
                             body_node, name_parts[1:])
+
+        # Check if the current node is a field declaration (class-level/global variables)
+        elif node.type == "field_declaration" and len(name_parts) == 1:
+            for child in node.children:
+                if child.type == "variable_declarator":
+                    var_name = self._node_text(
+                        child.child_by_field_name("name"))
+                    if var_name == name_parts[0]:
+                        self.component_type = "variable"
+                        return child  # Found the class-level variable
+
+        # Check if the current node is a method declaration and search for local variables
+        elif node.type == "method_declaration" and len(name_parts) > 1:
+            method_name = self._node_text(node.child_by_field_name("name"))
+            if method_name == name_parts[0]:
+                body_node = node.child_by_field_name("body")
+                if body_node:
+                    # Search for local variables in the method body
+                    return self._find_component_node(body_node, name_parts[1:])
+
+        # Check for local variable declarations in method body
+        elif node.type == "local_variable_declaration" and len(
+                name_parts) == 1:
+            for child in node.children:
+                if child.type == "variable_declarator":
+                    var_name = self._node_text(
+                        child.child_by_field_name("name"))
+                    if var_name == name_parts[0]:
+                        self.component_type = "variable"
+                        return child  # Found the local variable
 
         # Recursively search child nodes
         for child in node.children:
@@ -370,15 +471,44 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
 
     def extract_callable_objects(self):
         """
-        Extracts names of callable objects defined within the component code.
+        Extracts names of callable objects and variables defined within the component code.
         
         Returns:
-            List[str]: List of names of callable objects.
+            List[str]: List of names of callable objects and variables.
         """
-        return list(
-            set(
-                self.file_parser._rec_called_components_finder(
-                    self.component_node)))
+        # Extract callable objects (method invocations, function calls, etc.)
+        callable_objects = set(
+            self.file_parser._rec_called_components_finder(
+                self.component_node))
+
+        # Extract variable references (identifiers) within the component node
+        variables = set()
+        self._extract_variables(self.component_node, variables)
+        variables_sorted = set()
+        for variable in variables:
+            for cmp in self.file_parser.extract_component_names():
+                if cmp.split(
+                        ".")[-1] == variable and self.component_name != cmp:
+                    variables_sorted.add(cmp)
+
+        # Combine callable objects and variables into a single list
+        return list(callable_objects.union(variables_sorted))
+
+    def _extract_variables(self, node, variables):
+        """
+        Recursively finds variable references (identifiers) within the given node.
+
+        Args:
+            node: The current AST node being processed.
+            variables: A set to collect found variable names.
+        """
+        if node.type == "identifier":
+            # Assuming the identifier is not part of a method invocation
+            variables.add(self._node_text(node))
+
+        # Recursively search all child nodes for more variable references
+        for child in node.children:
+            self._extract_variables(child, variables)
 
     def extract_signature(self):
         JAVA_LANGUAGE = Language(tsjava.language())

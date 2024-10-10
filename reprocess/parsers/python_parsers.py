@@ -29,6 +29,7 @@ class PythonFileParser(TreeSitterFileParser):
         self.packages = get_import_statement_path(cutted_path)
         self.tree = self._parse_source_code()
         self.file_path = cutted_path[1:]
+        self.package_components_names = self.extract_component_names()
 
     def _parse_source_code(self):
         """
@@ -66,6 +67,13 @@ class PythonFileParser(TreeSitterFileParser):
                             f"{node.name}.{class_body_node.name}")
             elif isinstance(node, ast.FunctionDef):
                 components.append(node.name)
+            elif isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name):
+                        components.append(target.id)
+            elif isinstance(node, ast.Global):
+                for name in node.names:
+                    components.append(name)
 
         for node in self.tree.body:
             visit_node(node)
@@ -125,9 +133,10 @@ class PythonFileParser(TreeSitterFileParser):
         def handle_import_from(node):
             if node.names[0].name == '*':
                 module = get_wildcard_module(node)
-                for cmp in self.extract_component_names():
+                for cmp in self.package_components_names:
+                    # Preserve the full component name without splitting on '.'
                     if cmp.startswith(module):
-                        imports.append(cmp.split(".")[-1])
+                        imports.append(cmp)  # Keep the full name
             else:
                 append_aliases(node)
 
@@ -149,7 +158,6 @@ class PythonFileParser(TreeSitterFileParser):
                 append_aliases(node)
             elif isinstance(node, ast.ImportFrom):
                 handle_import_from(node)
-
         return imports
 
 
@@ -174,17 +182,16 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
             str: The extracted source code of the component, or an empty string if not found.
         """
         #Empty separator handling
-        if self.component_name.startswith('.'):
-            if self.component_name.count('.') == 1:
-                component_name_splitted = [
-                    self.component_name.replace(".", "", 1)
-                ]
+        cmp_name = self.component_name.split(
+            f"{self.file_parser.packages}.")[-1]
+        if cmp_name.startswith('.'):
+            if cmp_name.count('.') == 1:
+                component_name_splitted = [cmp_name.replace(".", "", 1)]
             else:
-                self.component_name = self.component_name.replace(".", "", 1)
-                component_name_splitted = self.component_name.split(".")[1:]
+                cmp_name = cmp_name.replace(".", "", 1)
+                component_name_splitted = cmp_name.split(".")
         else:
-            component_name_splitted = self.component_name.split(
-                f"{self.file_parser.packages}.")[-1].split(".")
+            component_name_splitted = cmp_name.split(".")
 
         for node in self.file_parser.tree.body:
             if isinstance(node, ast.FunctionDef
@@ -205,7 +212,18 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
                         ) and class_node.name == component_name_splitted[1]:
                             self.component_type = "method"
                             return ast.unparse(class_node)
-
+            elif isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(
+                            target, ast.Name
+                    ) and target.id == component_name_splitted[0]:
+                        self.component_type = "variable"
+                        return ast.unparse(node)
+            elif isinstance(node, ast.Global):
+                for name in node.names:
+                    if name == component_name_splitted[0]:
+                        self.component_type = "variable"
+                        return ast.unparse(node)
         return ""
 
     def _collect_used_imports(self, code):
@@ -231,93 +249,90 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
     def _generate_import_statements(self, used_imports):
         """
         Generates import statements for the imports used within the component code.
-        
-        Args:
-            used_imports (Set[str]): Names of imported modules or objects used in the component code.
-            
-        Returns:
-            str: Concatenated import statements for the used imports.
         """
-        import_statements_code = ""
+        import_statements = []
         for node in self.file_parser.tree.body:
             if isinstance(node, ast.Import):
-                import_statements_code = self._handle_import_node(
-                    node, used_imports, import_statements_code)
+                for alias in node.names:
+                    if alias.name in used_imports or (
+                            alias.asname and alias.asname in used_imports):
+                        import_statements.append(f"import {alias.name}" + (
+                            f" as {alias.asname}" if alias.asname else ""))
             elif isinstance(node, ast.ImportFrom):
-                import_statements_code = self._handle_import_from_node(
-                    node, used_imports, import_statements_code)
-        return import_statements_code
+                module = self._resolve_module(node)
+                for alias in node.names:
+                    if alias.name in used_imports or (
+                            alias.asname and alias.asname in used_imports):
+
+                        if module == "":  #Please don't touch it. Somehow this works, but needs testing
+                            module += "."
+                        import_statements.append(
+                            f"from {module} import {alias.name}" +
+                            (f" as {alias.asname}" if alias.asname else ""))
+        return "\n".join(import_statements)
 
     def _handle_import_node(self, node, used_imports, import_statements_code):
         """
         Handles regular import nodes, adding necessary imports to the import statements code.
-        
-        Args:
-            node (ast.Import): An AST import node.
-            used_imports (Set[str]): Names of imported modules or objects used in the component code.
-            import_statements_code (str): Accumulated import statements code.
-            
-        Returns:
-            str: Updated import statements code with necessary imports added.
         """
-        imports_to_add = [
-            alias for alias in node.names if alias.name in used_imports or (
-                alias.asname is not None and alias.asname in used_imports)
-        ]
+        imports_to_add = []
+        for alias in node.names:
+            if alias.name in used_imports or (alias.asname is not None and
+                                              alias.asname in used_imports):
+                if alias.asname:
+                    imports_to_add.append(
+                        f"import {alias.name} as {alias.asname}")
+                else:
+                    imports_to_add.append(f"import {alias.name}")
+
         if imports_to_add:
-            code_line = ast.unparse(ast.Import(names=imports_to_add))
-            return code_line + "\n" + import_statements_code
+            return "\n".join(imports_to_add) + "\n" + import_statements_code
         return import_statements_code
 
     def _handle_import_from_node(self, node, used_imports,
                                  import_statements_code):
         """
         Handles import-from nodes, adding necessary imports to the import statements code.
-        
-        Args:
-            node (ast.ImportFrom): An AST import-from node.
-            used_imports (Set[str]): Names of imported modules or objects used in the component code.
-            import_statements_code (str): Accumulated import statements code.
-            
-        Returns:
-            str: Updated import statements code with necessary imports added.
         """
-        imports_to_add = [
-            alias for alias in node.names if alias.name in used_imports or (
-                alias.asname is not None and alias.asname in used_imports)
-            or alias.name == "*"
-        ]
-        if imports_to_add:
-            module = self._resolve_module(node)
-            if imports_to_add[0].name == "*":
-                imports_to_add = self._expand_wildcard_imports(
-                    module, used_imports)
+        imports_to_add = []
+        module = self._resolve_module(node)
 
-            if imports_to_add:
-                code_line = ast.unparse(
-                    ast.ImportFrom(module=module, names=imports_to_add))
-                return code_line + "\n" + import_statements_code
+        if node.names[0].name == "*":
+            expanded_imports = self._expand_wildcard_imports(
+                module, used_imports)
+            for imp in expanded_imports:
+                imports_to_add.append(f"from {module} import {imp.name}")
+        else:
+            for alias in node.names:
+                if alias.name in used_imports or (alias.asname is not None
+                                                  and alias.asname
+                                                  in used_imports):
+                    if alias.asname:
+                        imports_to_add.append(
+                            f"from {module} import {alias.name} as {alias.asname}"
+                        )
+                    else:
+                        imports_to_add.append(
+                            f"from {module} import {alias.name}")
+
+        if imports_to_add:
+            return "\n".join(imports_to_add) + "\n" + import_statements_code
         return import_statements_code
 
     def _resolve_module(self, node):
         """
         Resolves the module path for an import-from node based on relative imports level.
-        
-        Args:
-            node (ast.ImportFrom): An AST import-from node.
-            
-        Returns:
-            str: The resolved module path.
         """
         if node.level > 0:
-            current_package = self.component_name
-            splitted_package = current_package.split(".")
-            del splitted_package[-node.level - 1:]
+            current_package = ".".join(self.component_name.split(
+                ".")[:-1])  # Remove the component name itself
+            parts = current_package.split(".")
+            module_parts = parts[:-node.level] if node.level < len(
+                parts) else []
             if node.module:
-                splitted_package.append(node.module)
-
-            return '.'.join(splitted_package)
-        return node.module
+                module_parts.append(node.module)
+            return ".".join(module_parts)
+        return node.module or ""
 
     def _expand_wildcard_imports(self, module, used_imports):
         """
@@ -331,7 +346,7 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
             List[ast.alias]: A list of explicit imports replacing the wildcard import.
         """
         new_imports = []
-        for cmp in self.file_parser.extract_component_names():
+        for cmp in self.component_name:
             if cmp.startswith(module):
                 cmp_name = cmp.split(".")[-1]
                 if cmp_name in used_imports:
@@ -341,14 +356,12 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
     def extract_component_code(self):
         """
         Extracts the component code along with necessary import statements.
-        
-        Returns:
-            str: The extracted component code prefixed with necessary import statements.
         """
         code = self._extract_code_without_imports()
         used_imports = self._collect_used_imports(code)
         import_statements_code = self._generate_import_statements(used_imports)
-        return import_statements_code + "\n" + code
+
+        return import_statements_code + "\n\n" + code
 
     def extract_callable_objects(self):
         """
@@ -374,16 +387,26 @@ class PythonComponentFillerHelper(TreeSitterComponentFillerHelper):
         called_components = set()
 
         for node in ast.walk(tree):
-            if isinstance(node, ast.Call):
+            # Collect global declarations (global variables like 'ENV')
+            if isinstance(node, ast.Global):
+                called_components.update(
+                    node.names)  # Add the global variable names
+            # Collect function calls and attributes
+            elif isinstance(node, ast.Call):
                 if isinstance(node.func, ast.Name):
                     called_components.add(node.func.id)
                 elif isinstance(node.func, ast.Attribute):
                     called_components.add(node.func.attr)
+            # Collect variables (Names) being used (loaded)
+            elif isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
+                called_components.add(node.id)
 
         called_components = list(called_components)
         resulted_array = []
         for cmp in called_components:
-            if cmp in self.file_parser.extract_callable_components():
+            if cmp in self.file_parser.extract_callable_components(
+            ) or f"{self.file_parser.packages}.{cmp}" in self.file_parser.extract_component_names(
+            ):
                 resulted_array.append(f"{self.file_parser.packages}.{cmp}")
         resulted_array += imports
         return resulted_array
