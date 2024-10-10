@@ -421,6 +421,32 @@ class TypeScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
                         return self._find_component_node(
                             body_node, name_parts[1:])
 
+        if node.type == 'lexical_declaration':
+            for child in node.children:
+                if child.type == 'variable_declarator':
+                    var_name = self._node_text(
+                        child.child_by_field_name("name"))
+                    if var_name == name_parts[0]:
+                        self.component_type = "variable"
+                        return child
+
+        # Check for variable declarations or class variables
+        if node.type == "variable_declaration":
+            for declarator in node.named_children:
+                if declarator.type == "variable_declarator":
+                    var_name = self._node_text(
+                        declarator.child_by_field_name("name"))
+                    if var_name == name_parts[0]:
+                        self.component_type = "variable"
+                        return declarator
+
+        # Check for enums
+        if node.type == "enum_declaration":
+            enum_name = self._node_text(node.child_by_field_name("name"))
+            if enum_name == name_parts[0]:
+                self.component_type = "enum"
+                return node
+
         # Recursively search child nodes
         for child in node.children:
             result = self._find_component_node(child, name_parts)
