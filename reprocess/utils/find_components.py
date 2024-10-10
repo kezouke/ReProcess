@@ -1,5 +1,6 @@
 import ast
 from typing import Dict, List, Tuple
+from reprocess.utils.mappers.file_path_ast_mapper import FilePathAstMapError
 from reprocess.utils.import_path_extractor import get_import_statement_path
 
 
@@ -12,6 +13,9 @@ def extract_components(file_path: str, repos_dir: str,
         file_path (str): The path to the file to analyze.
         repos_dir (str): The directory where the repository is located. Used to calculate the relative path within the repo.
         file_path_ast_map (Dict[str, ast.Module]): A dictionary mapping file paths to their corresponding AST Module objects.
+    
+    Raises:
+        FilePathAstMapError: If file_path_ast_map is None.
     
     Returns:
         List[str]: A list of names of the components found in the file.
@@ -26,6 +30,9 @@ def extract_components(file_path: str, repos_dir: str,
                     components.append(f"{node.name}.{class_body_node.name}")
         elif isinstance(node, ast.FunctionDef):
             components.append(node.name)
+
+    if file_path_ast_map is None:
+        raise FilePathAstMapError("file_path_ast_map is None")
 
     relative_repo_path = "/".join(
         file_path.split(f'{repos_dir}')[1].split("/")[1:])

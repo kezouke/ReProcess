@@ -5,23 +5,6 @@ import ast
 import inspect
 import functools
 import copy
-import os
-import aiohttp
-import asyncio
-
-
-def syncify(func):
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        if inspect.iscoroutinefunction(func):
-            # Run the coroutine synchronously
-            return asyncio.run(func(*args, **kwargs))
-        else:
-            # Call the function normally
-            return func(*args, **kwargs)
-
-    return wrapper
 
 
 class FunctionAnalyzer(ast.NodeVisitor):
@@ -81,112 +64,76 @@ class AbsentAttributesException(Exception):
         return answer_string
 
 
-def process_call_method(original_call, cls, name, async_=False):
-    source = inspect.getsource(original_call)
-    lines = source.split('\n')
-    first_line = lines[0]
-    leading_spaces = len(first_line) - len(first_line.lstrip())
-    normalized_source = '\n'.join(line[leading_spaces:] for line in lines)
-    tree = ast.parse(normalized_source)
-
-    analyzer = FunctionAnalyzer()
-    analyzer.visit(tree)
-
-    req_attrs_list = []
-    if 'repository_container' in original_call.__code__.co_varnames:
-        param_index = original_call.__code__.co_varnames.index(
-            'repository_container')
-        param_type = original_call.__annotations__.get('repository_container',
-                                                       None)
-        if param_index == 1 and param_type == ReContainer:
-            req_attrs_list = list(analyzer.used_attrs)
-
-    req_attrs_list = list(filter(lambda x: x[:2] != "__", req_attrs_list))
-    return_attrs = find_return_attributes(normalized_source)
-    attribute_linker = get_attribute_linker()
-    attribute_linker(name, return_attrs)
-
-    def check_attrs(self, repository_container):
-        absent_attrs = []
-        existing_attrs = vars(repository_container).keys()
-        for attr in self.required_attrs:
-            if attr not in existing_attrs:
-                absent_attrs.append(attr)
-        if absent_attrs:
-            raise AbsentAttributesException(absent_attrs, name)
-
-    def set_re_container_attrs(self, repository_container, result):
-        active_container = repository_container if cls._init_kwargs.get(
-            'inplace') else copy.deepcopy(repository_container)
-        for key, value in result.items():
-            setattr(active_container, key, value)
-
-        return active_container
-
-    if async_:
-
-        @syncify
-        async def async_wrapped_call(self, repository_container, *args,
-                                     **kwargs):
-            check_attrs(self, repository_container)
-
-            original_container = copy.deepcopy(repository_container)
-            result = await original_call(self, repository_container, *args,
-                                         **kwargs)
-            assert isinstance(
-                result, dict
-            ), "You should return dict with updated attributes and their values"
-            assert original_container == repository_container, f"You should not explicitly modify repository container inside the {name}"
-
-            return set_re_container_attrs(self, repository_container, result)
-
-        functools.wraps(original_call)(async_wrapped_call)
-        setattr(cls, '__call__', async_wrapped_call)
-    else:
-
-        def wrapped_call(self, repository_container, *args, **kwargs):
-            check_attrs(self, repository_container)
-
-            original_container = copy.deepcopy(repository_container)
-            result = original_call(self, repository_container, *args, **kwargs)
-            assert isinstance(
-                result, dict
-            ), "You should return dict with updated attributes and their values"
-            assert original_container == repository_container, f"You should not explicitly modify repository container inside the {name}"
-
-            return set_re_container_attrs(self, repository_container, result)
-
-        functools.wraps(original_call)(wrapped_call)
-        setattr(cls, '__call__', wrapped_call)
-
-    setattr(cls, "required_attrs", req_attrs_list)
-
-
 class Meta(type):
 
     def __new__(mcs, name, bases, attrs, **kwargs):
         cls = super().__new__(mcs, name, bases, attrs)
         cls._init_kwargs = kwargs
         if '__call__' in attrs:
-            process_call_method(attrs['__call__'], cls, name)
-        return cls
 
+            # prepare code for the parsing
+            original_call = attrs['__call__']
+            source = inspect.getsource(original_call)
+            lines = source.split('\n')
+            first_line = lines[0]
+            leading_spaces = len(first_line) - len(first_line.lstrip())
+            normalized_source = '\n'.join(line[leading_spaces:]
+                                          for line in lines)
+            tree = ast.parse(normalized_source)
 
-class AsyncMeta(type):
+            analyzer = FunctionAnalyzer()
+            analyzer.visit(tree)
 
-    def __new__(mcs, name, bases, attrs, **kwargs):
-        cls = super().__new__(mcs, name, bases, attrs)
-        cls._init_kwargs = kwargs
-        if '__call__' in attrs:
-            process_call_method(attrs['__call__'], cls, name, async_=True)
+            if 'repository_container' in original_call.__code__.co_varnames:
+                param_index = original_call.__code__.co_varnames.index(
+                    'repository_container')
+                param_type = original_call.__annotations__.get(
+                    'repository_container', None)
+                if param_index == 1 and param_type == ReContainer:
+                    req_attrs_list = list(analyzer.used_attrs)
+
+            req_attrs_list = list(
+                filter(lambda x: x[:2] != "__", req_attrs_list))
+            return_attrs = find_return_attributes(normalized_source)
+            attribute_linker = get_attribute_linker()
+            attribute_linker(name, return_attrs)
+
+            # rewriten call method
+            @functools.wraps(original_call)
+            def wrapped_call(self, repository_container, *args, **kwargs):
+                # assert that all the required attributes are given
+                absent_attrs = []
+                existing_attrs = vars(repository_container).keys()
+                for attr in self.required_attrs:
+                    if attr not in existing_attrs:
+                        absent_attrs.append(attr)
+                if absent_attrs:
+                    raise AbsentAttributesException(absent_attrs, name)
+
+                original_container = copy.deepcopy(repository_container)
+                result = original_call(self, repository_container, *args,
+                                       **kwargs)
+
+                assert isinstance(
+                    result, dict
+                ), "You should return dict with updated attributes and their values"
+                assert original_container == repository_container, f"You should not explicitly modify repository container inside the {name}"
+
+                active_container = repository_container if cls._init_kwargs.get(
+                    'inplace') else copy.deepcopy(repository_container)
+
+                # update repository container attributes
+                for key, value in result.items():
+                    setattr(active_container, key, value)
+
+                return active_container
+
+            setattr(cls, '__call__', wrapped_call)
+            setattr(cls, "required_attrs", req_attrs_list)
         return cls
 
 
 class CombinedMeta(ABCMeta, Meta):
-    pass
-
-
-class AsyncCombinedMeta(ABCMeta, AsyncMeta):
     pass
 
 
@@ -198,43 +145,4 @@ class ReProcessor(ABC, metaclass=CombinedMeta):
 
     @abstractmethod
     def __call__(self, repository_container: ReContainer):
-        pass
-
-
-class AsyncReProcessor(ABC, metaclass=AsyncCombinedMeta):
-
-    def __new__(cls, *args, **kwargs):
-        cls._init_kwargs = kwargs
-        return super().__new__(cls)
-
-    @abstractmethod
-    @syncify
-    async def __call__(self, repository_container: ReContainer):
-        pass
-
-
-class AsyncVLLMReProcessor(ABC, metaclass=AsyncCombinedMeta):
-
-    class LLM:
-
-        def __init__(self) -> None:
-            self.url = os.getenv('LLM_URL')
-            if not self.url:
-
-                raise ValueError("Environment variable LLM_URL is not set")
-
-        async def get_response(self, json_data):
-            async with aiohttp.ClientSession() as session:
-                async with session.post(self.url, json=json_data) as response:
-                    if response.status != 200:
-                        raise Exception(f"Error: {response.status}")
-                    return await response.json()
-
-    def __new__(cls, *args, **kwargs):
-        cls._init_kwargs = kwargs
-        cls.llm = AsyncVLLMReProcessor.LLM()
-        return super().__new__(cls)
-
-    @abstractmethod
-    async def __call__(self, repository_container: ReContainer):
         pass
