@@ -48,14 +48,15 @@ class CppFileParser(TreeSitterFileParser):
 
     def extract_component_names(self):
         """
-        Extracts names of components (functions and classes) defined in the C++ file.
-        
+        Extracts names of components (functions, classes, and variables) defined in the C++ file.
+
         Returns:
             List[str]: List of component names.
         """
         components = []
 
         def visit_node(node, class_name=None):
+            # Extract function names
             if node.type == "function_definition":
                 func_node = node.child_by_field_name(
                     "declarator").child_by_field_name("declarator")
@@ -65,11 +66,25 @@ class CppFileParser(TreeSitterFileParser):
                     if class_name:
                         func_name = f"{class_name}.{func_name}"
                     components.append(func_name)
+
+            # Extract class names
             elif node.type == "class_specifier":
                 class_name_node = node.child_by_field_name("name")
                 if class_name_node:
                     class_name = class_name_node.text.decode('utf-8')
                     components.append(class_name)
+
+            # Extract variable names
+            elif node.type == "init_declarator":
+                declarator_node = node.child_by_field_name("declarator")
+                if declarator_node:
+                    var_name = declarator_node.text.decode('utf-8')
+                    components.append(var_name)
+            elif node.type == "field_declaration" and class_name:
+                field_name_node = node.child_by_field_name("declarator")
+                if field_name_node:
+                    field_name = field_name_node.text.decode('utf-8')
+                    components.append(f"{class_name}.{field_name}")
 
         def traverse_tree(node, class_name=None):
             if node.type == "class_specifier":
@@ -264,7 +279,10 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
 
     def _find_component_node(self, node, name_parts):
         """Recursively finds the AST node corresponding to the component."""
-        if node.type == 'function_definition' or node.type == 'class_specifier':
+        if node.type in [
+                'function_definition', 'class_specifier', 'init_declarator',
+                'field_declaration'
+        ]:
             declarator = None
             if node.type == 'function_definition':
                 self.component_type = 'function'
@@ -274,6 +292,15 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
                 self.component_type = 'class'
                 declarator = node.child_by_field_name('name')
 
+            elif node.type == 'init_declarator':  # For variable declarations
+                self.component_type = 'variable'
+                declarator = node.child_by_field_name('declarator')
+
+            elif node.type == 'field_declaration':  # Field variables
+                self.component_type = 'field'
+                declarator = node.child_by_field_name('declarator')
+
+            # Compare the stripped parameters to see if we have a match
             if declarator and self._strip_parameters(
                     declarator.text.decode('utf8')) == self._strip_parameters(
                         name_parts[0]):
@@ -298,27 +325,35 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
         """Extracts the code of the specified component."""
         self._find_class_methods()
         name_parts = component_name.split('.')
+
+        # Check for methods defined outside the class body first
         if len(name_parts
                ) > 1 and name_parts[0] in self.class_methods and name_parts[
                    1] in self.class_methods[name_parts[0]]:
-            # Handle class methods defined outside the class body
             component_node = self.class_methods[name_parts[0]][name_parts[1]]
             self.component_type = 'method'
             return self._get_node_text(component_node)
 
+        # Attempt to find the variable declaration first
         component_node = self._find_component_node(
             self.file_parser.tree.root_node, name_parts)
 
         if component_node:
             if component_node.type == 'class_specifier':
                 self.component_type = 'class'
-                # Include methods defined outside the class body
                 class_code = self._get_node_text(component_node)
                 class_name = name_parts[0]
                 if class_name in self.class_methods:
                     for method in self.class_methods[class_name].values():
                         class_code += '\n' + self._get_node_text(method)
                 return class_code
+
+            elif component_node.type == 'init_declarator':  # Extract variable declaration
+                self.component_type = 'variable'
+                return self._get_node_text(component_node.parent)
+            elif component_node.type == 'field_declaration':  # Extract field variable declaration
+                self.component_type = 'field'
+                return self._get_node_text(component_node)
             else:
                 if len(name_parts) > 1:
                     self.component_type = 'method'
@@ -326,7 +361,6 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
                     self.component_type = 'function'
                 return self._get_node_text(component_node)
         else:
-
             return ""
 
     def extract_component_code(self):
@@ -364,6 +398,7 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
         """
         called_components = set()
         variable_to_class = {}
+        declared_variables = set()
 
         code = self.component_code
         tree = self.file_parser.parser.parse(bytes(code, "utf8"))
@@ -390,7 +425,6 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
                             class_name = variable_to_class[instance_name]
                             full_func_name = f"{class_name}.{func_name.split('.')[1]}"
                             called_components.add(full_func_name)
-
             # Handle field expressions like obj.method()
             elif node.type == "field_expression":
                 var_node = node.child(0)  # This is the variable (e.g., 'sc')
@@ -405,7 +439,6 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
                         if field_node:
                             func_name = f"{class_name}.{field_node.text.decode('utf-8')}"
                             called_components.add(func_name)
-
             # Handle qualified identifiers like std::cout
             elif node.type == "qualified_identifier":
                 scope_node = node.child_by_field_name("scope")
@@ -415,7 +448,6 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
                     # Replace '::' with '.' to standardize the format
                     qualified_name = qualified_name.replace("::", ".")
                     called_components.add(qualified_name)
-
             # Handle binary expressions like std::cout << "Hello";
             elif node.type == "binary_expression":
                 left_node = node.child(0)
@@ -423,7 +455,6 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
                 if left_node and right_node:
                     visit_node(left_node)
                     visit_node(right_node)
-
             # Handle variable declarations like: MyClass obj;
             elif node.type == "declaration":
                 type_node = node.child_by_field_name("type")
@@ -434,6 +465,19 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
                         '(')[0].strip()  # Capture only the variable name
                     type_name = type_node.text.decode('utf-8')
                     variable_to_class[var_name] = type_name
+                    declared_variables.add(var_name)
+            elif node.type == "identifier":
+                var_name = node.text.decode('utf-8')
+                extracted_cmps = self.file_parser.extract_component_names()
+                # If the variable is not declared, add it to called_components
+                if var_name in extracted_cmps:
+                    called_components.add(var_name)
+
+                parts_name = self.component_name.split('.')
+                if len(parts_name) == 2:
+                    class_name = parts_name[0]
+                    if f"{class_name}.{var_name}" in extracted_cmps:
+                        called_components.add(f"{class_name}.{var_name}")
 
         def traverse_tree(node):
             visit_node(node)
@@ -443,7 +487,12 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
         # Traverse the tree and extract called components
         traverse_tree(tree.root_node)
         # print(variable_to_class)  # For debugging purposes
-        return list(called_components)
+        parts_name = self.component_name.split('.')
+        called_components = [
+            cmp for cmp in called_components if cmp != parts_name[-1]
+        ]
+
+        return called_components
 
     def extract_signature(self):
         CPP_LANGUAGE = Language(tscpp.language())

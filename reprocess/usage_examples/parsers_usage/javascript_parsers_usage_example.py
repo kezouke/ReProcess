@@ -16,7 +16,7 @@ print("\nCallable Components:")
 print(parser.extract_callable_components())
 
 helper = JavaScriptComponentFillerHelper(
-    "feed.prompt_display.PromptDisplay.constructor", file_path, parser)
+    "feed.prompt_display.checkGlobalStatus", file_path, parser)
 print("\nComponent Code:")
 print(helper.extract_component_code())
 
