@@ -490,4 +490,33 @@ class TypeScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
         Returns:
             List[str]: List of names of callable objects.
         """
-        return list(set(self.file_parser._find_cmp_names(self.component_node)))
+        node_to_start = self.component_node
+        if self.component_type == "variable":
+            node_to_start = node_to_start.parent
+        cmp_names_local_cuted = self.file_parser._find_cmp_names(node_to_start)
+        cmp_names_local = set(self.file_parser.packages + "." + cmp
+                              for cmp in cmp_names_local_cuted)
+        cmp_names_global = set(self.file_parser.extract_component_names())
+        cmp_names_global = cmp_names_global.difference(cmp_names_local)
+        cmp_map = {cmp.split(".")[-1]: cmp for cmp in cmp_names_global}
+        result = set()
+        cmp_names_local_cuted = [
+            cmp.split(".")[-1] for cmp in cmp_names_local_cuted
+        ]
+
+        def traverse_node(node):
+            for child in node.children:
+                if child.type == 'identifier':
+                    var_name = child.text.decode('utf-8')
+                    if var_name in cmp_map:
+                        result.add(cmp_map[var_name])
+                    elif var_name not in cmp_names_local_cuted:
+                        result.add(var_name)
+
+                traverse_node(child)
+
+        component_code_tree = self.file_parser.parser.parse(
+            bytes(self.component_code, "utf8"))
+        traverse_node(component_code_tree.root_node)
+
+        return list(result)
