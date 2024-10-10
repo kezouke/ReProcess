@@ -49,6 +49,7 @@ class CFileParser(TreeSitterFileParser):
             List[str]: List of component names and variables.
         """
         components = []
+        stack = [self.tree.root_node]
         variables = []
 
         def visit_node(node):
@@ -87,14 +88,11 @@ class CFileParser(TreeSitterFileParser):
                 variable_name = node.text.decode('utf8')
                 variables.append(variable_name)
 
-        def traverse_tree(node):
-            """Recursively traverses the AST starting from the given node."""
+        while stack:
+            node = stack.pop()
             visit_node(node)
             for child in node.children:
-                traverse_tree(child)
-
-        # Start traversal from the root node
-        traverse_tree(self.tree.root_node)
+                stack.append(child)
 
         # Replace hyphens with underscores for component names
         modules = [component.replace("-", "_") for component in components]
@@ -112,6 +110,7 @@ class CFileParser(TreeSitterFileParser):
             List[str]: List of names of called components.
         """
         called_components = set()
+        stack = [self.tree.root_node]
 
         def visit_node(node):
             """Visits a node in the AST and identifies called components."""
@@ -124,13 +123,11 @@ class CFileParser(TreeSitterFileParser):
                 if field_node:
                     called_components.add(field_node.text.decode('utf-8'))
 
-        def traverse_tree(node):
-            """Recursively traverses the AST starting from the given node."""
+        while stack:
+            node = stack.pop()
             visit_node(node)
             for child in node.children:
-                traverse_tree(child)
-
-        traverse_tree(self.tree.root_node)
+                stack.append(child)
 
         return list(called_components)
 
@@ -142,6 +139,7 @@ class CFileParser(TreeSitterFileParser):
             List[str]: List of names of callable components.
         """
         callable_components = set()
+        stack = [self.tree.root_node]
 
         def visit_node(node):
             if node.type == "function_definition":
@@ -166,12 +164,11 @@ class CFileParser(TreeSitterFileParser):
                             callable_components.add(
                                 f"{struct_name}.{field_name}")
 
-        def traverse_tree(node):
+        while stack:
+            node = stack.pop()
             visit_node(node)
             for child in node.children:
-                traverse_tree(child)
-
-        traverse_tree(self.tree.root_node)
+                stack.append(child)
 
         return list(callable_components)
 
@@ -183,6 +180,7 @@ class CFileParser(TreeSitterFileParser):
             List[str]: List of import statements found in the file.
         """
         imports = []
+        stack = [self.tree.root_node]
 
         def visit_node(node):
             if node.type == "preproc_include":
@@ -191,12 +189,11 @@ class CFileParser(TreeSitterFileParser):
                     imports.append(
                         include_node.text.decode('utf-8').strip('"<>'))
 
-        def traverse_tree(node):
+        while stack:
+            node = stack.pop()
             visit_node(node)
             for child in node.children:
-                traverse_tree(child)
-
-        traverse_tree(self.tree.root_node)
+                stack.append(child)
 
         return imports
 
