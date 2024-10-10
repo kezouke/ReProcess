@@ -32,7 +32,7 @@ class TypeScriptFileParser(TreeSitterFileParser):
             self.tree = self.parser.parse(bytes(self.source_code, "utf8"))
 
         # Adjust the file path relative to the repository
-        self.file_path = cutted_path[1:]
+        self.file_path = cutted_path[1:] + ".ts"
         self.variable_class_map = {}
         self.imports_map = self._map_imported_classes()
         self.local_component_names = self.extract_component_names()
