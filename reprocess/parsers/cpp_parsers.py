@@ -86,20 +86,24 @@ class CppFileParser(TreeSitterFileParser):
                     field_name = field_name_node.text.decode('utf-8')
                     components.append(f"{class_name}.{field_name}")
 
-        def traverse_tree(node, class_name=None):
-            if node.type == "class_specifier":
-                class_name_node = node.child_by_field_name("name")
-                if class_name_node:
-                    class_name = class_name_node.text.decode('utf-8')
+        def traverse_tree():
+            stack = [(self.tree.root_node, None)]
+            while stack:
+                node, class_name = stack.pop()
+                if node.type == "class_specifier":
+                    class_name_node = node.child_by_field_name("name")
+                    if class_name_node:
+                        class_name = class_name_node.text.decode('utf-8')
+                        visit_node(node, class_name)
+                        for child in node.children:
+                            stack.append((child, class_name))
+                else:
                     visit_node(node, class_name)
+                    print(class_name)
                     for child in node.children:
-                        traverse_tree(child, class_name)
-            else:
-                visit_node(node, class_name)
-                for child in node.children:
-                    traverse_tree(child, class_name)
+                        stack.append((child, class_name))
 
-        traverse_tree(self.tree.root_node)
+        traverse_tree()
 
         modules = [component.replace("-", "_") for component in components]
 
@@ -183,14 +187,16 @@ class CppFileParser(TreeSitterFileParser):
                     type_name = type_node.text.decode('utf-8')
                     variable_to_class[var_name] = type_name
 
-        def traverse_tree(node):
-            visit_node(node)
-            for child in node.children:
-                traverse_tree(child)
+        def traverse_tree():
+            stack = [self.tree.root_node]
+            while stack:
+                node = stack.pop()
+                visit_node(node)
+                for child in reversed(node.children):
+                    stack.append(child)
 
-        # Traverse the tree and extract called components
-        traverse_tree(self.tree.root_node)
-        # print(variable_to_class)  # For debugging purposes
+        traverse_tree()
+
         return list(called_components)
 
     def extract_callable_components(self):
@@ -218,12 +224,15 @@ class CppFileParser(TreeSitterFileParser):
                     imports.append(
                         include_node.text.decode('utf-8').strip('"<>'))
 
-        def traverse_tree(node):
-            visit_node(node)
-            for child in node.children:
-                traverse_tree(child)
+        def traverse_tree():
+            stack = [self.tree.root_node]
+            while stack:
+                node = stack.pop()
+                visit_node(node)
+                for child in reversed(node.children):
+                    stack.append(child)
 
-        traverse_tree(self.tree.root_node)
+        traverse_tree()
 
         return imports
 
