@@ -102,5 +102,4 @@ def test_typescript_component_filler_helper(typescript_code_file):
     assert "return new User(\"Admin\");" in code
 
     to_link = helper.extract_callable_objects()
-    assert set(to_link) == set(
-        ['GeneratedCode.User'])
+    assert set(to_link) == set(['GeneratedCode.User'])
