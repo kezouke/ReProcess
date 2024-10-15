@@ -491,6 +491,11 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
                         ".")[-1] == variable and self.component_name != cmp:
                     variables_sorted.add(cmp)
 
+        callable_objects = set()
+        for cmp in callable_objects:
+            if cmp != self.component_name:
+                callable_objects.add(cmp)
+
         # Combine callable objects and variables into a single list
         return list(callable_objects.union(variables_sorted))
 
