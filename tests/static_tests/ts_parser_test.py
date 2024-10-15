@@ -103,4 +103,4 @@ def test_typescript_component_filler_helper(typescript_code_file):
 
     to_link = helper.extract_callable_objects()
     assert set(to_link) == set(
-        ['GeneratedCode.User.createAdmin', 'GeneratedCode.User'])
+        ['GeneratedCode.User'])
