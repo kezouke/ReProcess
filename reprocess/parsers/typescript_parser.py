@@ -555,4 +555,5 @@ class TypeScriptComponentFillerHelper(TreeSitterComponentFillerHelper):
             bytes(self.component_code, "utf8"))
         traverse_node(component_code_tree.root_node)
 
-        return list(result)
+        result = [cmp for cmp in result if cmp != self.component_name]
+        return result
