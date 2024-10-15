@@ -485,14 +485,20 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
         variables = set()
         self._extract_variables(self.component_node, variables)
         variables_sorted = set()
+        print(variables)
         for variable in variables:
             for cmp in self.file_parser.extract_component_names():
                 if cmp.split(
                         ".")[-1] == variable and self.component_name != cmp:
                     variables_sorted.add(cmp)
 
+        callable_objs = set()
+        for cmp in callable_objects:
+            if cmp != self.component_name:
+                callable_objs.add(cmp)
+
         # Combine callable objects and variables into a single list
-        return list(callable_objects.union(variables_sorted))
+        return list(callable_objs.union(variables_sorted))
 
     def _extract_variables(self, node, variables):
         """

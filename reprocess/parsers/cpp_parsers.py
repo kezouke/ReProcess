@@ -487,9 +487,9 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
         # Traverse the tree and extract called components
         traverse_tree(tree.root_node)
         # print(variable_to_class)  # For debugging purposes
-        parts_name = self.component_name.split('.')
         called_components = [
-            cmp for cmp in called_components if cmp != parts_name[-1]
+            cmp for cmp in called_components if cmp != self.component_name
+            and cmp != self.component_name.split('.')[-1]
         ]
 
         return called_components
