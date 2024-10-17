@@ -1,9 +1,14 @@
+import os
+
+
 class ReContainer:
 
     def __init__(self, repo_name: str, repo_path: str, db_path: str) -> None:
         self.repo_name = repo_name
         self.repo_path = repo_path
         self.db_path = db_path
+        self.not_empty = bool(
+            os.listdir(repo_path)) if os.path.exists(repo_path) else False
 
     def __eq__(self, other) -> bool:
         if isinstance(other, ReContainer):

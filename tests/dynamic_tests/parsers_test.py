@@ -233,6 +233,9 @@ def test_code_lines_parsed(processed_repo):
         else:
             continue
 
+        if not random_line:
+            continue
+
         print(f"Random line: {random_line}")
 
         found = False
