@@ -4,7 +4,7 @@ from reprocess.re_container import ReContainer
 # Initialize a ReContainer object with the name of the repository,
 # the path where the repository will be cloned,
 # and the path where the JSON graphs will be saved.
-repo_container = ReContainer("booking", "/home/projects/booking", "/home/db")
+repo_container = ReContainer("arxiv-feed", "/home/arxiv-feed", "/home/db")
 
 # Neo4j connection details
 NEO4J_URI = "bolt://localhost:7299"  # URI for the Neo4j database
@@ -18,6 +18,7 @@ NEO4J_PASSWORD = "password"  # Password for Neo4j login
 # to JSON format,  and integrating the repository data with Neo4j
 # for graph storage and querying.
 composition = Compose([
+    CloneRepository(),
     GraphBuilder(),
     RegExpFinder("^(.*test.*)$|^((?:.*[Tt]est).*)$"),
     JsonConverter(),
