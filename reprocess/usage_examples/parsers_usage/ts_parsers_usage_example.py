@@ -15,8 +15,8 @@ print(parser.extract_called_components())
 print("\nCallable components:")
 print(parser.extract_callable_components())
 
-helper = TypeScriptComponentFillerHelper("feed.vars.getCounterValue",
-                                         file_path, parser)
+helper = TypeScriptComponentFillerHelper("feed.vars.changeUser", file_path,
+                                         parser)
 print("\nComponent Code:")
 print(helper.extract_component_code())
 
