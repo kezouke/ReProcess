@@ -8,7 +8,7 @@ repo_container = ReContainer("arxiv-feed", "/home/arxiv-feed", "/home/db")
 
 NEO4J_URI = "bolt://localhost:7299"
 NEO4J_USERNAME = "neo4j"
-NEO4J_PASSWORD = "rerfhfrf"
+NEO4J_PASSWORD = "password"
 
 # Create a Compose object that specifies a sequence of operations
 # to be performed on the repository. This sequence includes cloning
