@@ -30,7 +30,7 @@ class GraphBuilder(ReProcessor):
         Returns:
             dict: Contains code components, files, and external components.
         """
-        if not repository_container.not_empty:
+        if not repository_container.is_downloaded:
             return {}
 
         files = find_code_files(repository_container.repo_path)

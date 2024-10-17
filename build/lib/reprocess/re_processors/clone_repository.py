@@ -17,5 +17,5 @@ class CloneRepository(ReProcessor):
         return {
             "repo_author": repo_info[1],
             "repo_hash": repo_info[0],
-            "not_empty": True
+            "is_downloaded": True
         }
