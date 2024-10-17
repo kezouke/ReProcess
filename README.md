@@ -1,9 +1,9 @@
 # ReProcess
-_release version: 0.2_
+_release version: 0.3_
 
 ----
 
-ReProcess (`Re` stands for `Repository`) is an open-source system designed for the easy processing and analyzing of Git Python repositories.
+**ReProcess** (`Re` for Repository) is an open-source system designed for the analysis and processing of code repositories across multiple programming languages. Leveraging the `tree_sitter` library, ReProcess offers a powerful framework for extracting and analyzing code components and their dependencies.
 
 ----
 
@@ -11,30 +11,48 @@ ReProcess (`Re` stands for `Repository`) is an open-source system designed for t
 ## Features
 
 ReProcess provides several key features:
-- **Dependency Tree Generation**: Build a dependency tree of all components (class, class method, or function) within a repository, showing how these components are related.
+- **Multi-Language Parsing**: Supports several programming languages including Python, Java, C, C++, JavaScript, TypeScript, and Go. Powered by `tree_sitter`
+**Standalone Parsers**: Parsers can be used independently to analyze individual code files without requiring a full Git repository. Example scripts are available in `reprocess/usage_examples/parsers_usage`
+- **Comprehensive Code Component Support**: Code components are broadly categorized as:
+  - Class
+  - Method
+  - Function
+  - Variable (global or class field)
+  - Structure
+  - **Residual Component**: This stores everything not fitting into the above categories (e.g., loops, conditional statements).
+- **Dependency Tree Construction**: Builds a graph representing relationships between all components within a repository.
 - **Dependency Tree Update**: Update an existing Git repository's dependency tree when changes are made to the code after an initial tree is built.
 - **Component Search**: Quickly find code components whose names match a given regular expression (default is `r "*"`).
 - **Data Persistence**: Save and read built trees, found components, and other repository data attributes to/from JSON.
+- **Custom Repository Processors**: Users can create their own repository processors by deriving from either:
+  - `ReProcessor` (for synchronous processing)
+  - `AsyncReProcessor` (for asynchronous processing)
+  - `AsyncVLLMReProcessor` (for handling tasks with an LLM endpoint).  
+  For details, see the examples in `reprocess/usage_examples/async_custom_re_processors.py` and `reprocess/usage_examples/async_custom_vllm_re_processor.py`.
+- **Neo4j Integration**: ReProcess now integrates with Neo4j, allowing users to store and query code component graphs.
 
 Users can use local folders with their repositories or use the `CloneRepository` predefined ReProcessor to download the repository.
-
-Currently, ReProcess supports Git repositories and Python files. Users can also write their own custom repository handlers using the full functionality of ReProcess.
 
 ## Installation
 
 ### Step 1: Clone the Repository
 Begin by cloning the ReProcess repository to your local machine.
 ```bash
-git clone https://github.com/kezouke/TestGena
+git clone https://github.com/kezouke/ReProcess
 ```
 
 ### Step 2: Navigate to the Project Directory
 Change the directory to enter the project folder.
 ```bash
-cd TestGena
+cd ReProcess
 ```
 
-### Step 3: Install the Library
+### Step 3: Install Requirements
+```bash
+pip install -r requirements.txt
+```
+
+### Step 4: Install the Library
 Execute the `setup.py` script to install the `reprocess` library.
 ```bash
 python3 -m pip install -e .
@@ -45,7 +63,7 @@ These steps will set up the necessary environment for using the library in your 
 ## Usage
 
 ### Running the ReProcess Example Script
-To execute the usage example script of our library, use the following command:
+To see ReProcess in action, run the usage example:
 ```bash
 python -m reprocess.usage_examples.re_processing_example 
 ```
@@ -54,14 +72,17 @@ This script demonstrates how to utilize the ReProcess library.
 
 ### Example Usage Script
 ```python
-from reprocess.re_processors import JsonConverter, ReContainer, GraphBuilder, CloneRepository, Compose, RegExpFinder
+from reprocess.re_processors import JsonConverter, GraphBuilder, CloneRepository, Compose, RegExpFinder, Neo4jConverter
+from reprocess.re_container import ReContainer
 
 # Initialize a ReContainer object with the name of the repository,
 # the path where the repository will be cloned,
 # and the path where the JSON graphs will be saved.
-repo_container = ReContainer("arxiv-feed",
-                             "/Users/elisey/AES/test_repo_folder/arxiv-feed",
-                             "/Users/elisey/AES/test_repo_folder/db")
+repo_container = ReContainer("arxiv-feed", "/home/arxiv-feed", "/home/db")
+
+NEO4J_URI = "bolt://localhost:7299"
+NEO4J_USERNAME = "neo4j"
+NEO4J_PASSWORD = "password"
 
 # Create a Compose object that specifies a sequence of operations
 # to be performed on the repository. This sequence includes cloning
@@ -72,16 +93,16 @@ composition = Compose([
     CloneRepository("https://github.com/arXiv/arxiv-feed"),
     GraphBuilder(),
     RegExpFinder("^(.*test.*)$|^((?:.*[Tt]est).*)$"),
-    JsonConverter()
+    JsonConverter(),
+    Neo4jConverter(NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD)
 ])
-
 # Execute the sequence of operations on
 # the repository container.
 new_container = composition(repo_container)
 ```
 
 ### Description of ReContainer
-The `ReContainer` (`Re` stands for `Repository`) is the main class for handling repositories within ReProcess. This class stores any attributes related to the repository that the user is processing, such as the hash of the last commit, all `.py` files in the repository, etc. The `ReContainer` is central to the processing of repositories. The set of attributes that an `ReContainer` instance can store is flexible and dynamic; each repository handler can expect and create attributes as needed, making the `ReContainer` highly adaptable to different processing requirements.
+The `ReContainer` (`Re` stands for `Repository`) is the main class for handling repositories within ReProcess. This class stores any attributes related to the repository that the user is processing, such as the hash of the last commit, all files in the repository, etc. The `ReContainer` is central to the processing of repositories. The set of attributes that an `ReContainer` instance can store is flexible and dynamic; each repository handler can expect and create attributes as needed, making the `ReContainer` highly adaptable to different processing requirements.
 
 ### Parameters of the ReContainer
 - **repo_name**: Name of the repository.
@@ -123,6 +144,11 @@ Note that each individual `ReProcessor` is capable of adding new attributes to t
   ```
   This processor will update `repo_container` by adding a new attribute with the same name as the passed regular expression and will store all found    code components satisfying that regular expression.
 
+- **Neo4jConverter**: Converts repository data into Neo4j graph format.
+  ```python
+  Compose(repo_container, [Neo4jConverter(NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD)])
+  ```
+
 - **Compose**: Executes a sequence of other processors on the repository container.
   ```python
   Compose(repo_container, [Processors_list])
@@ -135,7 +161,7 @@ This set of processors allows flexible management and analysis of code dependenc
 
 Users can create their own repository processors by making classes that inherit from `ReProcessor`. When creating a custom processor, the class should:
 
-1. **Inherit from `ReProcessor`**: This ensures that the necessary checks and behaviors are inherited.
+1. **Inherit from `ReProcessor`/`AsyncReProcessor`/`AsyncVLLMReProcessor`**: This ensures that the necessary checks and behaviors are inherited.
 2. **Implement the `__call__` Method**: This method should accept a `ReContainer` instance as an argument and return a dictionary with updated attributes and their values. The `ReContainer` should not be explicitly modified within the `__call__` method.
 
 ### Example Code for a Custom Repository Processor
