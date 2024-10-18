@@ -99,7 +99,6 @@ class CppFileParser(TreeSitterFileParser):
                             stack.append((child, class_name))
                 else:
                     visit_node(node, class_name)
-                    print(class_name)
                     for child in node.children:
                         stack.append((child, class_name))
 
@@ -425,7 +424,6 @@ class CppComponentFillerHelper(TreeSitterComponentFillerHelper):
                     # Check for fully qualified calls (e.g., SampleClass.sampleMethod)
                     if "." in func_name and func_name.split(
                             ".")[0] not in variable_to_class:
-                        # print(func_name)
                         called_components.add(func_name)
                     else:
                         # Resolve instance method calls
