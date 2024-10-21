@@ -485,7 +485,6 @@ class JavaComponentFillerHelper(TreeSitterComponentFillerHelper):
         variables = set()
         self._extract_variables(self.component_node, variables)
         variables_sorted = set()
-        print(variables)
         for variable in variables:
             for cmp in self.file_parser.extract_component_names():
                 if cmp.split(

@@ -1,16 +1,15 @@
 from setuptools import setup, find_packages
 
 setup(name='reprocess',
-      version='0.2',
-      description=
-      'A tool for generating dependency graphs from code repositories.',
+      version='0.3',
+      description='A tool for processing code repositories.',
       author='Advanced Engineering School',
       author_email='eliwhatthe@gmail.com',
       packages=find_packages(),
       package_data={
           'data': ['path.json'],
       },
-      url='https://github.com/kezouke/TestGena',
+      url='https://github.com/kezouke/ReProcess',
       license='MIT',
       keywords='dependency-graph code-analysis',
       classifiers=[
