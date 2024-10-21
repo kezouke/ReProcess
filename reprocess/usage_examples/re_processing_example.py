@@ -4,14 +4,21 @@ import os
 # Initialize a ReContainer object with the name of the repository,
 # the path where the repository will be cloned,
 # and the path where the JSON graphs will be saved.
-print("Hello! We are about to run ReProcess on the 'arxiv-feed' repository. This will involve cloning the repository to your local machine.")
-print("Could you please provide the folder path where you'd like the repository to be cloned?")
+print(
+    "Hello! We are about to run ReProcess on the 'arxiv-feed' repository. This will involve cloning the repository to your local machine."
+)
+print(
+    "Could you please provide the folder path where you'd like the repository to be cloned?"
+)
 repo_save_path = os.path.join(input(), "arxiv-feed")
-print("We'll also generate and save a JSON file containing the processing results of the 'arxiv-feed' repository.")
-print("Could you please specify the path where you'd like the JSON file to be saved?")
+print(
+    "We'll also generate and save a JSON file containing the processing results of the 'arxiv-feed' repository."
+)
+print(
+    "Could you please specify the path where you'd like the JSON file to be saved?"
+)
 json_save_path = input()
 repo_container = ReContainer("arxiv-feed", repo_save_path, json_save_path)
-
 
 # Neo4j connection details
 print("Please, enter neo4j URI (press enter if you dont need it): ")
@@ -23,7 +30,6 @@ if NEO4J_URI:
     NEO4J_USERNAME = "neo4j"  # Username for Neo4j login
     print("Please, enter neo4j password: ")
     NEO4J_PASSWORD = "password"  # Password for Neo4j login
-
 
 # Create a Compose object that specifies a sequence of operations
 # to be performed on the repository. This sequence includes cloning
@@ -40,8 +46,9 @@ composition_list = [
 ]
 
 if NEO4J_URI:
-     # Store the graph data in Neo4j
-    composition_list.append(Neo4jConverter(NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD))
+    # Store the graph data in Neo4j
+    composition_list.append(
+        Neo4jConverter(NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD))
 
 composition = Compose(composition_list)
 # Execute the sequence of operations on
