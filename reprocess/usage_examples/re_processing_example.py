@@ -27,9 +27,9 @@ NEO4J_URI = input()  # URI for the Neo4j database
 NEO4J_USERNAME, NEO4J_PASSWORD = None, None
 if NEO4J_URI:
     print("Please, enter neo4j username: ")
-    NEO4J_USERNAME = "neo4j"  # Username for Neo4j login
+    NEO4J_USERNAME = input()  # Username for Neo4j login
     print("Please, enter neo4j password: ")
-    NEO4J_PASSWORD = "password"  # Password for Neo4j login
+    NEO4J_PASSWORD = input()  # Password for Neo4j login
 
 # Create a Compose object that specifies a sequence of operations
 # to be performed on the repository. This sequence includes cloning
