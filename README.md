@@ -72,17 +72,13 @@ This script demonstrates how to utilize the ReProcess library.
 
 ### Example Usage Script
 ```python
-from reprocess.re_processors import JsonConverter, GraphBuilder, CloneRepository, Compose, RegExpFinder, Neo4jConverter
+from reprocess.re_processors import JsonConverter, GraphBuilder, CloneRepository, Compose, RegExpFinder
 from reprocess.re_container import ReContainer
 
 # Initialize a ReContainer object with the name of the repository,
 # the path where the repository will be cloned,
 # and the path where the JSON graphs will be saved.
 repo_container = ReContainer("arxiv-feed", "/home/arxiv-feed", "/home/db")
-
-NEO4J_URI = "bolt://localhost:7299"
-NEO4J_USERNAME = "neo4j"
-NEO4J_PASSWORD = "password"
 
 # Create a Compose object that specifies a sequence of operations
 # to be performed on the repository. This sequence includes cloning
@@ -93,8 +89,7 @@ composition = Compose([
     CloneRepository("https://github.com/arXiv/arxiv-feed"),
     GraphBuilder(),
     RegExpFinder("^(.*test.*)$|^((?:.*[Tt]est).*)$"),
-    JsonConverter(),
-    Neo4jConverter(NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD)
+    JsonConverter()
 ])
 # Execute the sequence of operations on
 # the repository container.
@@ -148,6 +143,8 @@ Note that each individual `ReProcessor` is capable of adding new attributes to t
   ```python
   Compose(repo_container, [Neo4jConverter(NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD)])
   ```
+  The Neo4jConverter is particularly useful for users who want a more visual, interactive representation of the built dependency graph. By converting the repository data into a Neo4j-compatible format, users can explore the graph online using Neo4j's user interface, allowing for easier visualization and query-based analysis of code dependencies and relationships. This makes it possible to view and manipulate complex graphs without dealing directly with raw data or JSON files. If you are using Neo4j locally or on a remote server, this processor helps you visualize code components and how they interrelate, making it a powerful tool for debugging, understanding large codebases, and conducting code analysis.
+  ![Alt text](./assets/graph.png)
 
 - **Compose**: Executes a sequence of other processors on the repository container.
   ```python
