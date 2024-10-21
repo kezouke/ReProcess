@@ -1,9 +1,11 @@
 from reprocess.re_processors import JsonConverter, GraphBuilder, CloneRepository, Compose, RegExpFinder, Neo4jConverter
 from reprocess.re_container import ReContainer
 import os
+
 # Initialize a ReContainer object with the name of the repository,
 # the path where the repository will be cloned,
 # and the path where the JSON graphs will be saved.
+
 print(
     "Hello! We are about to run ReProcess on the 'arxiv-feed' repository. This will involve cloning the repository to your local machine."
 )
@@ -51,6 +53,7 @@ if NEO4J_URI:
         Neo4jConverter(NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD))
 
 composition = Compose(composition_list)
+
 # Execute the sequence of operations on
 # the repository container.
 new_container = composition(repo_container)
