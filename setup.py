@@ -2,8 +2,7 @@ from setuptools import setup, find_packages
 
 setup(name='reprocess',
       version='0.3',
-      description=
-      'A tool for processing code repositories.',
+      description='A tool for processing code repositories.',
       author='Advanced Engineering School',
       author_email='eliwhatthe@gmail.com',
       packages=find_packages(),
